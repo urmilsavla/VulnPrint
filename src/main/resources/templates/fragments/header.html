@@ -1,0 +1,263 @@
+<div th:fragment="header" id="header" class="fixed top-0 left-0 lg:left-16 right-0 h-20 bg-black/80 backdrop-blur-xl border-b border-neutral-900 flex justify-between items-center px-8 z-40 transition-all duration-300">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <!-- Notification Container -->
+    <div id="notification-container" class="fixed top-24 right-8 z-[100] flex flex-col gap-4 pointer-events-none"></div>
+
+    <style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined' !important;
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+        .toast-entry { animation: toast-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .toast-exit { animation: toast-out 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes toast-in {
+            from { transform: translateX(100%) scale(0.9); opacity: 0; }
+            to { transform: translateX(0) scale(1); opacity: 1; }
+        }
+        @keyframes toast-out {
+            from { transform: translateX(0) scale(1); opacity: 1; }
+            to { transform: translateX(100%) scale(0.9); opacity: 0; }
+        }
+        
+        /* Global Tooltip Fix */
+        .tester-tooltip {
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(63, 255, 20, 0.3);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            margin-top: 8px; /* Gap from trigger */
+        }
+        .group:hover > .tester-tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, 0);
+        }
+
+        /* Standardized Terminal Elite UI Utilities */
+        .radar-bg {
+            background:
+                radial-gradient(circle at top right, rgba(79, 254, 73, 0.15), transparent 35%),
+                radial-gradient(circle at bottom left, rgba(136, 246, 255, 0.12), transparent 35%),
+                linear-gradient(180deg, #050505 0%, #000000 100%) !important;
+            min-height: 100vh;
+            background-attachment: fixed !important;
+        }
+        .shell-panel {
+            backdrop-filter: blur(24px);
+            background: linear-gradient(180deg, rgba(20, 20, 20, 0.92), rgba(10, 10, 10, 0.96));
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 28px !important;
+        }
+        .shadow-terminal {
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 30px 80px rgba(0,0,0,0.6);
+        }
+        .corner-accent::before {
+            content: ''; position: absolute; top: -1px; left: -1px; width: 15px; height: 15px; border-top: 2px solid #4FFE49; border-left: 2px solid #4FFE49;
+            z-index: 10;
+        }
+    </style>
+
+    <div class="flex items-center gap-4">
+        <button id="mobile-toggle" class="lg:hidden text-neutral-400 hover:text-[#39FF14]"><span class="material-symbols-outlined">menu</span></button>
+        <a href="/dashboard" class="flex items-center transition-transform hover:scale-105">
+            <img alt="VulnPrint Logo" class="h-14 w-auto filter brightness-110" src="/images/logo.png">
+        </a>
+    </div>
+
+    <div class="flex items-center gap-6">
+        <a id="admin-settings-link" href="/settings/users" class="hidden text-neutral-400 hover:text-[#39FF14] transition-colors" title="System Settings">
+            <span class="material-symbols-outlined">settings</span>
+        </a>
+        
+        <!-- Alerts Dropdown -->
+        <div class="relative group">
+            <button class="relative text-neutral-400 hover:text-[#39FF14] transition-colors p-1 mt-1">
+                <span class="material-symbols-outlined">notifications</span>
+                <span id="alert-dot" class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-black hidden"></span>
+            </button>
+            <div class="hidden group-hover:block absolute right-[-50px] mt-0 w-80 pt-2 z-50">
+                <div class="bg-[#131313] border border-neutral-800 shadow-2xl overflow-hidden corner-accent">
+                    <div class="px-4 py-3 border-b border-neutral-800 bg-black/40 flex justify-between items-center">
+                        <span class="text-[10px] font-black uppercase tracking-widest text-primary">System_Alerts</span>
+                        <span class="text-[8px] text-neutral-600 font-mono uppercase">Node_Status: Live</span>
+                    </div>
+                    <div id="alerts-list" class="max-h-96 overflow-y-auto custom-scrollbar divide-y divide-neutral-900">
+                        <!-- Alerts populated via JS -->
+                        <div class="p-4 text-center text-[10px] text-neutral-600 uppercase tracking-widest italic">Syncing nodes...</div>
+                    </div>
+                    <div class="px-4 py-2 border-t border-neutral-800 bg-black/20 text-center">
+                        <p class="text-[8px] text-neutral-600 uppercase tracking-tighter">Auto-sync active // v1.0.4</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="relative group">
+            <button id="header-profile-toggle" class="flex items-center gap-3">
+                <div class="text-right hidden md:block">
+                    <p id="header-user-fullname" class="text-[10px] font-bold uppercase text-white">Operator</p>
+                    <p id="header-user-role" class="text-[8px] font-bold uppercase text-[#39FF14]">Admin</p>
+                </div>
+                <div class="relative">
+                    <img id="header-profile-img" class="w-10 h-10 rounded-full border border-[#39FF14]/30 object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAr7e2o-BtyJZ7Y_xVKPl6XoYky985WrO4JKV4yLl8WDiOFf4PQ5JDGd5vKTQD2Xps-2qM5eFUTH92zoxgfd0N8ugIQhBTVgecR5nNfLiDIC9WiL7GCaNqBe-YF81ukDt5L08_uikMr4_6G2fcc1cE2QmoU8F7GFi5z7qnP1TKiSSFG7zY859tudWDbInnPgrFcFrrAVCBFQTAy2c9OXp9uIQG3fyV1gt5n_ebNU8iizSMTZTQLAa5XGM3It2v-s7xOtYVmZaoU6_BQ">
+                    <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#39FF14] rounded-full border-2 border-black"></div>
+                </div>
+            </button>
+            <!-- Hover Dropdown -->
+            <div class="hidden group-hover:block absolute right-0 mt-0 w-48 pt-2 z-50">
+                <div class="bg-[#131313] border border-neutral-800 p-2 shadow-2xl">
+                    <a href="/profile" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">My Profile</a>
+                    <a href="/reset-password" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">Reset Password</a>
+                    <div class="border-t border-neutral-800 my-1"></div>
+                    <button onclick="logoutWithPermission()" class="w-full text-left px-4 py-2.5 text-[10px] uppercase tracking-widest text-red-500 hover:bg-neutral-800 transition-colors">Logout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Confirmation Modal -->
+    <div id="global-confirm-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-[200] hidden items-center justify-center p-4">
+        <div class="bg-[#0e0e0e] border border-neutral-800 w-full max-w-sm p-8 shadow-2xl">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="material-symbols-outlined text-[#39FF14]">help</span>
+                <h3 class="text-xs font-headline font-black uppercase tracking-widest text-white">Permission Required</h3>
+            </div>
+            <p id="confirm-message" class="text-xs text-zinc-400 mb-8 leading-relaxed uppercase tracking-tight">Are you sure you want to perform this action?</p>
+            <div class="grid grid-cols-2 gap-4">
+                <button id="confirm-cancel" class="py-3 bg-neutral-900 border border-neutral-800 text-[9px] font-black uppercase tracking-widest text-white hover:bg-neutral-800 transition-colors">Abort</button>
+                <button id="confirm-proceed" class="py-3 bg-[#39FF14] text-black text-[9px] font-black uppercase tracking-widest hover:opacity-90 transition-colors">Execute</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.askPermission = function(message) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('global-confirm-modal');
+                const proceedBtn = document.getElementById('confirm-proceed');
+                const cancelBtn = document.getElementById('confirm-cancel');
+                const msgEl = document.getElementById('confirm-message');
+
+                msgEl.innerText = message || "Are you sure you want to do it?";
+                modal.classList.replace('hidden', 'flex');
+
+                const cleanup = (result) => {
+                    modal.classList.replace('flex', 'hidden');
+                    proceedBtn.onclick = null;
+                    cancelBtn.onclick = null;
+                    resolve(result);
+                };
+
+                proceedBtn.onclick = () => cleanup(true);
+                cancelBtn.onclick = () => cleanup(false);
+            });
+        };
+
+        window.showNotification = function(message, type = 'info') {
+            const container = document.getElementById('notification-container');
+            const toast = document.createElement('div');
+            
+            let color = '#39FF14'; // Default neon green
+            let icon = 'info';
+            if (type === 'error') { color = '#ff7351'; icon = 'warning'; }
+            if (type === 'success') { icon = 'check_circle'; }
+
+            toast.className = `toast-entry pointer-events-auto flex items-center gap-4 bg-[#0e0e0e] border-l-4 p-4 shadow-2xl min-w-[300px]`;
+            toast.style.borderColor = color;
+            
+            toast.innerHTML = `
+                <span class="material-symbols-outlined" style="color: ${color}">${icon}</span>
+                <div class="flex-1">
+                    <p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: ${color}">${type === 'info' ? 'System' : type}</p>
+                    <p class="text-xs text-white font-medium mt-0.5">${message}</p>
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-neutral-600 hover:text-white transition-colors">
+                    <span class="material-symbols-outlined text-sm">close</span>
+                </button>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.replace('toast-entry', 'toast-exit');
+                setTimeout(() => toast.remove(), 400);
+            }, 4000);
+        };
+
+        async function loadAlerts() {
+            try {
+                const res = await fetch('/api/dashboard/alerts');
+                const alerts = await res.json();
+                const list = document.getElementById('alerts-list');
+                const dot = document.getElementById('alert-dot');
+                
+                if (alerts.length > 0) {
+                    dot.classList.remove('hidden');
+                    list.innerHTML = alerts.map(a => {
+                        let color = '#39FF14';
+                        if (a.level === 'Critical') color = '#ff7351';
+                        else if (a.level === 'High') color = '#ffb347';
+                        
+                        return `
+                            <div class="p-4 hover:bg-white/[0.02] transition-colors group/alert">
+                                <div class="flex justify-between items-start mb-1">
+                                    <span class="text-[8px] font-black uppercase tracking-widest" style="color: ${color}">${a.level}</span>
+                                    <span class="text-[8px] text-neutral-600 font-mono">${a.timeAgo || 'Now'}</span>
+                                </div>
+                                <p class="text-[11px] text-white font-bold leading-tight uppercase tracking-tight group-hover/alert:text-primary transition-colors mb-1">${a.title}</p>
+                                <p class="text-[10px] text-neutral-500 leading-relaxed">${a.details || ''}</p>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    dot.classList.add('hidden');
+                    list.innerHTML = '<div class="p-8 text-center text-[10px] text-neutral-600 uppercase tracking-widest italic">No active system alerts</div>';
+                }
+            } catch (e) {
+                console.error('Alert sync failed', e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const firstName = localStorage.getItem('firstName') || 'Operator';
+            const lastName = localStorage.getItem('lastName') || '';
+            const role = localStorage.getItem('role') || 'Admin';
+            const img = localStorage.getItem('profileImage');
+            
+            document.getElementById('header-user-fullname').innerText = firstName + ' ' + lastName;
+            document.getElementById('header-user-role').innerText = role;
+            if(img) document.getElementById('header-profile-img').src = img;
+
+            if (role === 'Administrator') {
+                const settingsLink = document.getElementById('admin-settings-link');
+                if (settingsLink) settingsLink.classList.remove('hidden');
+            }
+
+            loadAlerts();
+            setInterval(loadAlerts, 30000);
+        });
+        async function logoutWithPermission() {
+            const confirmed = await window.askPermission("Are you sure you want to terminate the current session?");
+            if (confirmed) {
+                localStorage.clear();
+                window.location.href = '/login';
+            }
+        }
+    </script>
+</div>

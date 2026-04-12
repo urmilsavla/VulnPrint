@@ -1,0 +1,698 @@
+openapi: 3.0.3
+info:
+  title: VulnPrint API Documentation
+  description: API documentation for VulnPrint, a vulnerable web application for pentest reporting.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+paths:
+  /api/auth/login:
+    post:
+      summary: Login a user
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  token:
+                    type: string
+                    description: Username used as token
+                  email:
+                    type: string
+                  firstName:
+                    type: string
+                  lastName:
+                    type: string
+                  role:
+                    type: string
+                  profileImage:
+                    type: string
+                  message:
+                    type: string
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+
+  /api/dashboard/metrics:
+    get:
+      summary: Get dashboard metrics
+      tags:
+        - Dashboard
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalPentests:
+                    type: integer
+                  totalVulnerabilities:
+                    type: integer
+                  critical:
+                    type: integer
+                  high:
+                    type: integer
+                  medium:
+                    type: integer
+                  low:
+                    type: integer
+                  info:
+                    type: integer
+                  globalRiskScore:
+                    type: string
+
+  /api/dashboard/recent:
+    get:
+      summary: Get 3 most recent pentests
+      tags:
+        - Dashboard
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pentest'
+
+  /api/dashboard/vulnerabilities:
+    get:
+      summary: Get 15 most recent vulnerabilities
+      tags:
+        - Dashboard
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    title:
+                      type: string
+                    severity:
+                      type: string
+                    cvssScore:
+                      type: number
+                    status:
+                      type: string
+                    pentestId:
+                      type: integer
+                    pentestApp:
+                      type: string
+                    description:
+                      type: string
+
+  /api/dashboard/alerts:
+    get:
+      summary: Get 5 most recent alerts
+      tags:
+        - Dashboard
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alert'
+
+  /api/dashboard/pentests:
+    get:
+      summary: Get enriched list of pentests
+      tags:
+        - Dashboard
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+          description: Filter by pentest type (Web, Mobile, etc.)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 3
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    pentestName:
+                      type: string
+                    applicationName:
+                      type: string
+                    clientName:
+                      type: string
+                    clientSpocName:
+                      type: string
+                    clientSpocContact:
+                      type: string
+                    pentestType:
+                      type: string
+                    target:
+                      type: string
+                    url:
+                      type: string
+                    apiDomain:
+                      type: string
+                    ipRanges:
+                      type: string
+                    createdDate:
+                      type: string
+                      format: date-time
+                    lastModifiedDate:
+                      type: string
+                      format: date-time
+                    status:
+                      type: string
+                    assignedPentesters:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/User'
+                    lastModifiedTimeAgo:
+                      type: string
+                    critical:
+                      type: integer
+                    high:
+                      type: integer
+                    medium:
+                      type: integer
+                    low:
+                      type: integer
+                    info:
+                      type: integer
+                    riskIndex:
+                      type: string
+
+  /api/pentests:
+    post:
+      summary: Create a new pentest
+      tags:
+        - Pentest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pentest'
+      responses:
+        '200':
+          description: Pentest created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pentest'
+
+  /api/pentests/{id}:
+    get:
+      summary: Get a pentest by ID
+      tags:
+        - Pentest
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pentest'
+        '404':
+          description: Pentest not found
+    delete:
+      summary: Delete a pentest by ID
+      tags:
+        - Pentest
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Pentest deleted
+        '404':
+          description: Pentest not found
+
+  /api/pentests/{id}/status:
+    patch:
+      summary: Update pentest status
+      tags:
+        - Pentest
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+      responses:
+        '200':
+          description: Status updated
+        '404':
+          description: Pentest not found
+
+  /api/pentests/search:
+    get:
+      summary: Search pentests by name or client
+      tags:
+        - Pentest
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pentest'
+
+  /api/users:
+    get:
+      summary: Get all users
+      tags:
+        - User
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+  /api/users/profile/{username}:
+    get:
+      summary: Get user profile by username
+      tags:
+        - User
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+
+  /api/users/profile:
+    post:
+      summary: Update user profile
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                address:
+                  type: string
+                email:
+                  type: string
+                profileImage:
+                  type: string
+      responses:
+        '200':
+          description: Profile updated
+        '404':
+          description: User not found
+
+  /api/users/change-password:
+    post:
+      summary: Change user password
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Password updated
+        '400':
+          description: Invalid current password
+
+  /api/users/register:
+    post:
+      summary: Register a new user (Admin only in UI, but vulnerable)
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: User created successfully
+        '400':
+          description: Username already exists
+
+  /api/vulnerabilities/poc-image:
+    get:
+      summary: Get POC image
+      tags:
+        - Vulnerability
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Image not found
+
+  /api/vulnerabilities/pentest/{pentestId}:
+    post:
+      summary: Add vulnerability to a pentest
+      tags:
+        - Vulnerability
+      parameters:
+        - name: pentestId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Vulnerability'
+      responses:
+        '200':
+          description: Vulnerability added
+        '404':
+          description: Pentest not found
+
+  /api/vulnerabilities/{id}:
+    get:
+      summary: Get vulnerability by ID
+      tags:
+        - Vulnerability
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vulnerability'
+        '404':
+          description: Vulnerability not found
+    put:
+      summary: Update vulnerability by ID
+      tags:
+        - Vulnerability
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Vulnerability'
+      responses:
+        '200':
+          description: Vulnerability updated
+        '404':
+          description: Vulnerability not found
+    delete:
+      summary: Delete vulnerability by ID
+      tags:
+        - Vulnerability
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Vulnerability deleted
+        '404':
+          description: Vulnerability not found
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        password:
+          type: string
+          writeOnly: true
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+        address:
+          type: string
+        profileImage:
+          type: string
+
+    Pentest:
+      type: object
+      properties:
+        id:
+          type: integer
+        applicationName:
+          type: string
+        pentestName:
+          type: string
+        clientName:
+          type: string
+        clientSpocName:
+          type: string
+        clientSpocContact:
+          type: string
+        target:
+          type: string
+        pentestType:
+          type: string
+          enum: [Web, Mobile, API, Network, Source Code]
+        createdDate:
+          type: string
+          format: date-time
+        lastModifiedDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+        assignedPentesters:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        url:
+          type: string
+        osType:
+          type: string
+        apiDomain:
+          type: string
+        ipRanges:
+          type: string
+        zipHash:
+          type: string
+        version:
+          type: string
+        additionalUrls:
+          type: string
+        techStack:
+          type: string
+        packageName:
+          type: string
+        apiType:
+          type: string
+        targetType:
+          type: string
+        repoUrl:
+          type: string
+        branchName:
+          type: string
+        language:
+          type: string
+        vulnerabilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Vulnerability'
+
+    Vulnerability:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        cveReference:
+          type: string
+        owasp:
+          type: string
+        description:
+          type: string
+        impact:
+          type: string
+        mitigation:
+          type: string
+        cvssScore:
+          type: number
+        severity:
+          type: string
+        status:
+          type: string
+        pocFolderPath:
+          type: string
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/VulnerabilityStep'
+
+    VulnerabilityStep:
+      type: object
+      properties:
+        id:
+          type: integer
+        stepNumber:
+          type: integer
+        description:
+          type: string
+        imagePaths:
+          type: array
+          items:
+            type: string
+
+    Alert:
+      type: object
+      properties:
+        id:
+          type: integer
+        level:
+          type: string
+        title:
+          type: string
+        details:
+          type: string
+        timeAgo:
+          type: string

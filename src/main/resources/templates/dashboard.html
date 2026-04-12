@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html class="dark" lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>VulnPrint | Executive Dashboard</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+          darkMode: 'class',
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#4FFE49",
+                "surface-container-low": "#131313",
+                "surface-container-high": "#1f1f1f",
+                "surface": "#0e0e0e",
+                "error": "#ff7351",
+                "tertiary": "#88f6ff",
+                "outline-variant": "#484848",
+              },
+              fontFamily: { headline: ['Space Grotesk'], body: ['Inter'], label: ['Space Grotesk'] },
+              boxShadow: { terminal: "0 0 0 1px rgba(38,38,38,0.85), 0 30px 80px rgba(0,0,0,0.55)" }
+            }
+          }
+        }
+    </script>
+    <style>
+        :root { color-scheme: dark; }
+        body { margin: 0; }
+        #main-content { padding-top: 100px; margin-left: 64px; transition: margin-left 0.3s ease; }
+        body.sidebar-expanded #main-content { margin-left: 256px; }
+        body.sidebar-expanded #header { left: 256px; }
+        @media (max-width: 1024px) { #main-content { margin-left: 0 !important; } }
+    </style>
+</head>
+<body class="radar-bg text-on-surface font-body selection:bg-primary selection:text-black">
+
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <main id="main-content" class="px-8 pb-12 relative z-10 text-left">
+        <section class="shell-panel shadow-terminal mx-auto w-full max-w-[1600px]">
+            <div class="flex flex-col gap-6 p-6 sm:p-8 lg:p-10">
+                <!-- Dashboard Header -->
+                <div class="flex items-center justify-between border-b border-neutral-900 pb-2">
+                    <h1 class="text-lg font-headline font-bold tracking-tight text-on-surface uppercase">EXECUTIVE DASHBOARD</h1>
+                </div>
+
+                <!-- Top Metrics Row -->
+                <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+                    <article class="group relative overflow-hidden border-l-2 border-primary/50 bg-surface-container-low p-6">
+                        <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-primary/0 via-primary/60 to-primary/0 opacity-0 transition-opacity group-hover:opacity-100"></div>
+                        <div class="mb-4 flex items-start justify-between">
+                            <span class="text-[10px] font-label uppercase tracking-[0.28em] text-neutral-500">Total Pentests</span>
+                            <span class="material-symbols-outlined text-primary/40 transition-colors group-hover:text-primary">analytics</span>
+                        </div>
+                        <h2 class="text-4xl font-headline font-black text-white" id="stat-pentests">0</h2>
+                        <div class="mt-4 flex items-center gap-2 text-[10px] font-label text-primary">
+                            <span class="material-symbols-outlined text-xs">trending_up</span>
+                            <span>LIVE REGISTRY SYNC</span>
+                        </div>
+                    </article>
+
+                    <article class="group relative overflow-hidden border-l-2 border-error/50 bg-surface-container-low p-6">
+                        <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-error/0 via-error/60 to-error/0 opacity-0 transition-opacity group-hover:opacity-100"></div>
+                        <div class="mb-4 flex items-start justify-between">
+                            <span class="text-[10px] font-label uppercase tracking-[0.28em] text-neutral-500">Vulnerabilities</span>
+                            <span class="material-symbols-outlined text-error/40 transition-colors group-hover:text-error">bug_report</span>
+                        </div>
+                        <h2 class="neon-glow-red text-4xl font-headline font-black text-error" id="stat-vulns">0</h2>
+                        <div class="mt-4 flex items-center gap-2 text-[10px] font-label text-error">
+                            <span class="material-symbols-outlined text-xs">warning</span>
+                            <span>CRITICAL THREAT LEVEL</span>
+                        </div>
+                    </article>
+
+                    <article class="group relative overflow-hidden border-l-2 border-[#ffb347]/50 bg-surface-container-low p-6">
+                        <div class="mb-4 flex items-start justify-between">
+                            <span class="text-[10px] font-label uppercase tracking-[0.28em] text-neutral-500">Global Risk Score</span>
+                            <span class="material-symbols-outlined text-[#ffb347]/40 transition-colors group-hover:text-[#ffb347]">speed</span>
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <h2 class="text-4xl font-headline font-black text-[#ffb347]" id="stat-risk">0.0</h2>
+                            <span class="pb-1 text-sm font-label text-neutral-600">/ 10.0</span>
+                        </div>
+                        <div class="mt-4 h-1.5 w-full bg-neutral-900">
+                            <div class="h-full bg-[#ffb347] transition-all duration-1000" id="stat-risk-bar" style="width: 0%"></div>
+                        </div>
+                    </article>
+
+                    <article class="group relative overflow-hidden border-l-2 border-tertiary/50 bg-surface-container-low p-6">
+                        <div class="mb-4 flex items-start justify-between">
+                            <span class="text-[10px] font-label uppercase tracking-[0.28em] text-neutral-500">Severity Split</span>
+                            <span class="material-symbols-outlined text-tertiary/40 transition-colors group-hover:text-tertiary">pie_chart</span>
+                        </div>
+                        <div class="flex items-center gap-6">
+                            <div class="flex-1 space-y-1.5">
+                                <div class="flex items-center justify-between text-[9px] font-label uppercase"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 bg-error shadow-[0_0_5px_rgba(255,115,81,0.5)]"></span><span class="text-neutral-400" id="split-crit">CRIT (0%)</span></div></div>
+                                <div class="flex items-center justify-between text-[9px] font-label uppercase"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 bg-[#ffb347] shadow-[0_0_5px_rgba(255,179,71,0.5)]"></span><span class="text-neutral-400" id="split-high">HIGH (0%)</span></div></div>
+                                <div class="flex items-center justify-between text-[9px] font-label uppercase"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 bg-primary shadow-[0_0_5px_rgba(79,254,73,0.5)]"></span><span class="text-neutral-400" id="split-med">MED (0%)</span></div></div>
+                                <div class="flex items-center justify-between text-[9px] font-label uppercase"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 bg-tertiary shadow-[0_0_5px_rgba(136,246,255,0.5)]"></span><span class="text-neutral-400" id="split-low">LOW (0%)</span></div></div>
+                            </div>
+                            <div class="relative flex items-center justify-center">
+                                <div class="h-20 w-20 rounded-full border-2 border-neutral-900 shadow-2xl relative transition-all duration-1000 flex items-center justify-center overflow-hidden" id="split-pie" style="background: conic-gradient(#1a1a1a 0% 100%);">
+                                    <div class="absolute inset-[15%] bg-surface-container-low rounded-full border border-neutral-800 flex flex-col items-center justify-center z-10">
+                                        <span class="text-[8px] font-black text-neutral-600 leading-none">TOTAL</span>
+                                        <span class="text-xs font-headline font-bold text-white mt-0.5" id="split-total">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+
+                <!-- Active Project Table -->
+                <section class="overflow-hidden bg-surface-container-low border border-neutral-900 shadow-terminal">
+                    <div class="flex flex-col gap-3 border-b border-neutral-900 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-6 bg-black/20">
+                        <h3 class="flex items-center gap-3 text-lg font-headline font-bold tracking-tight uppercase">
+                            <span class="material-symbols-outlined text-primary font-bold">shield</span>
+                            ACTIVE PENTEST RECORDS
+                        </h3>
+                        <div class="flex items-center gap-4">
+                            <a href="/pentest/add" class="bg-primary text-black px-10 py-3 text-[13px] font-headline font-black uppercase tracking-[0.2em] hover:opacity-90 shadow-[0_0_30px_rgba(79,254,73,0.4)]">ADD Pentest</a>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full min-w-[1000px] border-collapse text-left">
+                            <thead>
+                            <tr class="border-b border-neutral-900 text-[10px] font-label uppercase tracking-[0.28em] text-neutral-500 bg-black/40">
+                                <th class="px-8 py-5 font-medium">Pentest</th>
+                                <th class="px-6 py-5 font-medium">Testers</th>
+                                <th class="px-6 py-5 font-medium">Pentest Type</th>
+                                <th class="px-6 py-5 font-medium">Vuln Distribution</th>
+                                <th class="px-6 py-5 font-medium text-center">Risk</th>
+                                <th class="px-6 py-5 font-medium text-center">Status</th>
+                                <th class="px-8 py-5 text-right font-medium">Operations</th>
+                            </tr>
+                            </thead>
+                            <tbody class="divide-y divide-neutral-900/60" id="project-list">
+                                <!-- Data mapped from backend -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="flex items-center justify-between border-t border-neutral-900 bg-neutral-950 px-8 py-4">
+                        <span class="text-[10px] font-label uppercase tracking-[0.22em] text-neutral-600" id="pentest-count-text">Syncing registry...</span>
+                        <div class="flex gap-2">
+                            <button onclick="changePage(-1)" class="p-1 text-neutral-500 transition-colors hover:text-primary disabled:opacity-30" id="btn-prev"><span class="material-symbols-outlined text-sm">chevron_left</span></button>
+                            <button class="bg-neutral-900 px-3 py-1 text-[10px] font-label text-primary" id="current-page-btn">1</button>
+                            <button onclick="changePage(1)" class="p-1 text-neutral-500 transition-colors hover:text-primary disabled:opacity-30" id="btn-next"><span class="material-symbols-outlined text-sm">chevron_right</span></button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </section>
+    </main>
+
+    <footer class="mx-auto flex w-full max-w-[1600px] items-center justify-between px-6 pb-6 pt-2 sm:px-8 opacity-50">
+        <div class="flex flex-wrap items-center gap-6">
+            <div class="flex items-center gap-2">
+                <span class="h-1.5 w-1.5 rounded-full bg-primary animate-pulse"></span>
+                <span class="text-[8px] font-label uppercase tracking-[0.28em] text-neutral-500">Engine Status: Operational</span>
+            </div>
+        </div>
+        <div class="text-[8px] font-label uppercase tracking-[0.4em] text-neutral-700">© 2024 VULNPRINT ARCHITECTURE. ALL RIGHTS RESERVED.</div>
+    </footer>
+
+    <script>
+        const DEFAULT_IMG = 'https://lh3.googleusercontent.com/aida-public/AB6AXuAr7e2o-BtyJZ7Y_xVKPl6XoYky985WrO4JKV4yLl8WDiOFf4PQ5JDGd5vKTQD2Xps-2qM5eFUTH92zoxgfd0N8ugIQhBTVgecR5nNfLiDIC9WiL7GCaNqBe-YF81ukDt5L08_uikMr4_6G2fcc1cE2QmoU8F7GFi5z7qnP1TKiSSFG7zY859tudWDbInnPgrFcFrrAVCBFQTAy2c9OXp9uIQG3fyV1gt5n_ebNU8iizSMTZTQLAa5XGM3It2v-s7xOtYVmZaoU6_BQ';
+        let currentPage = 0; const pageSize = 3;
+
+        async function updateStatus(event, id, newStatus) {
+            event.stopPropagation();
+            const res = await fetch(`/api/pentests/${id}/status`, {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({status: newStatus})
+            });
+            if(res.ok) { window.showNotification(`Project status synced: ${newStatus}`, 'success'); loadDashboard(); }
+        }
+
+        async function deletePentest(id) {
+            if(!(await window.askPermission("Permanently purge project node from registry?"))) return;
+            const res = await fetch(`/api/pentests/${id}`, { method: 'DELETE' });
+            if(res.ok) { window.showNotification("Node purged.", "success"); loadDashboard(); }
+        }
+
+        async function loadDashboard() {
+            try {
+                const mRes = await fetch('/api/dashboard/metrics'); const m = await mRes.json();
+                document.getElementById('stat-pentests').innerText = m.totalPentests || 0;
+                document.getElementById('stat-vulns').innerText = m.totalVulnerabilities || 0;
+                document.getElementById('stat-risk').innerText = parseFloat(m.globalRiskScore || 0).toFixed(1);
+                document.getElementById('stat-risk-bar').style.width = (parseFloat(m.globalRiskScore)*10)+'%';
+
+                const total = m.totalVulnerabilities || 0;
+                document.getElementById('split-total').innerText = total;
+                
+                const calcTotal = total || 1;
+                const pCrit = Math.round((m.critical || 0) / calcTotal * 100);
+                const pHigh = Math.round((m.high || 0) / calcTotal * 100);
+                const pMed = Math.round((m.medium || 0) / calcTotal * 100);
+                const pLow = Math.round((m.low || 0) / calcTotal * 100);
+                
+                document.getElementById('split-crit').innerText = `CRIT (${pCrit}%)`;
+                document.getElementById('split-high').innerText = `HIGH (${pHigh}%)`;
+                document.getElementById('split-med').innerText = `MED (${pMed}%)`;
+                document.getElementById('split-low').innerText = `LOW (${pLow}%)`;
+                
+                const pie = document.getElementById('split-pie');
+                const colors = { crit: '#ff7351', high: '#ffb347', med: '#4FFE49', low: '#88f6ff' };
+                let curr = 0; const segs = [];
+                if (m.critical > 0) { segs.push(`${colors.crit} ${curr}% ${curr + pCrit}%`); curr += pCrit; }
+                if (m.high > 0) { segs.push(`${colors.high} ${curr}% ${curr + pHigh}%`); curr += pHigh; }
+                if (m.medium > 0) { segs.push(`${colors.med} ${curr}% ${curr + pMed}%`); curr += pMed; }
+                if (m.low > 0) { segs.push(`${colors.low} ${curr}% ${curr + pLow}%`); curr += pLow; }
+                pie.style.background = segs.length > 0 ? `conic-gradient(${segs.join(', ')}${curr < 100 ? ', #1a1a1a ' + curr + '% 100%' : ''})` : 'conic-gradient(#1a1a1a 0% 100%)';
+
+                const pRes = await fetch(`/api/dashboard/pentests?page=${currentPage}&size=${pageSize}`); const pentests = await pRes.json();
+                document.getElementById('project-list').innerHTML = pentests.map(p => {
+                    const testersHtml = p.assignedPentesters && p.assignedPentesters.length > 0 ? p.assignedPentesters.map(u => `
+                        <div class="relative group inline-block mr-[-8px]">
+                            <img src="${u.profileImage || DEFAULT_IMG}" class="w-7 h-7 rounded-full border-2 border-neutral-900 grayscale group-hover:grayscale-0 transition-all object-cover">
+                            <div class="tester-tooltip absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black border border-primary/30 text-[9px] text-primary whitespace-nowrap z-50 pointer-events-none uppercase font-bold tracking-widest">${u.firstName} ${u.lastName}</div>
+                        </div>`).join('') : '<span class="text-[9px] text-neutral-600 uppercase">Unassigned</span>';
+                    
+                    const tVulns = (p.critical + p.high + p.medium + p.low + p.info) || 1;
+                    const critW = (p.critical / tVulns) * 100, highW = (p.high / tVulns) * 100, medW = (p.medium / tVulns) * 100, lowW = (p.low / tVulns) * 100;
+
+                    let riskColorClass = 'text-primary'; let riskBgClass = 'bg-primary';
+                    if (p.critical > 0 || parseFloat(p.riskIndex) >= 7.0) { riskColorClass = 'text-error'; riskBgClass = 'bg-error animate-pulse'; }
+                    else if (p.high > 0 || parseFloat(p.riskIndex) >= 4.0) { riskColorClass = 'text-[#ffb347]'; riskBgClass = 'bg-[#ffb347]'; }
+
+                    return `
+                        <tr class="hover:bg-neutral-900/30 transition-colors group cursor-pointer" onclick="location.href='/pentest/details/${p.id}'">
+                            <td class="px-8 py-6"><div class="font-bold text-white text-sm uppercase tracking-tight group-hover:text-primary transition-colors">${p.pentestName || 'Unnamed Node'}</div><div class="text-[9px] font-label text-neutral-500 uppercase mt-0.5">${p.clientName || 'Private Client'}</div></td>
+                            <td class="px-6 py-6">${testersHtml}</td>
+                            <td class="px-6 py-6 text-center"><span class="bg-neutral-900 border border-neutral-800 text-[8px] font-label px-2 py-1 tracking-tighter uppercase text-neutral-400">${p.pentestType}</span></td>
+                            <td class="px-6 py-6 w-48">
+                                <div class="flex items-center gap-1.5 mb-2">
+                                    <span class="text-[9px] font-bold px-1.5 py-0.5 bg-error/20 text-error border border-error/30 rounded-sm">${p.critical}C</span>
+                                    <span class="text-[9px] font-bold px-1.5 py-0.5 bg-[#ffb347]/20 text-[#ffb347] border border-[#ffb347]/30 rounded-sm">${p.high}H</span>
+                                    <span class="text-[9px] font-bold px-1.5 py-0.5 bg-primary/20 text-primary border border-primary/30 rounded-sm">${p.medium}M</span>
+                                    <span class="text-[9px] font-bold px-1.5 py-0.5 bg-tertiary/20 text-tertiary border border-tertiary/30 rounded-sm">${p.low}L</span>
+                                </div>
+                                <div class="flex h-1.5 w-full bg-neutral-900"><div class="bg-error" style="width: ${critW}%"></div><div class="bg-[#ffb347]" style="width: ${highW}%"></div><div class="bg-primary" style="width: ${medW}%"></div><div class="bg-tertiary" style="width: ${lowW}%"></div></div>
+                            </td>
+                            <td class="px-6 py-6 text-center"><div class="flex items-center justify-center gap-2"><span class="text-sm font-headline font-bold ${riskColorClass}">${p.riskIndex || '0.0'}</span><span class="w-2 h-2 rounded-full ${riskBgClass}"></span></div></td>
+                            <td class="px-6 py-6 text-center">
+                                <div class="flex flex-col gap-1 items-center">
+                                    <select onchange="updateStatus(event, ${p.id}, this.value)" onclick="event.stopPropagation();" class="bg-transparent border border-neutral-800 text-[9px] font-label uppercase tracking-widest px-2 py-1 outline-none focus:border-primary transition-colors text-neutral-400">
+                                        <option value="Active" ${p.status === 'Active' ? 'selected' : ''} class="bg-black">Active</option>
+                                        <option value="Completed" ${p.status === 'Completed' ? 'selected' : ''} class="bg-black">Completed</option>
+                                        <option value="Pending" ${p.status === 'Pending' ? 'selected' : ''} class="bg-black">Pending</option>
+                                    </select>
+                                    <span class="text-[8px] text-neutral-600 uppercase font-bold tracking-tighter">Updated ${p.lastModifiedTimeAgo || 'just now'}</span>
+                                </div>
+                            </td>
+                            <td class="px-8 py-6 text-right relative">
+                                <div class="flex items-center justify-end gap-3 text-neutral-600">
+                                    <div onclick="event.stopPropagation();" class="relative group inline-block">
+                                        <button class="text-neutral-500 hover:text-primary transition-colors p-1"><span class="material-symbols-outlined text-sm">visibility</span></button>
+                                        <div class="tester-tooltip absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-3 bg-black border border-primary/30 text-left min-w-[180px] shadow-2xl">
+                                            <p class="text-[8px] text-primary/60 uppercase tracking-widest font-bold mb-1">Client SPOC</p>
+                                            <p class="text-[10px] text-white font-bold mb-1 uppercase">${p.clientSpocName || 'N/A'}</p>
+                                            <p class="text-[9px] text-neutral-400 font-mono">${p.clientSpocContact || 'N/A'}</p>
+                                        </div>
+                                    </div>
+                                    <button type="button" onclick="event.stopPropagation(); window.location.href='/pentest/edit/${p.id}'" class="material-symbols-outlined text-sm hover:text-primary transition-colors p-1" title="Node View"><span class="material-symbols-outlined text-sm">edit_square</span></button>
+                                    <button type="button" onclick="event.preventDefault(); event.stopPropagation(); deletePentest(${p.id});" class="text-neutral-500 hover:text-error transition-colors p-1" title="Purge Node"><span class="material-symbols-outlined text-sm">delete_forever</span></button>
+                                </div>
+                            </td>
+                        </tr>`;
+                }).join('') || '<tr><td colspan="7" class="p-12 text-center text-neutral-600 uppercase text-[10px]">No project nodes active.</td></tr>';
+                
+                document.getElementById('pentest-count-text').innerText = `Showing page ${currentPage+1} of Registry`;
+                document.getElementById('current-page-btn').innerText = currentPage + 1;
+                document.getElementById('btn-prev').disabled = currentPage === 0;
+                document.getElementById('btn-next').disabled = pentests.length < pageSize;
+            } catch(e) { console.error("Sync Failure", e); window.showNotification("Dashboard sync failure.", "error"); }
+        }
+
+        function changePage(dir) { currentPage += dir; if(currentPage < 0) currentPage = 0; loadDashboard(); }
+        document.addEventListener('DOMContentLoaded', loadDashboard);
+    </script>
+</body>
+</html>

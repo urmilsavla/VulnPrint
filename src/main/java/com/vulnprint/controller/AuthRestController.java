@@ -1,0 +1,44 @@
+package com.vulnprint.controller;
+
+import com.vulnprint.model.User;
+import com.vulnprint.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/api/auth")
+public class AuthRestController {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
+        String username = credentials.get("username");
+        String password = credentials.get("password");
+
+        // Vulnerable to SQLi as per initial design requirements
+        Optional<User> userOpt = userRepository.findByUsernameAndPasswordVulnerable(username, password).stream().findFirst();
+
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("token", user.getUsername());
+            response.put("email", user.getEmail());
+            response.put("firstName", user.getFirstName());
+            response.put("lastName", user.getLastName());
+            response.put("role", user.getRole());
+            response.put("profileImage", user.getProfileImage());
+            response.put("message", "Login successful");
+            return ResponseEntity.ok(response);
+        }
+
+        return ResponseEntity.status(401).body(Map.of("status", "error", "message", "Invalid credentials"));
+    }
+}
