@@ -20,6 +20,7 @@ public class User {
     private String lastName;
     private String role;
     private String address;
+    private String qualification;
     
     @Column(columnDefinition = "TEXT")
     private String profileImage;

@@ -49,9 +49,9 @@ public class DataInitializer implements CommandLineRunner {
     @Transactional
     public void initializeUsers() {
         if (userRepository.findAll().isEmpty()) {
-            createUser("admin", "admin123", "admin@vulnprint.com", "Administrator", "User", "Administrator", "Global HQ");
-            createUser("urmil", "urmil123", "urmil@vulnprint.com", "Urmil", "Savla", "Lead Pentester", "Mumbai Node");
-            createUser("jinesh", "jinesh123", "jinesh@vulnprint.com", "Jinesh", "Savla", "Lead Pentester", "Dubai Node");
+            createUser("admin", "admin123", "admin@vulnprint.com", "Administrator", "User", "Administrator", "Global HQ", "CISSP, CISM, OSCP, Lead Security Manager");
+            createUser("urmil", "urmil123", "urmil@vulnprint.com", "Urmil", "Savla", "Lead Pentester", "Mumbai Node", "OSCP, CRT, CEH");
+            createUser("jinesh", "jinesh123", "jinesh@vulnprint.com", "Jinesh", "Savla", "Lead Pentester", "Dubai Node", "OSWE, GXPN, CISSP");
 
             // Seed some initial system alerts for the dashboard feed
             createAlert("System", "DATABASE_ONLINE", "Secure project registry is now operational.");
@@ -69,9 +69,9 @@ public class DataInitializer implements CommandLineRunner {
         alertRepository.save(a);
     }
 
-    private User createUser(String user, String pass, String email, String first, String last, String role, String address) {
+    private User createUser(String user, String pass, String email, String first, String last, String role, String address, String qualification) {
         User u = new User();
-        u.setUsername(user); u.setPassword(pass); u.setEmail(email); u.setFirstName(first); u.setLastName(last); u.setRole(role); u.setAddress(address);
+        u.setUsername(user); u.setPassword(pass); u.setEmail(email); u.setFirstName(first); u.setLastName(last); u.setRole(role); u.setAddress(address); u.setQualification(qualification);
         return userRepository.save(u);
     }
 

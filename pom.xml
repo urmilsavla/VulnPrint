@@ -44,8 +44,8 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-	</dependencies>
 
+		<!-- Lombok for cleaner models -->
 	<build>
 		<plugins>
 			<plugin>
