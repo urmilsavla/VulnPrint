@@ -38,7 +38,9 @@ public class DashboardRestController {
         Map<String, Object> map = new HashMap<>();
         List<Pentest> all = pentestRepository.findAll();
         List<Vulnerability> allVulns = all.stream()
+                .filter(p -> p.getVulnerabilities() != null)
                 .flatMap(p -> p.getVulnerabilities().stream())
+                .filter(v -> v != null)
                 .collect(Collectors.toList());
         
         map.put("totalPentests", all.size());

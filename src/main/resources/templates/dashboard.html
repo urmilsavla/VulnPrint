@@ -44,11 +44,6 @@
     <main id="main-content" class="px-8 pb-12 relative z-10 text-left">
         <section class="shell-panel shadow-terminal mx-auto w-full max-w-[1600px]">
             <div class="flex flex-col gap-6 p-6 sm:p-8 lg:p-10">
-                <!-- Dashboard Header -->
-                <div class="flex items-center justify-between border-b border-neutral-900 pb-2">
-                    <h1 class="text-lg font-headline font-bold tracking-tight text-on-surface uppercase">EXECUTIVE DASHBOARD</h1>
-                </div>
-
                 <!-- Top Metrics Row -->
                 <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
                     <article class="group relative overflow-hidden border-l-2 border-primary/50 bg-surface-container-low p-6">
@@ -98,16 +93,14 @@
                         </div>
                         <div class="flex items-center gap-6">
                             <div class="flex-1 space-y-1.5">
-                                <div class="flex items-center justify-between text-[9px] font-label uppercase"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 bg-error shadow-[0_0_5px_rgba(255,115,81,0.5)]"></span><span class="text-neutral-400" id="split-crit">CRIT (0%)</span></div></div>
-                                <div class="flex items-center justify-between text-[9px] font-label uppercase"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 bg-[#ffb347] shadow-[0_0_5px_rgba(255,179,71,0.5)]"></span><span class="text-neutral-400" id="split-high">HIGH (0%)</span></div></div>
-                                <div class="flex items-center justify-between text-[9px] font-label uppercase"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 bg-primary shadow-[0_0_5px_rgba(79,254,73,0.5)]"></span><span class="text-neutral-400" id="split-med">MED (0%)</span></div></div>
-                                <div class="flex items-center justify-between text-[9px] font-label uppercase"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 bg-tertiary shadow-[0_0_5px_rgba(136,246,255,0.5)]"></span><span class="text-neutral-400" id="split-low">LOW (0%)</span></div></div>
+                                <div class="flex items-center justify-between text-[9px] font-label uppercase"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 bg-error shadow-[0_0_5px_rgba(255,115,81,0.5)]"></span><span class="text-neutral-400" id="split-crit">Critical (0%)</span></div></div>
+                                <div class="flex items-center justify-between text-[9px] font-label uppercase"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 bg-[#ffb347] shadow-[0_0_5px_rgba(255,179,71,0.5)]"></span><span class="text-neutral-400" id="split-high">High (0%)</span></div></div>
+                                <div class="flex items-center justify-between text-[9px] font-label uppercase"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 bg-primary shadow-[0_0_5px_rgba(79,254,73,0.5)]"></span><span class="text-neutral-400" id="split-med">Medium (0%)</span></div></div>
+                                <div class="flex items-center justify-between text-[9px] font-label uppercase"><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 bg-tertiary shadow-[0_0_5px_rgba(136,246,255,0.5)]"></span><span class="text-neutral-400" id="split-low">Low (0%)</span></div></div>
                             </div>
                             <div class="relative flex items-center justify-center">
                                 <div class="h-20 w-20 rounded-full border-2 border-neutral-900 shadow-2xl relative transition-all duration-1000 flex items-center justify-center overflow-hidden" id="split-pie" style="background: conic-gradient(#1a1a1a 0% 100%);">
                                     <div class="absolute inset-[15%] bg-surface-container-low rounded-full border border-neutral-800 flex flex-col items-center justify-center z-10">
-                                        <span class="text-[8px] font-black text-neutral-600 leading-none">TOTAL</span>
-                                        <span class="text-xs font-headline font-bold text-white mt-0.5" id="split-total">0</span>
                                     </div>
                                 </div>
                             </div>
@@ -198,7 +191,6 @@
                 document.getElementById('stat-risk-bar').style.width = (parseFloat(m.globalRiskScore)*10)+'%';
 
                 const total = m.totalVulnerabilities || 0;
-                document.getElementById('split-total').innerText = total;
                 
                 const calcTotal = total || 1;
                 const pCrit = Math.round((m.critical || 0) / calcTotal * 100);
@@ -206,10 +198,10 @@
                 const pMed = Math.round((m.medium || 0) / calcTotal * 100);
                 const pLow = Math.round((m.low || 0) / calcTotal * 100);
                 
-                document.getElementById('split-crit').innerText = `CRIT (${pCrit}%)`;
-                document.getElementById('split-high').innerText = `HIGH (${pHigh}%)`;
-                document.getElementById('split-med').innerText = `MED (${pMed}%)`;
-                document.getElementById('split-low').innerText = `LOW (${pLow}%)`;
+                document.getElementById('split-crit').innerText = `Critical (${pCrit}%)`;
+                document.getElementById('split-high').innerText = `High (${pHigh}%)`;
+                document.getElementById('split-med').innerText = `Medium (${pMed}%)`;
+                document.getElementById('split-low').innerText = `Low (${pLow}%)`;
                 
                 const pie = document.getElementById('split-pie');
                 const colors = { crit: '#ff7351', high: '#ffb347', med: '#4FFE49', low: '#88f6ff' };
