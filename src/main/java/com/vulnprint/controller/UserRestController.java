@@ -41,6 +41,7 @@ public class UserRestController {
             user.setFirstName(data.get("firstName"));
             user.setLastName(data.get("lastName"));
             user.setAddress(data.get("address"));
+            user.setQualification(data.get("qualification"));
             if (data.containsKey("email")) {
                 user.setEmail(data.get("email"));
             }

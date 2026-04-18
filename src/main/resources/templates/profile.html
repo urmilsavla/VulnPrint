@@ -102,7 +102,14 @@
                     </div>
                     <div>
                         <label class="block text-[10px] font-label text-[#39FF14]/60 uppercase tracking-widest mb-2 font-bold">Location / Address</label>
-                        <textarea name="address" rows="3" class="w-full bg-black border border-neutral-800 text-white p-3 text-sm focus:border-[#39FF14] outline-none"></textarea>
+                        <textarea name="address" rows="2" class="w-full bg-black border border-neutral-800 text-white p-3 text-sm focus:border-[#39FF14] outline-none"></textarea>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="block text-[10px] font-label text-[#39FF14]/60 uppercase tracking-widest font-bold">Professional Qualifications</label>
+                            <span class="text-[8px] text-neutral-500 uppercase font-bold tracking-tighter">Will be displayed in reports</span>
+                        </div>
+                        <textarea name="qualification" rows="3" class="w-full bg-black border border-neutral-800 text-white p-3 text-sm focus:border-[#39FF14] outline-none" placeholder="e.g. OSCP, CISSP, CEH..."></textarea>
                     </div>
                     <div class="pt-6">
                         <button type="submit" class="w-full bg-[#39FF14] text-black font-headline font-black py-4 uppercase text-xs tracking-widest hover:opacity-90 transition-all shadow-lg">Save Profile Changes</button>
@@ -143,6 +150,7 @@
                 localStorage.setItem('firstName', data.firstName);
                 localStorage.setItem('lastName', data.lastName);
                 localStorage.setItem('address', data.address);
+                localStorage.setItem('qualification', data.qualification);
                 window.showNotification('Profile attributes synchronized.', 'success');
                 setTimeout(() => location.reload(), 1500);
             } else {
@@ -169,6 +177,7 @@
                     form.lastName.value = user.lastName || '';
                     form.role.value = user.role || '';
                     form.address.value = user.address || '';
+                    form.qualification.value = user.qualification || '';
                     if (user.profileImage) {
                         document.getElementById('profile-preview').src = user.profileImage;
                         localStorage.setItem('profileImage', user.profileImage);
