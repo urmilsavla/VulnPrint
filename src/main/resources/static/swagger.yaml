@@ -92,68 +92,6 @@ paths:
                   globalRiskScore:
                     type: string
 
-  /api/dashboard/recent:
-    get:
-      summary: Get 3 most recent pentests
-      tags:
-        - Dashboard
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Pentest'
-
-  /api/dashboard/vulnerabilities:
-    get:
-      summary: Get 15 most recent vulnerabilities
-      tags:
-        - Dashboard
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: integer
-                    title:
-                      type: string
-                    severity:
-                      type: string
-                    cvssScore:
-                      type: number
-                    status:
-                      type: string
-                    pentestId:
-                      type: integer
-                    pentestApp:
-                      type: string
-                    description:
-                      type: string
-
-  /api/dashboard/alerts:
-    get:
-      summary: Get 5 most recent alerts
-      tags:
-        - Dashboard
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Alert'
-
   /api/dashboard/pentests:
     get:
       summary: Get enriched list of pentests
@@ -358,6 +296,10 @@ paths:
                 selectedOwaspCategories:
                   type: string
                   description: Double-pipe (||) separated framework item strings
+                riskOverviewEnabled:
+                  type: boolean
+                riskSummary:
+                  type: string
                 severityEnabled:
                   type: boolean
                 severityDefinitions:
@@ -373,26 +315,35 @@ paths:
         '404':
           description: Pentest not found
 
-  /api/pentests/search:
+  /api/reports/master-data/{pentestId}:
     get:
-      summary: Search pentests by name or client
+      summary: Get all data for a report in a single consolidated package
       tags:
-        - Pentest
+        - Report
       parameters:
-        - name: query
-          in: query
+        - name: pentestId
+          in: path
           required: true
           schema:
-            type: string
+            type: integer
       responses:
         '200':
-          description: Successful response
+          description: Successful consolidated data package
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Pentest'
+                type: object
+                properties:
+                  assessmentMetadata:
+                    type: object
+                  reportConfiguration:
+                    type: object
+                  securityFindings:
+                    type: array
+                    items:
+                      type: object
+        '404':
+          description: Pentest not found
 
   /api/users:
     get:
@@ -409,14 +360,14 @@ paths:
                 items:
                   $ref: '#/components/schemas/User'
 
-  /api/users/profile/{username}:
+  /api/users/profile:
     get:
-      summary: Get user profile by username
+      summary: Get user profile by email
       tags:
         - User
       parameters:
-        - name: username
-          in: path
+        - name: email
+          in: query
           required: true
           schema:
             type: string
@@ -427,11 +378,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-        '404':
-          description: User not found
-
-  /api/users/profile:
-    post:
+    put:
       summary: Update user profile
       tags:
         - User
@@ -442,51 +389,23 @@ paths:
             schema:
               type: object
               properties:
-                username:
-                  type: string
                 firstName:
                   type: string
                 lastName:
                   type: string
                 address:
                   type: string
-                email:
+                qualification:
                   type: string
                 profileImage:
                   type: string
       responses:
         '200':
           description: Profile updated
-        '404':
-          description: User not found
-
-  /api/users/change-password:
-    post:
-      summary: Change user password
-      tags:
-        - User
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                currentPassword:
-                  type: string
-                newPassword:
-                  type: string
-      responses:
-        '200':
-          description: Password updated
-        '400':
-          description: Invalid current password
 
   /api/users/register:
     post:
-      summary: Register a new user (Admin only in UI, but vulnerable)
+      summary: Register a new user
       tags:
         - User
       requestBody:
@@ -498,46 +417,12 @@ paths:
       responses:
         '200':
           description: User created successfully
-        '400':
-          description: Username already exists
 
-  /api/vulnerabilities/poc-image:
-    get:
-      summary: Get POC image
-      tags:
-        - Vulnerability
-      parameters:
-        - name: path
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Successful response
-          content:
-            image/png:
-              schema:
-                type: string
-                format: binary
-            image/jpeg:
-              schema:
-                type: string
-                format: binary
-        '404':
-          description: Image not found
-
-  /api/vulnerabilities/pentest/{pentestId}:
+  /api/vulnerabilities:
     post:
-      summary: Add vulnerability to a pentest
+      summary: Create a new vulnerability
       tags:
         - Vulnerability
-      parameters:
-        - name: pentestId
-          in: path
-          required: true
-          schema:
-            type: integer
       requestBody:
         required: true
         content:
@@ -546,9 +431,7 @@ paths:
               $ref: '#/components/schemas/Vulnerability'
       responses:
         '200':
-          description: Vulnerability added
-        '404':
-          description: Pentest not found
+          description: Vulnerability created
 
   /api/vulnerabilities/{id}:
     get:
@@ -568,8 +451,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Vulnerability'
-        '404':
-          description: Vulnerability not found
     put:
       summary: Update vulnerability by ID
       tags:
@@ -589,8 +470,6 @@ paths:
       responses:
         '200':
           description: Vulnerability updated
-        '404':
-          description: Vulnerability not found
     delete:
       summary: Delete vulnerability by ID
       tags:
@@ -604,8 +483,6 @@ paths:
       responses:
         '200':
           description: Vulnerability deleted
-        '404':
-          description: Vulnerability not found
 
 components:
   schemas:
@@ -628,6 +505,8 @@ components:
         role:
           type: string
         address:
+          type: string
+        qualification:
           type: string
         profileImage:
           type: string
@@ -676,8 +555,6 @@ components:
           type: string
         version:
           type: string
-        additionalUrls:
-          type: string
         techStack:
           type: string
         packageName:
@@ -712,7 +589,9 @@ components:
           type: string
         selectedOwaspCategories:
           type: string
-        owaspImage:
+        riskOverviewEnabled:
+          type: boolean
+        riskSummary:
           type: string
         severityEnabled:
           type: boolean
@@ -734,7 +613,7 @@ components:
           type: integer
         title:
           type: string
-        cveReference:
+        cweReference:
           type: string
         owasp:
           type: string
@@ -746,11 +625,22 @@ components:
           type: string
         cvssScore:
           type: number
+        cvssVector:
+          type: string
         severity:
           type: string
         status:
           type: string
-        pocFolderPath:
+        evidenceMode:
+          type: string
+          enum: [STEPS, REQRES, SOURCE]
+        requestResponse:
+          type: string
+        fileName:
+          type: string
+        lineNumber:
+          type: string
+        codeSnippet:
           type: string
         steps:
           type: array
@@ -766,21 +656,15 @@ components:
           type: integer
         description:
           type: string
+        request:
+          type: string
+        response:
+          type: string
+        fileName:
+          type: string
+        lineNumber:
+          type: string
         imagePaths:
           type: array
           items:
             type: string
-
-    Alert:
-      type: object
-      properties:
-        id:
-          type: integer
-        level:
-          type: string
-        title:
-          type: string
-        details:
-          type: string
-        timeAgo:
-          type: string

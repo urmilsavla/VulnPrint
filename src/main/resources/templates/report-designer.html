@@ -399,15 +399,18 @@
             initSeverity();
 
             document.querySelector(`input[name="method-mode"][value="${p.methodologyDisplayMode || 'BOTH'}"]`).checked = true;
-            ['disclaimer', 'methodology', 'conclusion', 'owasp', 'severity'].forEach(s => {
+            ['disclaimer', 'methodology', 'conclusion', 'owasp', 'severity', 'risk'].forEach(s => {
                 const check = document.getElementById(`check-${s}`);
-                check.checked = (p[`${s}Enabled`] !== false);
+                if (!check) return;
+                
+                const enabledKey = s === 'risk' ? 'riskOverviewEnabled' : `${s}Enabled`;
+                check.checked = (p[enabledKey] !== false);
                 toggleTile(s);
                 
-                const valArea = document.getElementById(`val-${s}`);
+                const valArea = document.getElementById(`val-${s === 'risk' ? 'risk-summary' : s}`);
                 if (valArea) {
-                    // Use saved data if it exists and isn't just whitespace, otherwise use default template
-                    valArea.value = (p[s] && p[s].trim() !== "") ? p[s] : (defaultTemplates[s] || "");
+                    const dataKey = s === 'risk' ? 'riskSummary' : s;
+                    valArea.value = (p[dataKey] && p[dataKey].trim() !== "") ? p[dataKey] : (defaultTemplates[s] || "");
                 }
             });
             updateMethodMode();
@@ -424,6 +427,8 @@
                 selectedMethodologyImages: selectedMethodImages.join(','),
                 owaspEnabled: document.getElementById('check-owasp').checked,
                 owaspTop10: enabledFrameworks.join(','),
+                riskOverviewEnabled: document.getElementById('check-risk').checked,
+                riskSummary: document.getElementById('val-risk-summary').value,
                 severityEnabled: document.getElementById('check-severity').checked,
                 severityDefinitions: JSON.stringify(severityMatrix),
                 conclusionEnabled: document.getElementById('check-conclusion').checked,
