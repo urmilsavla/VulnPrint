@@ -315,6 +315,64 @@ paths:
         '404':
           description: Pentest not found
 
+  /api/pentests/{id}/report-details:
+    put:
+      summary: Update report designer details
+      tags:
+        - Pentest
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                disclaimerEnabled:
+                  type: boolean
+                disclaimer:
+                  type: string
+                methodologyEnabled:
+                  type: boolean
+                methodologyDisplayMode:
+                  type: string
+                  enum: [TEXT_ONLY, IMAGE_ONLY, BOTH]
+                methodology:
+                  type: string
+                methodologyImage:
+                  type: string
+                  description: JSON string containing array of Base64 custom images
+                selectedMethodologyImages:
+                  type: string
+                  description: Comma-separated IDs of selected pool images
+                owaspEnabled:
+                  type: boolean
+                owaspTop10:
+                  type: string
+                  description: Comma-separated IDs of enabled frameworks
+                selectedOwaspCategories:
+                  type: string
+                  description: Double-pipe (||) separated framework item strings
+                severityEnabled:
+                  type: boolean
+                severityDefinitions:
+                  type: string
+                  description: JSON string containing severity levels and impact criteria
+                conclusionEnabled:
+                  type: boolean
+                conclusion:
+                  type: string
+      responses:
+        '200':
+          description: Report details updated
+        '404':
+          description: Pentest not found
+
   /api/pentests/search:
     get:
       summary: Search pentests by name or client
@@ -633,6 +691,36 @@ components:
         branchName:
           type: string
         language:
+          type: string
+        disclaimerEnabled:
+          type: boolean
+        disclaimer:
+          type: string
+        methodologyEnabled:
+          type: boolean
+        methodologyDisplayMode:
+          type: string
+        methodology:
+          type: string
+        methodologyImage:
+          type: string
+        selectedMethodologyImages:
+          type: string
+        owaspEnabled:
+          type: boolean
+        owaspTop10:
+          type: string
+        selectedOwaspCategories:
+          type: string
+        owaspImage:
+          type: string
+        severityEnabled:
+          type: boolean
+        severityDefinitions:
+          type: string
+        conclusionEnabled:
+          type: boolean
+        conclusion:
           type: string
         vulnerabilities:
           type: array

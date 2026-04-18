@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html class="dark" lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>VulnPrint | Report Designer</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+          darkMode: 'class',
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#4FFE49",
+                "surface": "#0e0e0e",
+                "on-surface": "#ffffff",
+                "error": "#ff7351"
+              },
+              fontFamily: { body: ['Inter'] }
+            }
+          }
+        }
+    </script>
+    <style>
+        :root { color-scheme: dark; }
+        body { margin: 0; font-family: 'Inter', sans-serif; }
+        #main-content { padding-top: 100px; margin-left: 64px; transition: margin-left 0.3s ease; }
+        body.sidebar-expanded #main-content { margin-left: 256px; }
+        body.sidebar-expanded #header { left: 256px; }
+        @media (max-width: 1024px) { #main-content { margin-left: 0 !important; } }
+        
+        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #262626; transition: .4s; border-radius: 34px; border: 1px solid #404040; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: #525252; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: rgba(79, 254, 73, 0.1); border-color: #4FFE49; }
+        input:checked + .slider:before { transform: translateX(22px); background-color: #4FFE49; box-shadow: 0 0 10px rgba(79, 254, 73, 0.5); }
+
+        .tile-card { background: rgba(19, 19, 19, 0.4); border: 1px solid #262626; transition: all 0.3s ease; }
+        .tile-card.disabled { opacity: 0.4; }
+        .tile-card.disabled > div:not(.tile-header) { pointer-events: none; filter: grayscale(1); }
+
+        .fw-card { transition: all 0.3s ease; border: 1px solid #262626; background: rgba(19, 19, 19, 0.6); }
+        .fw-card.enabled { border-color: rgba(79, 254, 73, 0.4); background: rgba(79, 254, 73, 0.05); }
+        .fw-items-list { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out; }
+        .fw-items-list.expanded { max-height: 800px; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 1rem; }
+
+        .image-tile { cursor: pointer; border: 2px solid transparent; transition: all 0.2s; position: relative; }
+        .image-tile.selected { border-color: #4FFE49; background: rgba(79, 254, 73, 0.05); }
+        .image-tile .select-badge { position: absolute; top: -8px; right: -8px; background: #4FFE49; color: black; width: 20px; height: 20px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; z-index: 10; }
+        .image-tile.selected .select-badge { display: flex; }
+
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; }
+        .modal-content { max-width: 90%; max-height: 90vh; }
+        
+        .textarea-custom::-webkit-scrollbar { width: 4px; }
+        .textarea-custom::-webkit-scrollbar-track { background: transparent; }
+        .textarea-custom::-webkit-scrollbar-thumb { background: #4FFE49; }
+    </style>
+</head>
+<body class="radar-bg min-h-screen text-on-surface font-body selection:bg-primary selection:text-black">
+
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <main id="main-content" class="px-8 pb-20">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex justify-between items-center mb-12 border-b border-neutral-800 pb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-white">Report Designer</h1>
+                    <p class="text-neutral-400 mt-1">Modular tile configuration for technical security reporting</p>
+                </div>
+                <div class="flex gap-4">
+                    <button type="button" onclick="history.back()" class="px-6 py-2 border border-neutral-700 text-neutral-400 font-semibold text-xs uppercase tracking-wider hover:text-white transition-colors">Abort</button>
+                    <button onclick="saveReport()" class="px-8 py-2 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg">Save Configuration</button>
+                </div>
+            </div>
+
+            <div class="space-y-12">
+                <!-- Tile 1: Disclaimer -->
+                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-disclaimer">
+                    <div class="tile-header flex justify-between items-center mb-6">
+                        <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined text-primary text-3xl">gavel</span>
+                            <h2 class="text-xl font-bold text-white">Legal Disclaimer</h2>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="check-disclaimer" onchange="toggleTile('disclaimer')" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <textarea id="val-disclaimer" rows="4" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-6 text-sm focus:border-primary outline-none transition-colors rounded-lg"></textarea>
+                </div>
+
+                <!-- Tile 2: Methodology -->
+                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-methodology">
+                    <div class="tile-header flex justify-between items-center mb-6">
+                        <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined text-primary text-3xl">account_tree</span>
+                            <h2 class="text-xl font-bold text-white">Assessment Methodology</h2>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="check-methodology" onchange="toggleTile('methodology')" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="space-y-8">
+                        <div class="flex gap-6 p-4 bg-black/40 border border-neutral-800 rounded-lg">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="method-mode" value="TEXT_ONLY" onchange="updateMethodMode()" class="text-primary focus:ring-primary bg-black border-neutral-700">
+                                <span class="text-xs font-semibold text-neutral-400">Text Only</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="method-mode" value="IMAGE_ONLY" onchange="updateMethodMode()" class="text-primary focus:ring-primary bg-black border-neutral-700">
+                                <span class="text-xs font-semibold text-neutral-400">Images Only</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="method-mode" value="BOTH" onchange="updateMethodMode()" checked class="text-primary focus:ring-primary bg-black border-neutral-700">
+                                <span class="text-xs font-semibold text-neutral-400">Both (Text + Image)</span>
+                            </label>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div id="method-text-container" class="space-y-3">
+                                <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Procedural Description</p>
+                                <textarea id="val-methodology" rows="12" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-6 text-sm focus:border-primary outline-none transition-colors rounded-lg"></textarea>
+                            </div>
+                            <div id="method-img-container" class="space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Image Pool</p>
+                                    <button onclick="triggerUpload('methodology')" class="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline uppercase">
+                                        <span class="material-symbols-outlined text-sm">upload</span> Add Custom
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-3 gap-4" id="methodology-pool"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tile 3: Framework Intelligence -->
+                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-owasp">
+                    <div class="tile-header flex justify-between items-center mb-8">
+                        <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined text-primary text-3xl">security</span>
+                            <h2 class="text-xl font-bold text-white">Framework Intelligence</h2>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="check-owasp" onchange="toggleTile('owasp')" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="grid grid-cols-1 gap-6" id="owasp-frameworks"></div>
+                </div>
+
+                <!-- Tile 4: Severity Definitions -->
+                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-severity">
+                    <div class="tile-header flex justify-between items-center mb-6">
+                        <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined text-primary text-3xl">priority_high</span>
+                            <h2 class="text-xl font-bold text-white">Severity Matrix</h2>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="check-severity" onchange="toggleTile('severity')" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="overflow-hidden border border-neutral-800 rounded-lg bg-black/20">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead class="bg-neutral-900/50 border-b border-neutral-800">
+                                <tr class="text-[10px] uppercase font-semibold text-neutral-500 tracking-widest">
+                                    <th class="px-6 py-4 border-r border-neutral-800 w-32 text-center">Severity</th>
+                                    <th class="px-6 py-4">Contextual Criteria (Editable)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-neutral-800" id="severity-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tile 5: Conclusion -->
+                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-conclusion">
+                    <div class="tile-header flex justify-between items-center mb-6">
+                        <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined text-primary text-3xl">summarize</span>
+                            <h2 class="text-xl font-bold text-white">Executive Conclusion</h2>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="check-conclusion" onchange="toggleTile('conclusion')" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <textarea id="val-conclusion" rows="6" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-6 text-sm focus:border-primary outline-none transition-colors rounded-lg"></textarea>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="previewModal" class="modal" onclick="this.style.display='none'">
+        <img class="modal-content" id="previewImg">
+    </div>
+
+    <input type="file" id="image-upload" class="hidden" accept="image/*" onchange="handleImageUpload(event)">
+
+    <script th:inline="javascript">
+        const pentestId = [[${id}]];
+        let currentTarget = '';
+        let methodologyCustomImages = []; 
+        
+        const frameworks = [
+            { id: 'web', title: 'Web Application Security Risks (OWASP Top 10: 2021)', desc: 'The definitive standard for web application security.', items: ['A01:2021 – Broken Access Control', 'A02:2021 – Cryptographic Failures', 'A03:2021 – Injection', 'A04:2021 – Insecure Design', 'A05:2021 – Security Misconfiguration', 'A06:2021 – Vulnerable and Outdated Components', 'A07:2021 – Identification and Authentication Failures', 'A08:2021 – Software and Data Integrity Failures', 'A09:2021 – Security Logging and Monitoring Failures', 'A10:2021 – Server-Side Request Forgery (SSRF)'] },
+            { id: 'api', title: 'API Security Risks (OWASP Top 10: 2023)', desc: 'Focuses specifically on the logic and architecture of REST/GraphQL APIs.', items: ['API1:2023 – Broken Object Level Authorization (BOLA)', 'API2:2023 – Broken Authentication', 'API3:2023 – Broken Object Property Level Authorization', 'API4:2023 – Unrestricted Resource Consumption', 'API5:2023 – Broken Function Level Authorization', 'API6:2023 – Unrestricted Access to Sensitive Business Flows', 'API7:2023 – Server-Side Request Forgery (SSRF)', 'API8:2023 – Security Misconfiguration', 'API9:2023 – Improper Inventory Management', 'API10:2023 – Unsafe Consumption of APIs'] },
+            { id: 'mobile', title: 'Mobile Application Security Risks (OWASP Top 10: 2024)', desc: 'The latest version covering iOS/Android binary and local storage security.', items: ['M1 – Improper Credential Usage', 'M2 – Inadequate Supply Chain Security', 'M3 – Insecure Authentication/Authorization', 'M4 – Insufficient Input/Output Validation', 'M5 – Insecure Communication', 'M6 – Inadequate Privacy Controls', 'M7 – Insufficient Binary Protections', 'M8 – Security Misconfiguration', 'M9 – Insecure Data Storage', 'M10 – Insufficient Cryptography'] },
+            { id: 'ai', title: 'LLM & GenAI Security Risks (OWASP Top 10: 2025 Update)', desc: 'Critical for modern applications integrating AI and agentic capabilities.', items: ['LLM01 – Prompt Injection', 'LLM02 – Insecure Output Handling', 'LLM03 – Training Data Poisoning', 'LLM04 – Model Denial of Service', 'LLM05 – Supply Chain Vulnerabilities', 'LLM06 – Sensitive Information Disclosure', 'LLM07 – Insecure Plugin Design', 'LLM08 – Excessive Agency', 'LLM09 – Overreliance', 'LLM10 – Model Theft'] },
+            { id: 'infra', title: 'Infrastructure Security (Modern Enterprise Risks)', desc: 'Commonly used to categorize Network and Cloud Infrastructure audits.', items: ['ISR01 – Outdated/Unpatched Software', 'ISR02 – Insufficient Threat Detection & Response', 'ISR03 – Insecure System Configurations', 'ISR04 – Insecure Identity & Access Management (IAM)', 'ISR05 – Insecure Use of Cryptography (Weak Ciphers)', 'ISR06 – Insecure Network Segregation', 'ISR07 – Default Credentials & Weak Auth', 'ISR08 – Information Leakage via Metadata/Logs', 'ISR09 – Insecure Remote Management (SSH/RDP)', 'ISR10 – Insufficient Asset Inventory'] },
+            { id: 'code', title: 'Code Review/SAST (CWE Top 25: 2025)', desc: 'The most common software weaknesses found during static analysis.', items: ['CWE-79 – Cross-Site Scripting (XSS)', 'CWE-787 – Out-of-bounds Write', 'CWE-89 – SQL Injection', 'CWE-862 – Missing Authorization', 'CWE-20 – Improper Input Validation', 'CWE-125 – Out-of-bounds Read', 'CWE-416 – Use After Free', 'CWE-352 – Cross-Site Request Forgery (CSRF)', 'CWE-22 – Path Traversal', 'CWE-476 – Null Pointer Dereference', 'CWE-94 – Code Injection', 'CWE-78 – OS Command Injection', 'CWE-502 – Deserialization of Untrusted Data', 'CWE-269 – Improper Privilege Management', 'CWE-306 – Missing Authentication', 'CWE-362 – Race Condition', 'CWE-400 – Uncontrolled Resource Consumption', 'CWE-611 – Improper Restriction of XML External Entity Reference (XXE)', 'CWE-732 – Incorrect Permission Assignment for Critical Resource', 'CWE-295 – Improper Certificate Validation', 'CWE-312 – Cleartext Storage of Sensitive Information', 'CWE-327 – Use of a Broken or Risky Cryptographic Algorithm', 'CWE-522 – Insufficiently Protected Credentials', 'CWE-601 – Open Redirect', 'CWE-770 – Allocation of Resources Without Limits'] }
+        ];
+
+        const methodPool = [
+            { id: 'p_web', path: '/images/Methodologies/Web.png', label: 'Web' },
+            { id: 'p_mobile', path: '/images/Methodologies/Mobile.png', label: 'Mobile' },
+            { id: 'p_api', path: '/images/Methodologies/API.png', label: 'API' },
+            { id: 'p_infra', path: '/images/Methodologies/Infra.png', label: 'Infra' },
+            { id: 'p_code', path: '/images/Methodologies/CodeReview4.png', label: 'Code Review' }
+        ];
+
+        let selectedMethodImages = [];
+        let enabledFrameworks = [];
+        let severityMatrix = [
+            { level: 'Critical', color: 'error', impact: 'Immediate risk to critical infrastructure. Exploitation results in full system compromise.' },
+            { level: 'High', color: 'orange-500', impact: 'Serious security flaw that could result in unauthorized access or data exposure.' },
+            { level: 'Medium', color: 'primary', impact: 'Vulnerability that requires specific conditions to exploit. Potential for limited impact.' },
+            { level: 'Low', color: 'tertiary', impact: 'Minor security oversight with limited impact. Exploitation is difficult.' }
+        ];
+
+        function initFrameworks() {
+            const container = document.getElementById('owasp-frameworks');
+            container.innerHTML = '';
+            frameworks.forEach(fw => {
+                const isEnabled = enabledFrameworks.includes(fw.id);
+                const div = document.createElement('div');
+                div.className = `fw-card p-6 rounded-xl border transition-all cursor-pointer ${isEnabled ? 'enabled' : 'border-neutral-800'}`;
+                div.id = `fw-card-${fw.id}`;
+                div.onclick = (e) => {
+                    if (e.target.closest('.switch')) return;
+                    toggleFrameworkDetails(fw.id);
+                };
+                div.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <label class="switch">
+                                <input type="checkbox" id="check-fw-${fw.id}" onchange="toggleFrameworkSelection('${fw.id}')" ${isEnabled ? 'checked' : ''}>
+                                <span class="slider"></span>
+                            </label>
+                            <div>
+                                <h4 class="text-sm font-bold text-white">${fw.title}</h4>
+                                <p class="text-[10px] text-neutral-500 mt-1">${fw.desc}</p>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined text-neutral-600 transition-transform" id="icon-fw-${fw.id}">expand_more</span>
+                    </div>
+                    <div class="fw-items-list" id="list-fw-${fw.id}">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                            ${fw.items.map(item => `
+                                <div class="flex items-center gap-2 py-1">
+                                    <span class="w-1 h-1 bg-primary/40 rounded-full"></span>
+                                    <span class="text-[11px] text-neutral-400">${item}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function toggleFrameworkSelection(id) {
+            const card = document.getElementById(`fw-card-${id}`);
+            if (enabledFrameworks.includes(id)) {
+                enabledFrameworks = enabledFrameworks.filter(x => x !== id);
+                card.classList.remove('enabled');
+                card.classList.add('border-neutral-800');
+            } else {
+                enabledFrameworks.push(id);
+                card.classList.add('enabled');
+                card.classList.remove('border-neutral-800');
+            }
+        }
+
+        function toggleFrameworkDetails(id) {
+            const list = document.getElementById(`list-fw-${id}`);
+            const icon = document.getElementById(`icon-fw-${id}`);
+            const isExpanded = list.classList.toggle('expanded');
+            icon.style.transform = isExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+
+        function initMethodologyPool() {
+            const container = document.getElementById('methodology-pool');
+            container.innerHTML = '';
+            methodPool.forEach(img => renderImageTile(img.id, img.path, img.label, container));
+            methodologyCustomImages.forEach((img, idx) => renderImageTile(`custom_${idx}`, img, `Custom ${idx+1}`, container));
+        }
+
+        function renderImageTile(id, path, label, container) {
+            const div = document.createElement('div');
+            div.className = `image-tile rounded-lg bg-black/60 overflow-hidden group ${selectedMethodImages.includes(id) ? 'selected' : ''}`;
+            div.onclick = () => toggleMethodImage(id);
+            div.innerHTML = `
+                <div class="select-badge"><span class="material-symbols-outlined text-[12px]">check</span></div>
+                <img src="${path}" class="w-full h-24 object-contain p-3 opacity-60 group-hover:opacity-100 transition-opacity">
+                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+                    <button onclick="event.stopPropagation(); previewImage('${path}')" class="p-2 bg-primary text-black rounded-full shadow-lg">
+                        <span class="material-symbols-outlined text-sm">visibility</span>
+                    </button>
+                </div>
+                <div class="p-2 border-t border-neutral-800 bg-black/40 text-center">
+                    <p class="text-[9px] font-bold text-neutral-500 uppercase truncate">${label}</p>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function initSeverity() {
+            const tbody = document.getElementById('severity-tbody');
+            tbody.innerHTML = '';
+            severityMatrix.forEach((sev, idx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="px-6 py-5 border-r border-neutral-800 text-center">
+                        <span class="px-3 py-1 bg-${sev.color}/10 text-${sev.color} border border-${sev.color}/20 text-[10px] font-bold uppercase tracking-wider rounded">${sev.level}</span>
+                    </td>
+                    <td class="px-6 py-5">
+                        <textarea oninput="severityMatrix[${idx}].impact = this.value" class="w-full bg-transparent border-none text-neutral-400 text-xs leading-relaxed focus:ring-0 resize-none textarea-custom" rows="2">${sev.impact}</textarea>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function toggleTile(id) {
+            document.getElementById(`tile-${id}`).classList.toggle('disabled', !document.getElementById(`check-${id}`).checked);
+        }
+
+        function toggleMethodImage(id) {
+            if (selectedMethodImages.includes(id)) selectedMethodImages = selectedMethodImages.filter(x => x !== id);
+            else selectedMethodImages.push(id);
+            initMethodologyPool();
+        }
+
+        function updateMethodMode() {
+            const mode = document.querySelector('input[name="method-mode"]:checked').value;
+            document.getElementById('method-text-container').style.display = (mode === 'IMAGE_ONLY') ? 'none' : 'block';
+            document.getElementById('method-img-container').style.display = (mode === 'TEXT_ONLY') ? 'none' : 'block';
+        }
+
+        function previewImage(path) {
+            const modal = document.getElementById('previewModal');
+            document.getElementById('previewImg').src = path;
+            modal.style.display = "flex";
+        }
+
+        function triggerUpload(type) {
+            currentTarget = type;
+            document.getElementById('image-upload').click();
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                methodologyCustomImages.push(e.target.result);
+                initMethodologyPool();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        const defaultTemplates = {
+            disclaimer: "This report is confidential and intended solely for the use of the client. The findings represent the security posture at the time of assessment only. No security assessment can guarantee 100% protection against all threats. The information contained herein is sensitive and should be handled with appropriate care, following industry best practices for data protection.",
+            methodology: "Our assessment follows a structured approach combining automated scanning with deep manual exploitation. We utilize industry-standard tools and custom scripts to validate security controls and identify potential attack vectors. The process includes reconnaissance, vulnerability identification, exploitation, and post-exploitation analysis to provide a comprehensive security overview of the target environment.",
+            conclusion: "The assessment identified several security findings that should be addressed to improve the overall security posture. While some areas showed strong security controls, the discovered vulnerabilities present potential risks that require remediation. We recommend prioritizing Critical and High risk items immediately to mitigate potential exploitation paths and strengthen the defense-in-depth architecture."
+        };
+
+        async function loadProjectData() {
+            const res = await fetch(`/api/pentests/${pentestId}`);
+            if (!res.ok) return;
+            const p = await res.json();
+
+            enabledFrameworks = p.owaspTop10 ? p.owaspTop10.split(',') : [];
+            selectedMethodImages = p.selectedMethodologyImages ? p.selectedMethodologyImages.split(',') : [];
+            methodologyCustomImages = p.methodologyImage ? JSON.parse(p.methodologyImage) : [];
+            if (p.severityDefinitions) severityMatrix = JSON.parse(p.severityDefinitions);
+            
+            initFrameworks();
+            initMethodologyPool();
+            initSeverity();
+
+            document.querySelector(`input[name="method-mode"][value="${p.methodologyDisplayMode || 'BOTH'}"]`).checked = true;
+            ['disclaimer', 'methodology', 'conclusion', 'owasp', 'severity'].forEach(s => {
+                const check = document.getElementById(`check-${s}`);
+                check.checked = (p[`${s}Enabled`] !== false);
+                toggleTile(s);
+                
+                const valArea = document.getElementById(`val-${s}`);
+                if (valArea) {
+                    // Use saved data if it exists and isn't just whitespace, otherwise use default template
+                    valArea.value = (p[s] && p[s].trim() !== "") ? p[s] : (defaultTemplates[s] || "");
+                }
+            });
+            updateMethodMode();
+        }
+
+        async function saveReport() {
+            const data = {
+                disclaimerEnabled: document.getElementById('check-disclaimer').checked,
+                disclaimer: document.getElementById('val-disclaimer').value,
+                methodologyEnabled: document.getElementById('check-methodology').checked,
+                methodologyDisplayMode: document.querySelector('input[name="method-mode"]:checked').value,
+                methodology: document.getElementById('val-methodology').value,
+                methodologyImage: JSON.stringify(methodologyCustomImages),
+                selectedMethodologyImages: selectedMethodImages.join(','),
+                owaspEnabled: document.getElementById('check-owasp').checked,
+                owaspTop10: enabledFrameworks.join(','),
+                severityEnabled: document.getElementById('check-severity').checked,
+                severityDefinitions: JSON.stringify(severityMatrix),
+                conclusionEnabled: document.getElementById('check-conclusion').checked,
+                conclusion: document.getElementById('val-conclusion').value
+            };
+            const res = await fetch(`/api/pentests/${pentestId}/report-details`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) window.location.href = `/pentest/details/${pentestId}`;
+        }
+        document.addEventListener('DOMContentLoaded', loadProjectData);
+    </script>
+</body>
+</html>

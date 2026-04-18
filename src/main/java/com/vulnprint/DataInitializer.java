@@ -49,14 +49,27 @@ public class DataInitializer implements CommandLineRunner {
     @Transactional
     public void initializeUsers() {
         if (userRepository.findAll().isEmpty()) {
-            createUser("admin", "admin123", "admin@vulnprint.com", "Administrator", "User", "Administrator", "Global HQ", "CISSP, CISM, OSCP, Lead Security Manager");
-            createUser("urmil", "urmil123", "urmil@vulnprint.com", "Urmil", "Savla", "Lead Pentester", "Mumbai Node", "OSCP, CRT, CEH");
-            createUser("jinesh", "jinesh123", "jinesh@vulnprint.com", "Jinesh", "Savla", "Lead Pentester", "Dubai Node", "OSWE, GXPN, CISSP");
+            User admin = createUser("admin", "admin123", "admin@vulnprint.com", "Administrator", "User", "Administrator", "Global HQ", "CISSP, CISM, OSCP, Lead Security Manager");
+            User urmil = createUser("urmil", "urmil123", "urmil@vulnprint.com", "Urmil", "Savla", "Lead Pentester", "Mumbai Node", "OSCP, CRT, CEH");
+            User jinesh = createUser("jinesh", "jinesh123", "jinesh@vulnprint.com", "Jinesh", "Savla", "Lead Pentester", "Dubai Node", "OSWE, GXPN, CISSP");
 
             // Seed some initial system alerts for the dashboard feed
             createAlert("System", "DATABASE_ONLINE", "Secure project registry is now operational.");
             createAlert("System", "NODE_SYNC_COMPLETE", "All intelligence nodes are synchronized.");
             createAlert("System", "ENCRYPTION_ACTIVE", "AES-256 field level encryption is active.");
+
+            // Seed a sample Web Pentest
+            Pentest webProject = createPentest("VulnBank v2.0", "Financial Corp", "Web", "urmil", Arrays.asList(urmil, jinesh));
+            webProject.setUrl("https://staging.vulnbank.com");
+            webProject.setTechStack("Java, Spring, PostgreSQL");
+            webProject.setVersion("2.0.4-BETA");
+            webProject.setClientSpocName("John Doe");
+            webProject.setClientSpocContact("john.doe@fincorp.com");
+            pentestRepository.save(webProject);
+
+            addVuln(webProject, "SQL Injection in Login bypass", "Critical", 9.8, "A03:2021-Injection", "CWE-89");
+            addVuln(webProject, "Reflected XSS in Search", "Medium", 6.1, "A03:2021-Injection", "CWE-79");
+            addVuln(webProject, "Broken Session Management", "High", 7.5, "A07:2021-Identification and Authentication Failures", "CWE-287");
         }
     }
 

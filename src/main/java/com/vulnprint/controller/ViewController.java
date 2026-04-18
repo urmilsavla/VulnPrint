@@ -1,17 +1,11 @@
 package com.vulnprint.controller;
 
-import com.vulnprint.model.Pentest;
-import com.vulnprint.model.Vulnerability;
 import com.vulnprint.repository.PentestRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Controller
 public class ViewController {
@@ -76,6 +70,12 @@ public class ViewController {
         return "pentest-detail";
     }
 
+    @GetMapping("/pentest/report-designer/{id}")
+    public String reportDesigner(@PathVariable Long id, Model model) {
+        model.addAttribute("id", id);
+        return "report-designer";
+    }
+
     @GetMapping("/pentest/{id}/vulnerability/add")
     public String addVulnerability(@PathVariable Long id, Model model) {
         model.addAttribute("id", id);
@@ -102,26 +102,6 @@ public class ViewController {
     @GetMapping("/reset-password")
     public String resetPassword() {
         return "reset-password";
-    }
-
-    @GetMapping("/pentest/{id}/report/view")
-    public String viewReport(@PathVariable Long id, Model model) {
-        Pentest pentest = pentestRepository.findById(id).orElse(null);
-        if (pentest != null) {
-            model.addAttribute("pentest", pentest);
-            
-            // Calculate severity counts
-            long critical = pentest.getVulnerabilities().stream().filter(v -> "Critical".equalsIgnoreCase(v.getSeverity())).count();
-            long high = pentest.getVulnerabilities().stream().filter(v -> "High".equalsIgnoreCase(v.getSeverity())).count();
-            long medium = pentest.getVulnerabilities().stream().filter(v -> "Medium".equalsIgnoreCase(v.getSeverity())).count();
-            long low = pentest.getVulnerabilities().stream().filter(v -> "Low".equalsIgnoreCase(v.getSeverity())).count();
-            
-            model.addAttribute("criticalCount", critical);
-            model.addAttribute("highCount", high);
-            model.addAttribute("mediumCount", medium);
-            model.addAttribute("lowCount", low);
-        }
-        return "report";
     }
 
     @GetMapping("/")
