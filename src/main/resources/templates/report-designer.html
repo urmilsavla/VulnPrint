@@ -74,11 +74,90 @@
                 </div>
                 <div class="flex gap-4">
                     <button type="button" onclick="history.back()" class="px-6 py-2 border border-neutral-700 text-neutral-400 font-semibold text-xs uppercase tracking-wider hover:text-white transition-colors">Abort</button>
-                    <button onclick="saveReport()" class="px-8 py-2 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg">Save Configuration</button>
+                    <button onclick="saveReport(this)" class="px-8 py-2 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg">Save Configuration</button>
                 </div>
             </div>
 
             <div class="space-y-12">
+                <!-- Tile 0: Client Logo -->
+                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-branding">
+                    <div class="tile-header flex justify-between items-center mb-6">
+                        <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined text-primary text-3xl">branding_watermark</span>
+                            <h2 class="text-xl font-bold text-white">Client Logo</h2>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="check-branding" onchange="toggleTile('branding')" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="flex flex-col items-center gap-4 p-6 bg-black/40 border border-neutral-800 rounded-lg max-w-md mx-auto">
+                        <div id="client-logo-placeholder" class="h-20 w-full flex items-center justify-center border-2 border-dashed border-neutral-800 text-neutral-700">
+                            <span class="material-symbols-outlined text-4xl">add_photo_alternate</span>
+                        </div>
+                        <img id="img-client-logo" src="" class="h-20 object-contain mb-2 hidden">
+                        <button onclick="triggerLogoUpload('client')" class="w-full px-4 py-2 border border-neutral-700 text-[10px] font-bold uppercase hover:bg-white/5 transition-colors">Update Client Logo</button>
+                    </div>
+                </div>
+
+                <!-- Tile 0.5: Organization Details -->
+                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-organization">
+                    <div class="tile-header flex justify-between items-center mb-6">
+                        <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined text-primary text-3xl">corporate_fare</span>
+                            <h2 class="text-xl font-bold text-white">Organization Details</h2>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="check-organization" onchange="toggleTile('organization')" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <!-- Org Logo Section -->
+                        <div class="space-y-4">
+                            <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Organization Logo</p>
+                            <div class="flex flex-col items-center gap-4 p-6 bg-black/40 border border-neutral-800 rounded-lg">
+                                <img id="img-org-logo" src="/images/logo.png" class="h-20 object-contain mb-2 opacity-80">
+                                <div class="flex flex-col gap-2 w-full">
+                                    <button onclick="triggerLogoUpload('org')" class="px-4 py-2 border border-neutral-700 text-[10px] font-bold uppercase hover:bg-white/5 transition-colors">Upload Custom</button>
+                                    <button onclick="resetOrgLogo()" class="px-4 py-2 border border-primary/30 text-primary text-[10px] font-bold uppercase hover:bg-primary/10 transition-colors">Use Default</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Details Section -->
+                        <div class="lg:col-span-2 space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Organization Name</label>
+                                    <input type="text" id="val-org-name" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Official Email</label>
+                                    <input type="text" id="val-org-email" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Contact Phone</label>
+                                    <input type="text" id="val-org-phone" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Headquarters Address</label>
+                                    <input type="text" id="val-org-address" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
+                                </div>
+                            </div>
+                            
+                            <!-- Approver Selection (Merged) -->
+                            <div class="pt-6 border-t border-neutral-800">
+                                <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest mb-3 block">Approver</label>
+                                <select id="val-report-approver" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
+                                    <option value="">Select Authorized Approver...</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Tile 1: Disclaimer -->
                 <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-disclaimer">
                     <div class="tile-header flex justify-between items-center mb-6">
@@ -181,6 +260,52 @@
                     </div>
                 </div>
 
+                <!-- Tile 4.5: Risk Overview -->
+                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-risk">
+                    <div class="tile-header flex justify-between items-center mb-6">
+                        <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined text-primary text-3xl">analytics</span>
+                            <h2 class="text-xl font-bold text-white">Risk Overview</h2>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="check-risk" onchange="toggleTile('risk')" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Table Section -->
+                        <div class="space-y-4">
+                            <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Findings Summary</p>
+                            <div class="overflow-hidden border border-neutral-800 rounded-lg">
+                                <table class="w-full text-left text-[11px] border-collapse bg-black/20">
+                                    <thead class="bg-neutral-900/50 border-b border-neutral-800 text-neutral-500 uppercase font-bold">
+                                        <tr>
+                                            <th class="px-4 py-3 w-12 text-center">#</th>
+                                            <th class="px-4 py-3">Vulnerability Title</th>
+                                            <th class="px-4 py-3 w-24 text-center">Severity</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="risk-table-body" class="divide-y divide-neutral-900">
+                                        <!-- Populated via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Chart Section -->
+                        <div class="space-y-4">
+                            <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Severity Distribution</p>
+                            <div class="flex items-center justify-center p-6 bg-black/40 border border-neutral-800 rounded-lg min-h-[250px]">
+                                <div id="chart-loading" class="text-neutral-600 italic text-xs">Generating analytics...</div>
+                                <img id="risk-chart-img" src="" class="hidden max-h-[220px] object-contain">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Keep hidden input for compatibility if needed, though we'll update Master API logic -->
+                    <input type="hidden" id="val-risk-summary">
+                </div>
+
                 <!-- Tile 5: Conclusion -->
                 <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-conclusion">
                     <div class="tile-header flex justify-between items-center mb-6">
@@ -209,6 +334,19 @@
         const pentestId = [[${id}]];
         let currentTarget = '';
         let methodologyCustomImages = []; 
+        let organizationLogoBase64 = null;
+        let clientLogoBase64 = null;
+
+        function triggerLogoUpload(type) {
+            currentTarget = 'logo_' + type;
+            document.getElementById('image-upload').click();
+        }
+
+        function resetOrgLogo() {
+            organizationLogoBase64 = null;
+            document.getElementById('img-org-logo').src = '/images/logo.png';
+            document.getElementById('img-org-logo').classList.add('opacity-80');
+        }
         
         const frameworks = [
             { id: 'web', title: 'Web Application Security Risks (OWASP Top 10: 2021)', desc: 'The definitive standard for web application security.', items: ['A01:2021 – Broken Access Control', 'A02:2021 – Cryptographic Failures', 'A03:2021 – Injection', 'A04:2021 – Insecure Design', 'A05:2021 – Security Misconfiguration', 'A06:2021 – Vulnerable and Outdated Components', 'A07:2021 – Identification and Authentication Failures', 'A08:2021 – Software and Data Integrity Failures', 'A09:2021 – Security Logging and Monitoring Failures', 'A10:2021 – Server-Side Request Forgery (SSRF)'] },
@@ -372,8 +510,19 @@
             if (!file) return;
             const reader = new FileReader();
             reader.onload = (e) => {
-                methodologyCustomImages.push(e.target.result);
-                initMethodologyPool();
+                if (currentTarget === 'logo_org') {
+                    organizationLogoBase64 = e.target.result;
+                    document.getElementById('img-org-logo').src = organizationLogoBase64;
+                    document.getElementById('img-org-logo').classList.remove('opacity-80');
+                } else if (currentTarget === 'logo_client') {
+                    clientLogoBase64 = e.target.result;
+                    document.getElementById('img-client-logo').src = clientLogoBase64;
+                    document.getElementById('img-client-logo').classList.remove('hidden');
+                    document.getElementById('client-logo-placeholder').classList.add('hidden');
+                } else {
+                    methodologyCustomImages.push(e.target.result);
+                    initMethodologyPool();
+                }
             };
             reader.readAsDataURL(file);
         }
@@ -385,61 +534,234 @@
         };
 
         async function loadProjectData() {
-            const res = await fetch(`/api/pentests/${pentestId}`);
-            if (!res.ok) return;
-            const p = await res.json();
-
-            enabledFrameworks = p.owaspTop10 ? p.owaspTop10.split(',') : [];
-            selectedMethodImages = p.selectedMethodologyImages ? p.selectedMethodologyImages.split(',') : [];
-            methodologyCustomImages = p.methodologyImage ? JSON.parse(p.methodologyImage) : [];
-            if (p.severityDefinitions) severityMatrix = JSON.parse(p.severityDefinitions);
-            
-            initFrameworks();
-            initMethodologyPool();
-            initSeverity();
-
-            document.querySelector(`input[name="method-mode"][value="${p.methodologyDisplayMode || 'BOTH'}"]`).checked = true;
-            ['disclaimer', 'methodology', 'conclusion', 'owasp', 'severity', 'risk'].forEach(s => {
-                const check = document.getElementById(`check-${s}`);
-                if (!check) return;
-                
-                const enabledKey = s === 'risk' ? 'riskOverviewEnabled' : `${s}Enabled`;
-                check.checked = (p[enabledKey] !== false);
-                toggleTile(s);
-                
-                const valArea = document.getElementById(`val-${s === 'risk' ? 'risk-summary' : s}`);
-                if (valArea) {
-                    const dataKey = s === 'risk' ? 'riskSummary' : s;
-                    valArea.value = (p[dataKey] && p[dataKey].trim() !== "") ? p[dataKey] : (defaultTemplates[s] || "");
+            try {
+                // 1. Load Users for Approver dropdown
+                const userRes = await fetch('/api/users');
+                if (userRes.ok) {
+                    const users = await userRes.json();
+                    const approverSelect = document.getElementById('val-report-approver');
+                    approverSelect.innerHTML = '<option value="">Select Authorized Approver...</option>';
+                    users.forEach(u => {
+                        const opt = document.createElement('option');
+                        opt.value = u.id;
+                        opt.textContent = `${u.firstName} ${u.lastName} (${u.role})`;
+                        approverSelect.appendChild(opt);
+                    });
                 }
-            });
-            updateMethodMode();
+
+                // 2. Load Pentest Data
+                const res = await fetch(`/api/pentests/${pentestId}`);
+                if (!res.ok) return;
+                const p = await res.json();
+
+                // 3. Populate Risk Overview (Table and Bar Graph)
+                const tbody = document.getElementById('risk-table-body');
+                tbody.innerHTML = '';
+                const counts = { 'Critical': 0, 'High': 0, 'Medium': 0, 'Low': 0, 'Informational': 0 };
+
+                if (p.vulnerabilities && p.vulnerabilities.length > 0) {
+                    const sevOrder = { 'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3, 'INFORMATIONAL': 4 };
+                    const sortedVulns = [...p.vulnerabilities].sort((a,b) => {
+                        const aSev = (a.severity || '').toUpperCase();
+                        const bSev = (b.severity || '').toUpperCase();
+                        return (sevOrder[aSev] ?? 99) - (sevOrder[bSev] ?? 99);
+                    });
+
+                    sortedVulns.forEach((v, idx) => {
+                        const sNormalized = (v.severity || '').charAt(0).toUpperCase() + (v.severity || '').slice(1).toLowerCase();
+                        counts[sNormalized] = (counts[sNormalized] || 0) + 1;
+                        
+                        const colorMap = { 'Critical': '#ff7351', 'High': '#ff9f40', 'Medium': '#4FFE49', 'Low': '#4bc0c0', 'Informational': '#36a2eb' };
+                        const color = colorMap[sNormalized] || '#999';
+                        
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="px-4 py-3 text-center text-neutral-600 font-mono">${idx + 1}</td>
+                            <td class="px-4 py-3 text-neutral-300 font-medium">${v.title}</td>
+                            <td class="px-4 py-3 text-center">
+                                <span class="px-2 py-0.5 rounded-[2px] text-[9px] font-black uppercase tracking-tighter" style="background: ${color}20; color: ${color}; border: 1px solid ${color}40">${v.severity}</span>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+
+                    // Generate Vertical Bar Chart
+                    const chartConfig = {
+                        type: 'bar',
+                        data: {
+                            labels: ['Critical', 'High', 'Medium', 'Low', 'Informational'],
+                            datasets: [{
+                                data: [counts['Critical'], counts['High'], counts['Medium'], counts['Low'], counts['Informational']],
+                                backgroundColor: ['#ff7351', '#ff9f40', '#4FFE49', '#4bc0c0', '#36a2eb'],
+                                borderRadius: 4,
+                                barThickness: 30
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'x',
+                            plugins: {
+                                legend: { display: false },
+                                datalabels: { anchor: 'end', align: 'top', color: '#fff', font: { weight: 'bold', size: 10 } }
+                            },
+                            scales: {
+                                x: {
+                                    title: { display: true, text: 'Type of vulnerability', color: '#666', font: { size: 10, weight: 'bold' } },
+                                    grid: { display: false },
+                                    ticks: { color: '#fff', font: { weight: '600', size: 10 } }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    title: { display: true, text: 'No of Vulnerabilities', color: '#666', font: { size: 10, weight: 'bold' } },
+                                    grid: { color: 'rgba(255,255,255,0.05)' },
+                                    ticks: { color: '#666', stepSize: 1, precision: 0 }
+                                }
+                            }
+                        }
+                    };
+                    const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(chartConfig))}&w=450&h=250&bkg=000000&v=${Date.now()}`;
+                    const imgEl = document.getElementById('risk-chart-img');
+                    imgEl.src = chartUrl;
+                    imgEl.classList.remove('hidden');
+                    document.getElementById('chart-loading').classList.add('hidden');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="3" class="px-4 py-8 text-center text-neutral-600 italic">No vulnerabilities recorded yet.</td></tr>';
+                    document.getElementById('chart-loading').innerText = 'No data available for charting.';
+                }
+
+                // 4. Logo Handlers
+                organizationLogoBase64 = p.organizationLogo;
+                clientLogoBase64 = p.clientLogo;
+
+                // 5. Organizational Identity & Overrides
+                if (!p.organizationName) {
+                    const orgRes = await fetch('/api/organization');
+                    if (orgRes.ok) {
+                        const globalOrg = await orgRes.json();
+                        document.getElementById('val-org-name').value = globalOrg.name || '';
+                        document.getElementById('val-org-email').value = globalOrg.email || '';
+                        document.getElementById('val-org-phone').value = globalOrg.phone || '';
+                        document.getElementById('val-org-address').value = globalOrg.address || '';
+                        if (!organizationLogoBase64 && globalOrg.logo) organizationLogoBase64 = globalOrg.logo;
+                    }
+                } else {
+                    document.getElementById('val-org-name').value = p.organizationName || '';
+                    document.getElementById('val-org-email').value = p.organizationEmail || '';
+                    document.getElementById('val-org-phone').value = p.organizationPhone || '';
+                    document.getElementById('val-org-address').value = p.organizationAddress || '';
+                }
+
+                if (organizationLogoBase64) {
+                    document.getElementById('img-org-logo').src = organizationLogoBase64;
+                    document.getElementById('img-org-logo').classList.remove('opacity-80');
+                }
+                if (clientLogoBase64) {
+                    document.getElementById('img-client-logo').src = clientLogoBase64;
+                    document.getElementById('img-client-logo').classList.remove('hidden');
+                    document.getElementById('client-logo-placeholder').classList.add('hidden');
+                }
+
+                // 6. Approver Selection
+                if (p.reportApprover) {
+                    document.getElementById('val-report-approver').value = p.reportApprover.id;
+                }
+
+                // 7. Tile Toggles and Content
+                enabledFrameworks = p.owaspTop10 ? p.owaspTop10.split(',') : [];
+                selectedMethodImages = p.selectedMethodologyImages ? p.selectedMethodologyImages.split(',') : [];
+                methodologyCustomImages = p.methodologyImage ? JSON.parse(p.methodologyImage) : [];
+                if (p.severityDefinitions) severityMatrix = JSON.parse(p.severityDefinitions);
+                
+                initFrameworks();
+                initMethodologyPool();
+                initSeverity();
+
+                const mode = p.methodologyDisplayMode || 'BOTH';
+                const radio = document.querySelector(`input[name="method-mode"][value="${mode}"]`);
+                if (radio) radio.checked = true;
+
+                ['branding', 'organization', 'disclaimer', 'methodology', 'conclusion', 'owasp', 'severity', 'risk'].forEach(s => {
+                    const check = document.getElementById(`check-${s}`);
+                    if (!check) return;
+                    const enabledKey = (s === 'risk') ? 'riskOverviewEnabled' : 
+                                       (s === 'organization') ? 'organizationDetailsEnabled' : 
+                                       (s === 'branding') ? 'brandingEnabled' : `${s}Enabled`;
+                    check.checked = (p[enabledKey] !== false);
+                    toggleTile(s);
+                    
+                    const valArea = document.getElementById(`val-${s === 'risk' ? 'risk-summary' : s}`);
+                    if (valArea && s !== 'organization' && s !== 'branding') {
+                        const dataKey = s === 'risk' ? 'riskSummary' : s;
+                        valArea.value = (p[dataKey] && p[dataKey].trim() !== "") ? p[dataKey] : (defaultTemplates[s] || "");
+                    }
+                });
+                updateMethodMode();
+            } catch (err) {
+                console.error('Initialization error:', err);
+                window.showNotification('Failed to load project configuration.', 'error');
+            }
         }
 
         async function saveReport() {
-            const data = {
-                disclaimerEnabled: document.getElementById('check-disclaimer').checked,
-                disclaimer: document.getElementById('val-disclaimer').value,
-                methodologyEnabled: document.getElementById('check-methodology').checked,
-                methodologyDisplayMode: document.querySelector('input[name="method-mode"]:checked').value,
-                methodology: document.getElementById('val-methodology').value,
-                methodologyImage: JSON.stringify(methodologyCustomImages),
-                selectedMethodologyImages: selectedMethodImages.join(','),
-                owaspEnabled: document.getElementById('check-owasp').checked,
-                owaspTop10: enabledFrameworks.join(','),
-                riskOverviewEnabled: document.getElementById('check-risk').checked,
-                riskSummary: document.getElementById('val-risk-summary').value,
-                severityEnabled: document.getElementById('check-severity').checked,
-                severityDefinitions: JSON.stringify(severityMatrix),
-                conclusionEnabled: document.getElementById('check-conclusion').checked,
-                conclusion: document.getElementById('val-conclusion').value
-            };
-            const res = await fetch(`/api/pentests/${pentestId}/report-details`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            if (res.ok) window.location.href = `/pentest/details/${pentestId}`;
+            const saveBtn = event.currentTarget;
+            const originalText = saveBtn.innerText;
+            
+            try {
+                saveBtn.disabled = true;
+                saveBtn.innerText = 'SAVING...';
+
+                const methodModeEl = document.querySelector('input[name="method-mode"]:checked');
+                const methodMode = methodModeEl ? methodModeEl.value : 'BOTH';
+
+                const data = {
+                    brandingEnabled: document.getElementById('check-branding').checked,
+                    organizationLogo: organizationLogoBase64,
+                    clientLogo: clientLogoBase64,
+
+                    organizationDetailsEnabled: document.getElementById('check-organization').checked,
+                    organizationName: document.getElementById('val-org-name').value,
+                    organizationEmail: document.getElementById('val-org-email').value,
+                    organizationPhone: document.getElementById('val-org-phone').value,
+                    organizationAddress: document.getElementById('val-org-address').value,
+
+                    reportApproverId: document.getElementById('val-report-approver').value || null,
+
+                    disclaimerEnabled: document.getElementById('check-disclaimer').checked,
+                    disclaimer: document.getElementById('val-disclaimer').value,
+                    methodologyEnabled: document.getElementById('check-methodology').checked,
+                    methodologyDisplayMode: methodMode,
+                    methodology: document.getElementById('val-methodology').value,
+                    methodologyImage: JSON.stringify(methodologyCustomImages),
+                    selectedMethodologyImages: selectedMethodImages.join(','),
+                    owaspEnabled: document.getElementById('check-owasp').checked,
+                    owaspTop10: enabledFrameworks.join(','),
+                    riskOverviewEnabled: document.getElementById('check-risk').checked,
+                    riskSummary: document.getElementById('val-risk-summary').value,
+                    severityEnabled: document.getElementById('check-severity').checked,
+                    severityDefinitions: JSON.stringify(severityMatrix),
+                    conclusionEnabled: document.getElementById('check-conclusion').checked,
+                    conclusion: document.getElementById('val-conclusion').value
+                };
+
+                const res = await fetch(`/api/pentests/${pentestId}/report-details`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    window.showNotification('Configuration saved successfully.', 'success');
+                    setTimeout(() => window.location.href = `/pentest/details/${pentestId}`, 800);
+                } else {
+                    const errorText = await res.text();
+                    window.showNotification('Save failed: ' + res.status, 'error');
+                }
+            } catch (err) {
+                console.error('Save error:', err);
+                window.showNotification('Communication error.', 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerText = originalText;
+            }
         }
         document.addEventListener('DOMContentLoaded', loadProjectData);
     </script>

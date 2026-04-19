@@ -163,6 +163,27 @@ public class ReportDataService {
             "text", p.getConclusion() != null ? p.getConclusion() : ""
         ));
 
+        Map<String, Object> branding = new LinkedHashMap<>();
+        branding.put("isEnabled", p.getBrandingEnabled() != null ? p.getBrandingEnabled() : true);
+        branding.put("organizationLogo", p.getOrganizationLogo());
+        branding.put("clientLogo", p.getClientLogo());
+        config.put("branding", branding);
+
+        Map<String, Object> orgDetails = new LinkedHashMap<>();
+        orgDetails.put("isEnabled", p.getOrganizationDetailsEnabled() != null ? p.getOrganizationDetailsEnabled() : true);
+        orgDetails.put("name", p.getOrganizationName());
+        orgDetails.put("address", p.getOrganizationAddress());
+        orgDetails.put("phone", p.getOrganizationPhone());
+        orgDetails.put("email", p.getOrganizationEmail());
+        config.put("organizationDetails", orgDetails);
+
+        if (p.getReportApprover() != null) {
+            Map<String, Object> approver = new LinkedHashMap<>();
+            approver.put("fullName", p.getReportApprover().getFirstName() + " " + p.getReportApprover().getLastName());
+            approver.put("email", p.getReportApprover().getEmail());
+            config.put("reportApprover", approver);
+        }
+
         masterPackage.put("reportConfiguration", config);
 
         // SECTION 3: SECURITY FINDINGS
@@ -302,6 +323,47 @@ public class ReportDataService {
         methodology.put("imageIds", methodImgIds);
         config.put("assessmentMethodology", methodology);
         config.put("conclusion", p.getConclusion());
+
+        Map<String, Object> branding = new LinkedHashMap<>();
+        branding.put("isEnabled", p.getBrandingEnabled() != null ? p.getBrandingEnabled() : true);
+        if (p.getOrganizationLogo() != null && !p.getOrganizationLogo().isEmpty()) {
+            String imgId = "LOGO_ORG_" + imgCounter++;
+            imageLibrary.put(imgId, p.getOrganizationLogo());
+            branding.put("organizationLogoId", imgId);
+        } else {
+            // Default VulnPrint Logo
+            try {
+                Resource resource = resourceLoader.getResource("classpath:/static/images/logo.png");
+                byte[] bytes = resource.getInputStream().readAllBytes();
+                String b64 = "data:image/png;base64," + Base64.getEncoder().encodeToString(bytes);
+                String imgId = "LOGO_ORG_DEFAULT";
+                imageLibrary.put(imgId, b64);
+                branding.put("organizationLogoId", imgId);
+            } catch (Exception ignored) {}
+        }
+
+        if (p.getClientLogo() != null && !p.getClientLogo().isEmpty()) {
+            String imgId = "LOGO_CLIENT_" + imgCounter++;
+            imageLibrary.put(imgId, p.getClientLogo());
+            branding.put("clientLogoId", imgId);
+        }
+        config.put("branding", branding);
+
+        Map<String, Object> orgDetails = new LinkedHashMap<>();
+        orgDetails.put("isEnabled", p.getOrganizationDetailsEnabled() != null ? p.getOrganizationDetailsEnabled() : true);
+        orgDetails.put("name", p.getOrganizationName());
+        orgDetails.put("address", p.getOrganizationAddress());
+        orgDetails.put("phone", p.getOrganizationPhone());
+        orgDetails.put("email", p.getOrganizationEmail());
+        config.put("organizationDetails", orgDetails);
+
+        if (p.getReportApprover() != null) {
+            Map<String, Object> approver = new LinkedHashMap<>();
+            approver.put("fullName", p.getReportApprover().getFirstName() + " " + p.getReportApprover().getLastName());
+            approver.put("email", p.getReportApprover().getEmail());
+            config.put("reportApprover", approver);
+        }
+
         masterPackage.put("reportConfiguration", config);
 
         // Findings

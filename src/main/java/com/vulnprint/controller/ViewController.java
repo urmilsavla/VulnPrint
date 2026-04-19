@@ -89,9 +89,14 @@ public class ViewController {
         return "add-vulnerability"; // We can reuse the same form for edit
     }
 
-    @GetMapping("/settings/users")
+    @GetMapping("/user-management")
     public String userManagement() {
         return "user-management";
+    }
+
+    @GetMapping("/organization-settings")
+    public String organizationSettings() {
+        return "organization-settings";
     }
 
     @GetMapping("/profile")
