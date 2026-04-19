@@ -15,6 +15,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
+/**
+ * Service responsible for consolidating all pentest and vulnerability data into a "Master Package".
+ * 
+ * IMPORTANT: This Master API is designed to feed a docx-template report generation system.
+ * Any structural changes to the JSON output (Assessment Metadata, Report Configuration, 
+ * Security Findings) must be coordinated with the placeholders defined in the .docx template.
+ */
 @Service
 public class ReportDataService {
 
@@ -26,6 +33,11 @@ public class ReportDataService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /**
+     * @deprecated Use {@link #getMasterReportDataV2(Long)} instead.
+     * This version is inefficient as it embeds large Base64 images multiple times.
+     */
+    @Deprecated
     @Transactional(readOnly = true)
     public Map<String, Object> getMasterReportData(Long pentestId) {
         Pentest p = pentestRepository.findById(pentestId)
@@ -33,7 +45,7 @@ public class ReportDataService {
 
         Map<String, Object> masterPackage = new LinkedHashMap<>();
 
-        // --- SECTION 1: ASSESSMENT METADATA ---
+        // SECTION 1: ASSESSMENT METADATA
         Map<String, Object> metadata = new LinkedHashMap<>();
         
         Map<String, Object> identity = new LinkedHashMap<>();
@@ -89,7 +101,7 @@ public class ReportDataService {
         metadata.put("auditTeam", auditors);
         masterPackage.put("assessmentMetadata", metadata);
 
-        // --- SECTION 2: REPORT CONFIGURATION (DESIGNER) ---
+        // SECTION 2: REPORT CONFIGURATION
         Map<String, Object> config = new LinkedHashMap<>();
         
         config.put("disclaimer", Map.of(
@@ -153,7 +165,7 @@ public class ReportDataService {
 
         masterPackage.put("reportConfiguration", config);
 
-        // --- SECTION 3: SECURITY FINDINGS ---
+        // SECTION 3: SECURITY FINDINGS
         List<Map<String, Object>> findings = new ArrayList<>();
         if (p.getVulnerabilities() != null) {
             for (Vulnerability v : p.getVulnerabilities()) {
@@ -172,11 +184,10 @@ public class ReportDataService {
                 finding.put("status", v.getStatus());
                 finding.put("evidenceMode", v.getEvidenceMode());
 
-                // Global evidence fields
                 finding.put("requestResponse", v.getRequestResponse());
                 finding.put("fileName", v.getFileName());
                 finding.put("lineNumber", v.getLineNumber());
-                finding.put("codeSnippetBase64", v.getCodeSnippet()); // Note: stored as Base64 from the UI
+                finding.put("codeSnippetBase64", v.getCodeSnippet());
 
                 List<Map<String, Object>> instances = new ArrayList<>();
                 if (v.getSteps() != null) {
@@ -214,6 +225,128 @@ public class ReportDataService {
         });
 
         masterPackage.put("securityFindings", findings);
+
+        return masterPackage;
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getMasterReportDataV2(Long pentestId) {
+        Pentest p = pentestRepository.findById(pentestId)
+                .orElseThrow(() -> new RuntimeException("Assessment ID " + pentestId + " not found."));
+
+        Map<String, Object> masterPackage = new LinkedHashMap<>();
+        Map<String, String> imageLibrary = new LinkedHashMap<>();
+        int imgCounter = 1;
+
+        // Metadata
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        Map<String, Object> identity = new LinkedHashMap<>();
+        identity.put("id", p.getId());
+        identity.put("pentestName", p.getPentestName());
+        identity.put("applicationName", p.getApplicationName());
+        identity.put("pentestType", p.getPentestType());
+        identity.put("status", p.getStatus());
+        metadata.put("identity", identity);
+
+        Map<String, Object> scope = new LinkedHashMap<>();
+        scope.put("target", p.getTarget());
+        scope.put("url", p.getUrl());
+        scope.put("osType", p.getOsType());
+        scope.put("apiDomain", p.getApiDomain());
+        scope.put("ipRanges", p.getIpRanges());
+        scope.put("repoUrl", p.getRepoUrl());
+        metadata.put("technicalScope", scope);
+
+        List<Map<String, Object>> auditors = new ArrayList<>();
+        if (p.getAssignedPentesters() != null) {
+            for (User u : p.getAssignedPentesters()) {
+                Map<String, Object> auditor = new LinkedHashMap<>();
+                auditor.put("fullName", u.getFirstName() + " " + u.getLastName());
+                auditor.put("qualifications", u.getQualification());
+                if (u.getProfileImage() != null) {
+                    String imgId = "AUDITOR_" + imgCounter++;
+                    imageLibrary.put(imgId, u.getProfileImage());
+                    auditor.put("profileImageId", imgId);
+                }
+                auditors.add(auditor);
+            }
+        }
+        metadata.put("auditTeam", auditors);
+        masterPackage.put("assessmentMetadata", metadata);
+
+        // Config
+        Map<String, Object> config = new LinkedHashMap<>();
+        config.put("disclaimer", p.getDisclaimer());
+        
+        Map<String, Object> methodology = new LinkedHashMap<>();
+        methodology.put("text", p.getMethodology());
+        List<String> methodImgIds = new ArrayList<>();
+        if (p.getSelectedMethodologyImages() != null && !p.getSelectedMethodologyImages().isEmpty()) {
+            for (String id : p.getSelectedMethodologyImages().split(",")) {
+                String b64 = "";
+                if (id.startsWith("p_")) b64 = resolvePredefinedMethodologyImage(id);
+                else if (id.startsWith("custom_")) {
+                    try {
+                        List<String> pool = objectMapper.readValue(p.getMethodologyImage(), List.class);
+                        int idx = Integer.parseInt(id.replace("custom_", ""));
+                        if (idx < pool.size()) b64 = pool.get(idx);
+                    } catch (Exception ignored) {}
+                }
+                if (!b64.isEmpty()) {
+                    String imgId = "METHOD_" + imgCounter++;
+                    imageLibrary.put(imgId, b64);
+                    methodImgIds.add(imgId);
+                }
+            }
+        }
+        methodology.put("imageIds", methodImgIds);
+        config.put("assessmentMethodology", methodology);
+        config.put("conclusion", p.getConclusion());
+        masterPackage.put("reportConfiguration", config);
+
+        // Findings
+        List<Map<String, Object>> findings = new ArrayList<>();
+        if (p.getVulnerabilities() != null) {
+            for (Vulnerability v : p.getVulnerabilities()) {
+                Map<String, Object> finding = new LinkedHashMap<>();
+                finding.put("title", v.getTitle());
+                finding.put("severity", v.getSeverity());
+                finding.put("description", v.getDescription());
+                
+                if (v.getCodeSnippet() != null && !v.getCodeSnippet().isEmpty()) {
+                    String imgId = "SNIPPET_" + imgCounter++;
+                    imageLibrary.put(imgId, v.getCodeSnippet());
+                    finding.put("codeSnippetImageId", imgId);
+                }
+
+                List<Map<String, Object>> instances = new ArrayList<>();
+                if (v.getSteps() != null) {
+                    for (VulnerabilityStep s : v.getSteps()) {
+                        Map<String, Object> inst = new LinkedHashMap<>();
+                        inst.put("instruction", s.getDescription());
+                        List<String> instImgIds = new ArrayList<>();
+                        if (s.getImagePaths() != null) {
+                            for (String img : s.getImagePaths()) {
+                                String b64 = encodeFileToBase64(v.getPocFolderPath(), img);
+                                if (b64 != null) {
+                                    String imgId = "VULN_POC_" + imgCounter++;
+                                    imageLibrary.put(imgId, b64);
+                                    instImgIds.add(imgId);
+                                }
+                            }
+                        }
+                        inst.put("evidenceImageIds", instImgIds);
+                        instances.add(inst);
+                    }
+                }
+                finding.put("instances", instances);
+                findings.add(finding);
+            }
+        }
+        masterPackage.put("securityFindings", findings);
+
+        // Finally add the Library
+        masterPackage.put("imageLibrary", imageLibrary);
 
         return masterPackage;
     }
