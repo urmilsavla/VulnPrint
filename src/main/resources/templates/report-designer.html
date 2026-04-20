@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script id="tailwind-config">
         tailwind.config = {
           darkMode: 'class',
@@ -296,9 +298,9 @@
                         <!-- Chart Section -->
                         <div class="space-y-4">
                             <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Severity Distribution</p>
-                            <div class="flex items-center justify-center p-6 bg-black/40 border border-neutral-800 rounded-lg min-h-[250px]">
+                            <div class="flex items-center justify-center p-6 bg-black/40 border border-neutral-800 rounded-lg min-h-[250px] relative">
                                 <div id="chart-loading" class="text-neutral-600 italic text-xs">Generating analytics...</div>
-                                <img id="risk-chart-img" src="" class="hidden max-h-[220px] object-contain">
+                                <canvas id="risk-chart-canvas" class="max-h-[220px]"></canvas>
                             </div>
                         </div>
                     </div>
@@ -336,6 +338,7 @@
         let methodologyCustomImages = []; 
         let organizationLogoBase64 = null;
         let clientLogoBase64 = null;
+        let riskChartInstance = null;
 
         function triggerLogoUpload(type) {
             currentTarget = 'logo_' + type;
@@ -535,7 +538,6 @@
 
         async function loadProjectData() {
             try {
-                // 1. Load Users for Approver dropdown
                 const userRes = await fetch('/api/users');
                 if (userRes.ok) {
                     const users = await userRes.json();
@@ -549,18 +551,16 @@
                     });
                 }
 
-                // 2. Load Pentest Data
                 const res = await fetch(`/api/pentests/${pentestId}`);
                 if (!res.ok) return;
                 const p = await res.json();
 
-                // 3. Populate Risk Overview (Table and Bar Graph)
                 const tbody = document.getElementById('risk-table-body');
                 tbody.innerHTML = '';
                 const counts = { 'Critical': 0, 'High': 0, 'Medium': 0, 'Low': 0, 'Informational': 0 };
 
                 if (p.vulnerabilities && p.vulnerabilities.length > 0) {
-                    const sevOrder = { 'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3, 'INFORMATIONAL': 4 };
+                    const sevOrder = { 'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3, 'INFORMATIONAL': 4, 'INFO': 4 };
                     const sortedVulns = [...p.vulnerabilities].sort((a,b) => {
                         const aSev = (a.severity || '').toUpperCase();
                         const bSev = (b.severity || '').toUpperCase();
@@ -568,7 +568,9 @@
                     });
 
                     sortedVulns.forEach((v, idx) => {
-                        const sNormalized = (v.severity || '').charAt(0).toUpperCase() + (v.severity || '').slice(1).toLowerCase();
+                        let sev = (v.severity || '').toUpperCase();
+                        if (sev === 'INFO') sev = 'INFORMATIONAL';
+                        const sNormalized = sev.charAt(0).toUpperCase() + sev.slice(1).toLowerCase();
                         counts[sNormalized] = (counts[sNormalized] || 0) + 1;
                         
                         const colorMap = { 'Critical': '#ff7351', 'High': '#ff9f40', 'Medium': '#4FFE49', 'Low': '#4bc0c0', 'Informational': '#36a2eb' };
@@ -585,8 +587,9 @@
                         tbody.appendChild(tr);
                     });
 
-                    // Generate Vertical Bar Chart
-                    const chartConfig = {
+                    if (riskChartInstance) riskChartInstance.destroy();
+                    const ctx = document.getElementById('risk-chart-canvas').getContext('2d');
+                    riskChartInstance = new Chart(ctx, {
                         type: 'bar',
                         data: {
                             labels: ['Critical', 'High', 'Medium', 'Low', 'Informational'],
@@ -597,8 +600,11 @@
                                 barThickness: 30
                             }]
                         },
+                        plugins: [ChartDataLabels],
                         options: {
                             indexAxis: 'x',
+                            responsive: true,
+                            maintainAspectRatio: false,
                             plugins: {
                                 legend: { display: false },
                                 datalabels: { anchor: 'end', align: 'top', color: '#fff', font: { weight: 'bold', size: 10 } }
@@ -617,22 +623,16 @@
                                 }
                             }
                         }
-                    };
-                    const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(chartConfig))}&w=450&h=250&bkg=000000&v=${Date.now()}`;
-                    const imgEl = document.getElementById('risk-chart-img');
-                    imgEl.src = chartUrl;
-                    imgEl.classList.remove('hidden');
+                    });
                     document.getElementById('chart-loading').classList.add('hidden');
                 } else {
                     tbody.innerHTML = '<tr><td colspan="3" class="px-4 py-8 text-center text-neutral-600 italic">No vulnerabilities recorded yet.</td></tr>';
                     document.getElementById('chart-loading').innerText = 'No data available for charting.';
                 }
 
-                // 4. Logo Handlers
                 organizationLogoBase64 = p.organizationLogo;
                 clientLogoBase64 = p.clientLogo;
 
-                // 5. Organizational Identity & Overrides
                 if (!p.organizationName) {
                     const orgRes = await fetch('/api/organization');
                     if (orgRes.ok) {
@@ -660,16 +660,18 @@
                     document.getElementById('client-logo-placeholder').classList.add('hidden');
                 }
 
-                // 6. Approver Selection
-                if (p.reportApprover) {
-                    document.getElementById('val-report-approver').value = p.reportApprover.id;
-                }
+                if (p.reportApprover) document.getElementById('val-report-approver').value = p.reportApprover.id;
 
-                // 7. Tile Toggles and Content
                 enabledFrameworks = p.owaspTop10 ? p.owaspTop10.split(',') : [];
                 selectedMethodImages = p.selectedMethodologyImages ? p.selectedMethodologyImages.split(',') : [];
-                methodologyCustomImages = p.methodologyImage ? JSON.parse(p.methodologyImage) : [];
-                if (p.severityDefinitions) severityMatrix = JSON.parse(p.severityDefinitions);
+                
+                try {
+                    methodologyCustomImages = (p.methodologyImage && p.methodologyImage.trim()) ? JSON.parse(p.methodologyImage) : [];
+                } catch(e) { methodologyCustomImages = []; }
+                
+                try {
+                    if (p.severityDefinitions && p.severityDefinitions.trim()) severityMatrix = JSON.parse(p.severityDefinitions);
+                } catch(e) {}
                 
                 initFrameworks();
                 initMethodologyPool();
@@ -701,30 +703,23 @@
             }
         }
 
-        async function saveReport() {
-            const saveBtn = event.currentTarget;
+        async function saveReport(saveBtn) {
             const originalText = saveBtn.innerText;
-            
             try {
                 saveBtn.disabled = true;
                 saveBtn.innerText = 'SAVING...';
-
                 const methodModeEl = document.querySelector('input[name="method-mode"]:checked');
                 const methodMode = methodModeEl ? methodModeEl.value : 'BOTH';
-
                 const data = {
                     brandingEnabled: document.getElementById('check-branding').checked,
                     organizationLogo: organizationLogoBase64,
                     clientLogo: clientLogoBase64,
-
                     organizationDetailsEnabled: document.getElementById('check-organization').checked,
                     organizationName: document.getElementById('val-org-name').value,
                     organizationEmail: document.getElementById('val-org-email').value,
                     organizationPhone: document.getElementById('val-org-phone').value,
                     organizationAddress: document.getElementById('val-org-address').value,
-
                     reportApproverId: document.getElementById('val-report-approver').value || null,
-
                     disclaimerEnabled: document.getElementById('check-disclaimer').checked,
                     disclaimer: document.getElementById('val-disclaimer').value,
                     methodologyEnabled: document.getElementById('check-methodology').checked,
@@ -741,18 +736,15 @@
                     conclusionEnabled: document.getElementById('check-conclusion').checked,
                     conclusion: document.getElementById('val-conclusion').value
                 };
-
                 const res = await fetch(`/api/pentests/${pentestId}/report-details`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
-
                 if (res.ok) {
                     window.showNotification('Configuration saved successfully.', 'success');
                     setTimeout(() => window.location.href = `/pentest/details/${pentestId}`, 800);
                 } else {
-                    const errorText = await res.text();
                     window.showNotification('Save failed: ' + res.status, 'error');
                 }
             } catch (err) {
