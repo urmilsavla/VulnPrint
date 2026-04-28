@@ -76,6 +76,11 @@ public class ViewController {
         return "report-designer";
     }
 
+    @GetMapping("/report-mapping-docs")
+    public String reportMappingDocs() {
+        return "report-mapping-docs";
+    }
+
     @GetMapping("/pentest/{id}/vulnerability/add")
     public String addVulnerability(@PathVariable Long id, Model model) {
         model.addAttribute("id", id);

@@ -13,14 +13,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
- * Service responsible for consolidating all pentest and vulnerability data into a "Master Package".
- * 
- * IMPORTANT: This Master API is designed to feed a docx-template report generation system.
- * Any structural changes to the JSON output (Assessment Metadata, Report Configuration, 
- * Security Findings) must be coordinated with the placeholders defined in the .docx template.
+ * Service responsible for consolidating all pentest and vulnerability data into a structured Master Package for reporting.
+ * Follows the strict 10-Section Architectural Requirement.
  */
 @Service
 public class ReportDataService {
@@ -33,223 +32,6 @@ public class ReportDataService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    /**
-     * @deprecated Use {@link #getMasterReportDataV2(Long)} instead.
-     * This version is inefficient as it embeds large Base64 images multiple times.
-     */
-    @Deprecated
-    @Transactional(readOnly = true)
-    public Map<String, Object> getMasterReportData(Long pentestId) {
-        Pentest p = pentestRepository.findById(pentestId)
-                .orElseThrow(() -> new RuntimeException("Assessment ID " + pentestId + " not found."));
-
-        Map<String, Object> masterPackage = new LinkedHashMap<>();
-
-        // SECTION 1: ASSESSMENT METADATA
-        Map<String, Object> metadata = new LinkedHashMap<>();
-        
-        Map<String, Object> identity = new LinkedHashMap<>();
-        identity.put("id", p.getId());
-        identity.put("pentestName", p.getPentestName());
-        identity.put("applicationName", p.getApplicationName());
-        identity.put("pentestType", p.getPentestType());
-        identity.put("status", p.getStatus());
-        identity.put("createdDate", p.getCreatedDate());
-        identity.put("lastModifiedDate", p.getLastModifiedDate());
-        identity.put("globalRiskIndex", calculateRiskIndex(p.getVulnerabilities()));
-        metadata.put("identity", identity);
-
-        Map<String, Object> client = new LinkedHashMap<>();
-        client.put("clientName", p.getClientName());
-        client.put("clientSpocName", p.getClientSpocName());
-        client.put("clientSpocContact", p.getClientSpocContact());
-        metadata.put("client", client);
-
-        Map<String, Object> scope = new LinkedHashMap<>();
-        scope.put("target", p.getTarget());
-        scope.put("url", p.getUrl());
-        scope.put("osType", p.getOsType());
-        scope.put("apiDomain", p.getApiDomain());
-        scope.put("ipRanges", p.getIpRanges());
-        scope.put("zipHash", p.getZipHash());
-        scope.put("version", p.getVersion());
-        scope.put("additionalUrls", p.getAdditionalUrls());
-        scope.put("techStack", p.getTechStack());
-        scope.put("packageName", p.getPackageName());
-        scope.put("apiType", p.getApiType());
-        scope.put("targetType", p.getTargetType());
-        scope.put("repoUrl", p.getRepoUrl());
-        scope.put("branchName", p.getBranchName());
-        scope.put("language", p.getLanguage());
-        metadata.put("technicalScope", scope);
-
-        List<Map<String, Object>> auditors = new ArrayList<>();
-        if (p.getAssignedPentesters() != null) {
-            for (User u : p.getAssignedPentesters()) {
-                Map<String, Object> auditor = new LinkedHashMap<>();
-                auditor.put("id", u.getId());
-                auditor.put("username", u.getUsername());
-                auditor.put("fullName", u.getFirstName() + " " + u.getLastName());
-                auditor.put("email", u.getEmail());
-                auditor.put("role", u.getRole());
-                auditor.put("address", u.getAddress());
-                auditor.put("professionalQualifications", u.getQualification() != null ? u.getQualification() : "Certified Security Professional");
-                auditor.put("profileImageBase64", u.getProfileImage()); 
-                auditors.add(auditor);
-            }
-        }
-        metadata.put("auditTeam", auditors);
-        masterPackage.put("assessmentMetadata", metadata);
-
-        // SECTION 2: REPORT CONFIGURATION
-        Map<String, Object> config = new LinkedHashMap<>();
-        
-        config.put("disclaimer", Map.of(
-            "isEnabled", p.getDisclaimerEnabled() != null ? p.getDisclaimerEnabled() : true,
-            "text", p.getDisclaimer() != null ? p.getDisclaimer() : ""
-        ));
-
-        Map<String, Object> methodology = new LinkedHashMap<>();
-        methodology.put("isEnabled", p.getMethodologyEnabled() != null ? p.getMethodologyEnabled() : true);
-        methodology.put("displayMode", p.getMethodologyDisplayMode() != null ? p.getMethodologyDisplayMode() : "BOTH");
-        methodology.put("text", p.getMethodology() != null ? p.getMethodology() : "");
-        
-        List<String> resolvedMethodImages = new ArrayList<>();
-        if (p.getSelectedMethodologyImages() != null && !p.getSelectedMethodologyImages().isEmpty()) {
-            for (String id : p.getSelectedMethodologyImages().split(",")) {
-                if (id.startsWith("p_")) resolvedMethodImages.add(resolvePredefinedMethodologyImage(id));
-                else if (id.startsWith("custom_")) {
-                    try {
-                        List<String> pool = objectMapper.readValue(p.getMethodologyImage(), List.class);
-                        int idx = Integer.parseInt(id.replace("custom_", ""));
-                        if (idx < pool.size()) resolvedMethodImages.add(pool.get(idx));
-                    } catch (Exception ignored) {}
-                }
-            }
-        }
-        methodology.put("base64Images", resolvedMethodImages);
-        config.put("assessmentMethodology", methodology);
-
-        Map<String, Object> riskOverview = new LinkedHashMap<>();
-        riskOverview.put("isEnabled", p.getRiskOverviewEnabled() != null ? p.getRiskOverviewEnabled() : true);
-        riskOverview.put("summaryNote", p.getRiskSummary() != null ? p.getRiskSummary() : "");
-        
-        List<Vulnerability> vulns = p.getVulnerabilities() != null ? p.getVulnerabilities() : new ArrayList<>();
-        Map<String, Long> counts = new HashMap<>();
-        counts.put("CRITICAL", vulns.stream().filter(v -> "Critical".equalsIgnoreCase(v.getSeverity())).count());
-        counts.put("HIGH", vulns.stream().filter(v -> "High".equalsIgnoreCase(v.getSeverity())).count());
-        counts.put("MEDIUM", vulns.stream().filter(v -> "Medium".equalsIgnoreCase(v.getSeverity())).count());
-        counts.put("LOW", vulns.stream().filter(v -> "Low".equalsIgnoreCase(v.getSeverity())).count());
-        counts.put("INFORMATIONAL", vulns.stream().filter(v -> "Informational".equalsIgnoreCase(v.getSeverity()) || "Info".equalsIgnoreCase(v.getSeverity())).count());
-        riskOverview.put("distributionMetrics", counts);
-        config.put("riskOverview", riskOverview);
-
-        Map<String, Object> frameworks = new LinkedHashMap<>();
-        frameworks.put("isEnabled", p.getOwaspEnabled() != null ? p.getOwaspEnabled() : true);
-        frameworks.put("activeFrameworks", p.getOwaspTop10() != null ? Arrays.asList(p.getOwaspTop10().split(",")) : new ArrayList<>());
-        frameworks.put("detailedMapping", p.getSelectedOwaspCategories() != null ? Arrays.asList(p.getSelectedOwaspCategories().split("\\|\\|")) : new ArrayList<>());
-        frameworks.put("owaspImageBase64", p.getOwaspImage());
-        config.put("frameworkIntelligence", frameworks);
-
-        Map<String, Object> severity = new LinkedHashMap<>();
-        severity.put("isEnabled", p.getSeverityEnabled() != null ? p.getSeverityEnabled() : true);
-        try {
-            severity.put("definitions", p.getSeverityDefinitions() != null ? objectMapper.readValue(p.getSeverityDefinitions(), List.class) : new ArrayList<>());
-        } catch (Exception e) { severity.put("definitions", new ArrayList<>()); }
-        config.put("severityMatrix", severity);
-
-        config.put("conclusion", Map.of(
-            "isEnabled", p.getConclusionEnabled() != null ? p.getConclusionEnabled() : true,
-            "text", p.getConclusion() != null ? p.getConclusion() : ""
-        ));
-
-        Map<String, Object> branding = new LinkedHashMap<>();
-        branding.put("isEnabled", p.getBrandingEnabled() != null ? p.getBrandingEnabled() : true);
-        branding.put("organizationLogo", p.getOrganizationLogo());
-        branding.put("clientLogo", p.getClientLogo());
-        config.put("branding", branding);
-
-        Map<String, Object> orgDetails = new LinkedHashMap<>();
-        orgDetails.put("isEnabled", p.getOrganizationDetailsEnabled() != null ? p.getOrganizationDetailsEnabled() : true);
-        orgDetails.put("name", p.getOrganizationName());
-        orgDetails.put("address", p.getOrganizationAddress());
-        orgDetails.put("phone", p.getOrganizationPhone());
-        orgDetails.put("email", p.getOrganizationEmail());
-        config.put("organizationDetails", orgDetails);
-
-        if (p.getReportApprover() != null) {
-            Map<String, Object> approver = new LinkedHashMap<>();
-            approver.put("fullName", p.getReportApprover().getFirstName() + " " + p.getReportApprover().getLastName());
-            approver.put("email", p.getReportApprover().getEmail());
-            config.put("reportApprover", approver);
-        }
-
-        masterPackage.put("reportConfiguration", config);
-
-        // SECTION 3: SECURITY FINDINGS
-        List<Map<String, Object>> findings = new ArrayList<>();
-        if (p.getVulnerabilities() != null) {
-            for (Vulnerability v : p.getVulnerabilities()) {
-                Map<String, Object> finding = new LinkedHashMap<>();
-                finding.put("id", v.getId());
-                finding.put("refId", "VULN-" + String.format("%03d", v.getId()));
-                finding.put("title", v.getTitle());
-                finding.put("severity", v.getSeverity());
-                finding.put("cvssScore", v.getCvssScore());
-                finding.put("cvssVector", v.getCvssVector());
-                finding.put("owaspCategory", v.getOwasp());
-                finding.put("cweReference", v.getCweReference());
-                finding.put("description", v.getDescription());
-                finding.put("impact", v.getImpact());
-                finding.put("mitigation", v.getMitigation());
-                finding.put("status", v.getStatus());
-                finding.put("evidenceMode", v.getEvidenceMode());
-
-                finding.put("requestResponse", v.getRequestResponse());
-                finding.put("fileName", v.getFileName());
-                finding.put("lineNumber", v.getLineNumber());
-                finding.put("codeSnippetBase64", v.getCodeSnippet());
-
-                List<Map<String, Object>> instances = new ArrayList<>();
-                if (v.getSteps() != null) {
-                    for (VulnerabilityStep s : v.getSteps()) {
-                        Map<String, Object> instanceData = new LinkedHashMap<>();
-                        instanceData.put("id", s.getId());
-                        instanceData.put("sequence", s.getStepNumber());
-                        instanceData.put("description", s.getDescription());
-                        instanceData.put("request", s.getRequest());
-                        instanceData.put("response", s.getResponse());
-                        instanceData.put("fileName", s.getFileName());
-                        instanceData.put("lineNumber", s.getLineNumber());
-                        
-                        List<String> evidenceBase64 = new ArrayList<>();
-                        if (s.getImagePaths() != null) {
-                            for (String img : s.getImagePaths()) {
-                                String b64 = encodeFileToBase64(v.getPocFolderPath(), img);
-                                if (b64 != null) evidenceBase64.add(b64);
-                            }
-                        }
-                        instanceData.put("evidenceBase64", evidenceBase64);
-                        instances.add(instanceData);
-                    }
-                }
-                finding.put("evidenceInstances", instances);
-                findings.add(finding);
-            }
-        }
-        
-        Map<String, Integer> sevMap = Map.of("CRITICAL", 0, "HIGH", 1, "MEDIUM", 2, "LOW", 3, "INFORMATIONAL", 4, "INFO", 4);
-        findings.sort((a, b) -> {
-            int aVal = sevMap.getOrDefault(a.get("severity").toString().toUpperCase(), 5);
-            int bVal = sevMap.getOrDefault(b.get("severity").toString().toUpperCase(), 5);
-            return Integer.compare(aVal, bVal);
-        });
-
-        masterPackage.put("securityFindings", findings);
-
-        return masterPackage;
-    }
-
     @Transactional(readOnly = true)
     public Map<String, Object> getMasterReportDataV2(Long pentestId) {
         Pentest p = pentestRepository.findById(pentestId)
@@ -259,158 +41,211 @@ public class ReportDataService {
         Map<String, String> imageLibrary = new LinkedHashMap<>();
         int imgCounter = 1;
 
-        // Metadata
-        Map<String, Object> metadata = new LinkedHashMap<>();
-        Map<String, Object> identity = new LinkedHashMap<>();
-        identity.put("id", p.getId());
-        identity.put("pentestName", p.getPentestName());
-        identity.put("applicationName", p.getApplicationName());
-        identity.put("pentestType", p.getPentestType());
-        identity.put("status", p.getStatus());
-        metadata.put("identity", identity);
+        // --- SECTION 1: BASIC DETAILED ---
+        Map<String, Object> section1 = new LinkedHashMap<>();
+        String projectName = (p.getPentestName() != null && !p.getPentestName().isEmpty()) ? p.getPentestName() : p.getApplicationName();
+        section1.put("projectName", projectName != null ? projectName : "N/A");
+        section1.put("pentestType", p.getPentestType() != null ? p.getPentestType() : "N/A");
+        section1.put("currentDateTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        masterPackage.put("section1", section1);
 
-        Map<String, Object> scope = new LinkedHashMap<>();
-        scope.put("target", p.getTarget());
-        scope.put("url", p.getUrl());
-        scope.put("osType", p.getOsType());
-        scope.put("apiDomain", p.getApiDomain());
-        scope.put("ipRanges", p.getIpRanges());
-        scope.put("repoUrl", p.getRepoUrl());
-        metadata.put("technicalScope", scope);
+        // --- SECTION 2: DISCLAIMER ---
+        Map<String, Object> section2 = new LinkedHashMap<>();
+        section2.put("disclaimer", p.getDisclaimer() != null ? p.getDisclaimer() : "");
+        masterPackage.put("section2", section2);
 
-        List<Map<String, Object>> auditors = new ArrayList<>();
+        // --- SECTION 3: CLIENT DETAILS ---
+        Map<String, Object> section3 = new LinkedHashMap<>();
+        section3.put("clientOrgName", p.getClientName() != null ? p.getClientName() : "N/A");
+        section3.put("clientSpocName", p.getClientSpocName() != null ? p.getClientSpocName() : "N/A");
+        section3.put("clientSpocContact", p.getClientSpocContact() != null ? p.getClientSpocContact() : "N/A");
+        if (hasValue(p.getClientLogo())) {
+            String imgId = "LOGO_CLIENT";
+            imageLibrary.put(imgId, p.getClientLogo());
+            section3.put("clientLogoId", imgId);
+        }
+        masterPackage.put("section3", section3);
+
+        // --- SECTION 4: PROJECT DETAILS ---
+        Map<String, Object> section4 = new LinkedHashMap<>();
+        section4.put("projectName", projectName != null ? projectName : "N/A");
+        section4.put("pentestType", p.getPentestType() != null ? p.getPentestType() : "N/A");
+        section4.put("projectInitiationDate", p.getCreatedDate() != null ? p.getCreatedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) : "N/A");
+        
+        String riskIndexValue = calculateRiskIndex(p.getVulnerabilities());
+        section4.put("technicalScore", riskIndexValue); 
+        section4.put("overallPentestRiskIndex", riskIndexValue);
+        
+        // Deep Factor Addition: Technical Scope items included in Project Details for completeness
+        List<Map<String, String>> scopeItems = new ArrayList<>();
+        if (hasValue(p.getTarget())) scopeItems.add(Map.of("label", "Scope Target", "value", p.getTarget()));
+        if (hasValue(p.getUrl())) scopeItems.add(Map.of("label", "URL", "value", p.getUrl()));
+        if (hasValue(p.getTechStack())) scopeItems.add(Map.of("label", "Tech Stack", "value", p.getTechStack()));
+        if (hasValue(p.getIpRanges())) scopeItems.add(Map.of("label", "IP Ranges", "value", p.getIpRanges()));
+        section4.put("scopeItems", scopeItems);
+        masterPackage.put("section4", section4);
+
+        // --- SECTION 5: TESTERS DETAILS ---
+        Map<String, Object> section5 = new LinkedHashMap<>();
+        List<Map<String, Object>> testers = new ArrayList<>();
         if (p.getAssignedPentesters() != null) {
             for (User u : p.getAssignedPentesters()) {
-                Map<String, Object> auditor = new LinkedHashMap<>();
-                auditor.put("fullName", u.getFirstName() + " " + u.getLastName());
-                auditor.put("qualifications", u.getQualification());
-                if (u.getProfileImage() != null) {
-                    String imgId = "AUDITOR_" + imgCounter++;
-                    imageLibrary.put(imgId, u.getProfileImage());
-                    auditor.put("profileImageId", imgId);
-                }
-                auditors.add(auditor);
+                Map<String, Object> t = new LinkedHashMap<>();
+                t.put("name", u.getFirstName() + " " + u.getLastName());
+                t.put("designation", u.getRole() != null ? u.getRole() : "Pentester");
+                t.put("qualification", u.getQualification() != null ? u.getQualification() : "Certified Professional");
+                testers.add(t);
             }
         }
-        metadata.put("auditTeam", auditors);
-        masterPackage.put("assessmentMetadata", metadata);
-
-        // Config
-        Map<String, Object> config = new LinkedHashMap<>();
-        config.put("disclaimer", p.getDisclaimer());
+        section5.put("testers", testers);
         
-        Map<String, Object> methodology = new LinkedHashMap<>();
-        methodology.put("text", p.getMethodology());
-        List<String> methodImgIds = new ArrayList<>();
-        if (p.getSelectedMethodologyImages() != null && !p.getSelectedMethodologyImages().isEmpty()) {
-            for (String id : p.getSelectedMethodologyImages().split(",")) {
-                String b64 = "";
-                if (id.startsWith("p_")) b64 = resolvePredefinedMethodologyImage(id);
-                else if (id.startsWith("custom_")) {
-                    try {
-                        List<String> pool = objectMapper.readValue(p.getMethodologyImage(), List.class);
-                        int idx = Integer.parseInt(id.replace("custom_", ""));
-                        if (idx < pool.size()) b64 = pool.get(idx);
-                    } catch (Exception ignored) {}
-                }
-                if (!b64.isEmpty()) {
+        if (p.getReportApprover() != null) {
+            User a = p.getReportApprover();
+            section5.put("approverName", a.getFirstName() + " " + a.getLastName());
+        } else {
+            section5.put("approverName", "Authorized Signatory");
+        }
+        masterPackage.put("section5", section5);
+
+        // --- SECTION 6: PENTESTING ORG DETAILS ---
+        Map<String, Object> section6 = new LinkedHashMap<>();
+        section6.put("orgName", p.getOrganizationName() != null ? p.getOrganizationName() : "N/A");
+        section6.put("headquarterAddress", p.getOrganizationAddress() != null ? p.getOrganizationAddress() : "N/A");
+        section6.put("officialEmail", p.getOrganizationEmail() != null ? p.getOrganizationEmail() : "N/A");
+        if (hasValue(p.getOrganizationLogo())) {
+            String imgId = "LOGO_ORG";
+            imageLibrary.put(imgId, p.getOrganizationLogo());
+            section6.put("orgLogoId", imgId);
+        }
+        masterPackage.put("section6", section6);
+
+        // --- SECTION 7: PENTEST METHODOLOGY ---
+        Map<String, Object> section7 = new LinkedHashMap<>();
+        section7.put("methodologyText", p.getMethodology() != null ? p.getMethodology() : "");
+        List<String> methImgIds = new ArrayList<>();
+        if (hasValue(p.getSelectedMethodologyImages())) {
+            for (String mid : p.getSelectedMethodologyImages().split(",")) {
+                String b64 = resolvePredefinedMethodologyImage(mid);
+                if (b64 != null) {
                     String imgId = "METHOD_" + imgCounter++;
                     imageLibrary.put(imgId, b64);
-                    methodImgIds.add(imgId);
+                    methImgIds.add(imgId);
                 }
             }
         }
-        methodology.put("imageIds", methodImgIds);
-        config.put("assessmentMethodology", methodology);
-        config.put("conclusion", p.getConclusion());
-
-        Map<String, Object> branding = new LinkedHashMap<>();
-        branding.put("isEnabled", p.getBrandingEnabled() != null ? p.getBrandingEnabled() : true);
-        if (p.getOrganizationLogo() != null && !p.getOrganizationLogo().isEmpty()) {
-            String imgId = "LOGO_ORG_" + imgCounter++;
-            imageLibrary.put(imgId, p.getOrganizationLogo());
-            branding.put("organizationLogoId", imgId);
-        } else {
-            // Default VulnPrint Logo
+        if (hasValue(p.getMethodologyImage())) {
             try {
-                Resource resource = resourceLoader.getResource("classpath:/static/images/logo.png");
-                byte[] bytes = resource.getInputStream().readAllBytes();
-                String b64 = "data:image/png;base64," + Base64.getEncoder().encodeToString(bytes);
-                String imgId = "LOGO_ORG_DEFAULT";
-                imageLibrary.put(imgId, b64);
-                branding.put("organizationLogoId", imgId);
-            } catch (Exception ignored) {}
+                List<String> customImages = objectMapper.readValue(p.getMethodologyImage(), List.class);
+                for (String b64 : customImages) {
+                    if (b64 != null && !b64.isEmpty()) {
+                        String imgId = "METHOD_CUSTOM_" + imgCounter++;
+                        imageLibrary.put(imgId, b64);
+                        methImgIds.add(imgId);
+                    }
+                }
+            } catch (Exception e) {
+                // Ignore parsing errors for custom images
+            }
         }
+        section7.put("methodologyImageIds", methImgIds);
+        section7.put("selectedFramework", p.getSelectedOwaspCategories() != null ? Arrays.asList(p.getSelectedOwaspCategories().split("\\|\\|")) : new ArrayList<>());
+        masterPackage.put("section7", section7);
 
-        if (p.getClientLogo() != null && !p.getClientLogo().isEmpty()) {
-            String imgId = "LOGO_CLIENT_" + imgCounter++;
-            imageLibrary.put(imgId, p.getClientLogo());
-            branding.put("clientLogoId", imgId);
+        // --- SECTION 8: PENTEST SUMMARY ---
+        Map<String, Object> section8 = new LinkedHashMap<>();
+        section8.put("executiveSummary", p.getExecutiveSummary() != null ? p.getExecutiveSummary() : "");
+        
+        List<Map<String, String>> summaryTable = new ArrayList<>();
+        List<Vulnerability> vs = p.getVulnerabilities() != null ? p.getVulnerabilities() : new ArrayList<>();
+        for (Vulnerability v : vs) {
+            summaryTable.add(Map.of("title", v.getTitle(), "severity", v.getSeverity() != null ? v.getSeverity() : "Info"));
         }
-        config.put("branding", branding);
+        section8.put("riskSummaryTable", summaryTable);
 
-        Map<String, Object> orgDetails = new LinkedHashMap<>();
-        orgDetails.put("isEnabled", p.getOrganizationDetailsEnabled() != null ? p.getOrganizationDetailsEnabled() : true);
-        orgDetails.put("name", p.getOrganizationName());
-        orgDetails.put("address", p.getOrganizationAddress());
-        orgDetails.put("phone", p.getOrganizationPhone());
-        orgDetails.put("email", p.getOrganizationEmail());
-        config.put("organizationDetails", orgDetails);
+        section8.put("severityMetrics", Map.of(
+            "CRITICAL", vs.stream().filter(v -> "Critical".equalsIgnoreCase(v.getSeverity())).count(),
+            "HIGH", vs.stream().filter(v -> "High".equalsIgnoreCase(v.getSeverity())).count(),
+            "MEDIUM", vs.stream().filter(v -> "Medium".equalsIgnoreCase(v.getSeverity())).count(),
+            "LOW", vs.stream().filter(v -> "Low".equalsIgnoreCase(v.getSeverity())).count(),
+            "INFO", vs.stream().filter(v -> "Info".equalsIgnoreCase(v.getSeverity()) || "Informational".equalsIgnoreCase(v.getSeverity())).count()
+        ));
 
-        if (p.getReportApprover() != null) {
-            Map<String, Object> approver = new LinkedHashMap<>();
-            approver.put("fullName", p.getReportApprover().getFirstName() + " " + p.getReportApprover().getLastName());
-            approver.put("email", p.getReportApprover().getEmail());
-            config.put("reportApprover", approver);
+        try { 
+            section8.put("severityMatrix", hasValue(p.getSeverityDefinitions()) ? objectMapper.readValue(p.getSeverityDefinitions(), List.class) : new ArrayList<>()); 
+        } catch (Exception e) { 
+            section8.put("severityMatrix", new ArrayList<>()); 
         }
+        masterPackage.put("section8", section8);
 
-        masterPackage.put("reportConfiguration", config);
-
-        // Findings
+        // --- SECTION 9: VULNERABILITIES IN DETAIL ---
         List<Map<String, Object>> findings = new ArrayList<>();
         if (p.getVulnerabilities() != null) {
             for (Vulnerability v : p.getVulnerabilities()) {
-                Map<String, Object> finding = new LinkedHashMap<>();
-                finding.put("title", v.getTitle());
-                finding.put("severity", v.getSeverity());
-                finding.put("description", v.getDescription());
-                
-                if (v.getCodeSnippet() != null && !v.getCodeSnippet().isEmpty()) {
-                    String imgId = "SNIPPET_" + imgCounter++;
+                Map<String, Object> f = new LinkedHashMap<>();
+                f.put("refId", "VULN-" + String.format("%03d", v.getId()));
+                f.put("title", v.getTitle());
+                f.put("severity", v.getSeverity());
+                f.put("cvssScore", v.getCvssScore());
+                f.put("cvssVector", v.getCvssVector());
+                f.put("status", v.getStatus());
+                f.put("cwe", v.getCweReference());
+                f.put("owasp", v.getOwasp());
+                f.put("description", v.getDescription());
+                f.put("impact", v.getImpact());
+                f.put("mitigation", v.getMitigation());
+                f.put("evidenceMode", v.getEvidenceMode());
+                f.put("globalFileName", v.getFileName());
+                f.put("globalLineNumber", v.getLineNumber());
+                f.put("globalRequestResponse", v.getRequestResponse());
+                if (hasValue(v.getCodeSnippet())) {
+                    String imgId = "SNIPPET_" + v.getId();
                     imageLibrary.put(imgId, v.getCodeSnippet());
-                    finding.put("codeSnippetImageId", imgId);
+                    f.put("codeSnippetImageId", imgId);
                 }
 
-                List<Map<String, Object>> instances = new ArrayList<>();
+                List<Map<String, Object>> steps = new ArrayList<>();
                 if (v.getSteps() != null) {
                     for (VulnerabilityStep s : v.getSteps()) {
-                        Map<String, Object> inst = new LinkedHashMap<>();
-                        inst.put("instruction", s.getDescription());
-                        List<String> instImgIds = new ArrayList<>();
+                        Map<String, Object> st = new LinkedHashMap<>();
+                        st.put("order", s.getStepNumber());
+                        st.put("description", s.getDescription());
+                        st.put("request", s.getRequest());
+                        st.put("response", s.getResponse());
+                        st.put("fileName", s.getFileName());
+                        st.put("lineNumber", s.getLineNumber());
+                        
+                        List<String> stepImgIds = new ArrayList<>();
                         if (s.getImagePaths() != null) {
-                            for (String img : s.getImagePaths()) {
-                                String b64 = encodeFileToBase64(v.getPocFolderPath(), img);
+                            for (String imgName : s.getImagePaths()) {
+                                String b64 = encodeFileToBase64(v.getPocFolderPath(), imgName);
                                 if (b64 != null) {
                                     String imgId = "VULN_POC_" + imgCounter++;
                                     imageLibrary.put(imgId, b64);
-                                    instImgIds.add(imgId);
+                                    stepImgIds.add(imgId);
                                 }
                             }
                         }
-                        inst.put("evidenceImageIds", instImgIds);
-                        instances.add(inst);
+                        st.put("pocImageIds", stepImgIds);
+                        steps.add(st);
                     }
                 }
-                finding.put("instances", instances);
-                findings.add(finding);
+                f.put("reproductionSteps", steps);
+                findings.add(f);
             }
         }
-        masterPackage.put("securityFindings", findings);
+        masterPackage.put("section9", Map.of("vulnerabilities", findings));
 
-        // Finally add the Library
+        // --- SECTION 10: CONCLUSION ---
+        masterPackage.put("section10", Map.of("conclusion", p.getConclusion() != null ? p.getConclusion() : ""));
+
+        // Global Image Library
         masterPackage.put("imageLibrary", imageLibrary);
 
         return masterPackage;
+    }
+
+    private boolean hasValue(String s) {
+        return s != null && !s.trim().isEmpty();
     }
 
     private String calculateRiskIndex(List<Vulnerability> vulns) {

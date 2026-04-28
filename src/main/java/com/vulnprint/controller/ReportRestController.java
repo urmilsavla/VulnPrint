@@ -23,7 +23,7 @@ public class ReportRestController {
     @GetMapping("/master-data/{pentestId}")
     public ResponseEntity<?> getMasterReportData(@PathVariable Long pentestId) {
         try {
-            Map<String, Object> data = reportDataService.getMasterReportData(pentestId);
+            Map<String, Object> data = reportDataService.getMasterReportDataV2(pentestId);
             return ResponseEntity.ok(data);
         } catch (RuntimeException e) {
             Map<String, String> error = new HashMap<>();

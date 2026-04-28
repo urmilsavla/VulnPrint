@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script id="tailwind-config">
         tailwind.config = {
           darkMode: 'class',
@@ -32,22 +33,23 @@
         body.sidebar-expanded #main-content { margin-left: 256px; }
         body.sidebar-expanded #header { left: 256px; }
         @media (max-width: 1024px) { #main-content { margin-left: 0 !important; } }
-        
-        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #262626; transition: .4s; border-radius: 34px; border: 1px solid #404040; }
-        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: #525252; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: rgba(79, 254, 73, 0.1); border-color: #4FFE49; }
-        input:checked + .slider:before { transform: translateX(22px); background-color: #4FFE49; box-shadow: 0 0 10px rgba(79, 254, 73, 0.5); }
 
         .tile-card { background: rgba(19, 19, 19, 0.4); border: 1px solid #262626; transition: all 0.3s ease; }
-        .tile-card.disabled { opacity: 0.4; }
-        .tile-card.disabled > div:not(.tile-header) { pointer-events: none; filter: grayscale(1); }
+        .drag-handle { cursor: grab; color: #525252; transition: color 0.2s; margin-right: 1rem; }
+        .drag-handle:hover { color: #4FFE49; }
+        .sortable-ghost { opacity: 0.3; background: rgba(79, 254, 73, 0.05); border: 2px dashed #4FFE49; }
 
         .fw-card { transition: all 0.3s ease; border: 1px solid #262626; background: rgba(19, 19, 19, 0.6); }
         .fw-card.enabled { border-color: rgba(79, 254, 73, 0.4); background: rgba(79, 254, 73, 0.05); }
         .fw-items-list { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out; }
         .fw-items-list.expanded { max-height: 800px; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 1rem; }
+
+        .tile-content { max-height: 3000px; overflow: visible; transition: all 0.5s cubic-bezier(0, 1, 0, 1); }
+        .tile-card.collapsed .tile-content { max-height: 0; opacity: 0; padding-top: 0 !important; padding-bottom: 0 !important; margin-top: 0 !important; margin-bottom: 0 !important; overflow: hidden; pointer-events: none; }
+        .collapse-icon { transition: transform 0.3s ease; cursor: pointer; color: #525252; }
+        .collapse-icon:hover { color: #4FFE49; }
+        .tile-card.collapsed .collapse-icon { transform: rotate(-90deg); }
+        .tile-header { cursor: pointer; }
 
         .image-tile { cursor: pointer; border: 2px solid transparent; transition: all 0.2s; position: relative; }
         .image-tile.selected { border-color: #4FFE49; background: rgba(79, 254, 73, 0.05); }
@@ -80,247 +82,254 @@
                 </div>
             </div>
 
-            <div class="space-y-12">
+            <div class="space-y-12" id="tiles-container">
                 <!-- Tile 0: Client Logo -->
-                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-branding">
-                    <div class="tile-header flex justify-between items-center mb-6">
+                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-branding" data-id="branding">
+                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('tile-branding')">
                         <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined drag-handle" onclick="event.stopPropagation()">drag_indicator</span>
                             <span class="material-symbols-outlined text-primary text-3xl">branding_watermark</span>
-                            <h2 class="text-xl font-bold text-white">Client Logo</h2>
+                            <h2 class="text-xl font-bold">Client Logo</h2>
                         </div>
-                        <label class="switch">
-                            <input type="checkbox" id="check-branding" onchange="toggleTile('branding')" checked>
-                            <span class="slider"></span>
-                        </label>
+                        <span class="material-symbols-outlined collapse-icon">expand_more</span>
                     </div>
-                    <div class="flex flex-col items-center gap-4 p-6 bg-black/40 border border-neutral-800 rounded-lg max-w-md mx-auto">
-                        <div id="client-logo-placeholder" class="h-20 w-full flex items-center justify-center border-2 border-dashed border-neutral-800 text-neutral-700">
-                            <span class="material-symbols-outlined text-4xl">add_photo_alternate</span>
+                    <div class="tile-content">
+                        <div class="flex flex-col items-center gap-4 p-6 bg-black/40 border border-neutral-800 rounded-lg max-w-md mx-auto">
+                            <div id="client-logo-placeholder" class="h-20 w-full flex items-center justify-center border-2 border-dashed border-neutral-800 text-neutral-700">
+                                <span class="material-symbols-outlined text-4xl">add_photo_alternate</span>
+                            </div>
+                            <img id="img-client-logo" src="" class="h-20 object-contain mb-2 hidden">
+                            <button onclick="triggerLogoUpload('client')" class="w-full px-4 py-2 border border-neutral-700 text-[10px] font-bold uppercase hover:bg-white/5 transition-colors">Update Client Logo</button>
                         </div>
-                        <img id="img-client-logo" src="" class="h-20 object-contain mb-2 hidden">
-                        <button onclick="triggerLogoUpload('client')" class="w-full px-4 py-2 border border-neutral-700 text-[10px] font-bold uppercase hover:bg-white/5 transition-colors">Update Client Logo</button>
                     </div>
                 </div>
 
                 <!-- Tile 0.5: Organization Details -->
-                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-organization">
-                    <div class="tile-header flex justify-between items-center mb-6">
+                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-organization" data-id="organization">
+                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('tile-organization')">
                         <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined drag-handle" onclick="event.stopPropagation()">drag_indicator</span>
                             <span class="material-symbols-outlined text-primary text-3xl">corporate_fare</span>
-                            <h2 class="text-xl font-bold text-white">Organization Details</h2>
+                            <h2 class="text-xl font-bold">Organization Details</h2>
                         </div>
-                        <label class="switch">
-                            <input type="checkbox" id="check-organization" onchange="toggleTile('organization')" checked>
-                            <span class="slider"></span>
-                        </label>
+                        <span class="material-symbols-outlined collapse-icon">expand_more</span>
                     </div>
                     
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <!-- Org Logo Section -->
-                        <div class="space-y-4">
-                            <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Organization Logo</p>
-                            <div class="flex flex-col items-center gap-4 p-6 bg-black/40 border border-neutral-800 rounded-lg">
-                                <img id="img-org-logo" src="/images/logo.png" class="h-20 object-contain mb-2 opacity-80">
-                                <div class="flex flex-col gap-2 w-full">
-                                    <button onclick="triggerLogoUpload('org')" class="px-4 py-2 border border-neutral-700 text-[10px] font-bold uppercase hover:bg-white/5 transition-colors">Upload Custom</button>
-                                    <button onclick="resetOrgLogo()" class="px-4 py-2 border border-primary/30 text-primary text-[10px] font-bold uppercase hover:bg-primary/10 transition-colors">Use Default</button>
+                    <div class="tile-content">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div class="space-y-4">
+                                <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Organization Logo</p>
+                                <div class="flex flex-col items-center gap-4 p-6 bg-black/40 border border-neutral-800 rounded-lg">
+                                    <img id="img-org-logo" src="/images/logo.png" class="h-20 object-contain mb-2 opacity-80">
+                                    <div class="flex flex-col gap-2 w-full">
+                                        <button onclick="triggerLogoUpload('org')" class="px-4 py-2 border border-neutral-700 text-[10px] font-bold uppercase hover:bg-white/5 transition-colors">Upload Custom</button>
+                                        <button onclick="resetOrgLogo()" class="px-4 py-2 border border-primary/30 text-primary text-[10px] font-bold uppercase hover:bg-primary/10 transition-colors">Use Default</button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Details Section -->
-                        <div class="lg:col-span-2 space-y-6">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div class="space-y-2">
-                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Organization Name</label>
-                                    <input type="text" id="val-org-name" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
+                            <div class="lg:col-span-2 space-y-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Organization Name</label>
+                                        <input type="text" id="val-org-name" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Official Email</label>
+                                        <input type="text" id="val-org-email" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Contact Phone</label>
+                                        <input type="text" id="val-org-phone" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Headquarters Address</label>
+                                        <input type="text" id="val-org-address" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
+                                    </div>
                                 </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Official Email</label>
-                                    <input type="text" id="val-org-email" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
+                                
+                                <div class="pt-6 border-t border-neutral-800">
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest mb-3 block">Approver</label>
+                                    <select id="val-report-approver" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
+                                        <option value="">Select Authorized Approver...</option>
+                                    </select>
                                 </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Contact Phone</label>
-                                    <input type="text" id="val-org-phone" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Headquarters Address</label>
-                                    <input type="text" id="val-org-address" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
-                                </div>
-                            </div>
-                            
-                            <!-- Approver Selection (Merged) -->
-                            <div class="pt-6 border-t border-neutral-800">
-                                <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest mb-3 block">Approver</label>
-                                <select id="val-report-approver" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
-                                    <option value="">Select Authorized Approver...</option>
-                                </select>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Tile 1: Disclaimer -->
-                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-disclaimer">
-                    <div class="tile-header flex justify-between items-center mb-6">
+                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-disclaimer" data-id="disclaimer">
+                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('tile-disclaimer')">
                         <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined drag-handle" onclick="event.stopPropagation()">drag_indicator</span>
                             <span class="material-symbols-outlined text-primary text-3xl">gavel</span>
-                            <h2 class="text-xl font-bold text-white">Legal Disclaimer</h2>
+                            <h2 class="text-xl font-bold">Legal Disclaimer</h2>
                         </div>
-                        <label class="switch">
-                            <input type="checkbox" id="check-disclaimer" onchange="toggleTile('disclaimer')" checked>
-                            <span class="slider"></span>
-                        </label>
+                        <span class="material-symbols-outlined collapse-icon">expand_more</span>
                     </div>
-                    <textarea id="val-disclaimer" rows="4" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-6 text-sm focus:border-primary outline-none transition-colors rounded-lg"></textarea>
+                    <div class="tile-content">
+                        <textarea id="val-disclaimer" rows="4" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-6 text-sm focus:border-primary outline-none transition-colors rounded-lg"></textarea>
+                    </div>
+                </div>
+
+                <!-- Tile 1.5: Executive Summary -->
+                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-executiveSummary" data-id="executiveSummary">
+                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('tile-executiveSummary')">
+                        <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined drag-handle" onclick="event.stopPropagation()">drag_indicator</span>
+                            <span class="material-symbols-outlined text-primary text-3xl">article</span>
+                            <h2 class="text-xl font-bold">Executive Summary</h2>
+                        </div>
+                        <span class="material-symbols-outlined collapse-icon">expand_more</span>
+                    </div>
+                    <div class="tile-content">
+                        <textarea id="val-executiveSummary" rows="10" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-6 text-sm focus:border-primary outline-none transition-colors rounded-lg" placeholder="Write a high-level summary of the assessment results..."></textarea>
+                    </div>
                 </div>
 
                 <!-- Tile 2: Methodology -->
-                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-methodology">
-                    <div class="tile-header flex justify-between items-center mb-6">
+                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-methodology" data-id="methodology">
+                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('tile-methodology')">
                         <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined drag-handle" onclick="event.stopPropagation()">drag_indicator</span>
                             <span class="material-symbols-outlined text-primary text-3xl">account_tree</span>
-                            <h2 class="text-xl font-bold text-white">Assessment Methodology</h2>
+                            <h2 class="text-xl font-bold">Assessment Methodology</h2>
                         </div>
-                        <label class="switch">
-                            <input type="checkbox" id="check-methodology" onchange="toggleTile('methodology')" checked>
-                            <span class="slider"></span>
-                        </label>
+                        <span class="material-symbols-outlined collapse-icon">expand_more</span>
                     </div>
                     
-                    <div class="space-y-8">
-                        <div class="flex gap-6 p-4 bg-black/40 border border-neutral-800 rounded-lg">
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="method-mode" value="TEXT_ONLY" onchange="updateMethodMode()" class="text-primary focus:ring-primary bg-black border-neutral-700">
-                                <span class="text-xs font-semibold text-neutral-400">Text Only</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="method-mode" value="IMAGE_ONLY" onchange="updateMethodMode()" class="text-primary focus:ring-primary bg-black border-neutral-700">
-                                <span class="text-xs font-semibold text-neutral-400">Images Only</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="method-mode" value="BOTH" onchange="updateMethodMode()" checked class="text-primary focus:ring-primary bg-black border-neutral-700">
-                                <span class="text-xs font-semibold text-neutral-400">Both (Text + Image)</span>
-                            </label>
-                        </div>
-
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <div id="method-text-container" class="space-y-3">
-                                <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Procedural Description</p>
-                                <textarea id="val-methodology" rows="12" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-6 text-sm focus:border-primary outline-none transition-colors rounded-lg"></textarea>
+                    <div class="tile-content">
+                        <div class="space-y-8">
+                            <div class="flex gap-6 p-4 bg-black/40 border border-neutral-800 rounded-lg">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="method-mode" value="TEXT_ONLY" onchange="updateMethodMode()" class="text-primary focus:ring-primary bg-black border-neutral-700">
+                                    <span class="text-xs font-semibold text-neutral-400">Text Only</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="method-mode" value="IMAGE_ONLY" onchange="updateMethodMode()" class="text-primary focus:ring-primary bg-black border-neutral-700">
+                                    <span class="text-xs font-semibold text-neutral-400">Images Only</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="method-mode" value="BOTH" onchange="updateMethodMode()" checked class="text-primary focus:ring-primary bg-black border-neutral-700">
+                                    <span class="text-xs font-semibold text-neutral-400">Both (Text + Image)</span>
+                                </label>
                             </div>
-                            <div id="method-img-container" class="space-y-4">
-                                <div class="flex justify-between items-center">
-                                    <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Image Pool</p>
-                                    <button onclick="triggerUpload('methodology')" class="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline uppercase">
-                                        <span class="material-symbols-outlined text-sm">upload</span> Add Custom
-                                    </button>
+
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <div id="method-text-container" class="space-y-3">
+                                    <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Procedural Description</p>
+                                    <textarea id="val-methodology" rows="12" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-6 text-sm focus:border-primary outline-none transition-colors rounded-lg"></textarea>
                                 </div>
-                                <div class="grid grid-cols-3 gap-4" id="methodology-pool"></div>
+                                <div id="method-img-container" class="space-y-4">
+                                    <div class="flex justify-between items-center">
+                                        <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Image Pool</p>
+                                        <button onclick="triggerUpload('methodology')" class="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline uppercase">
+                                            <span class="material-symbols-outlined text-sm">upload</span> Add Custom
+                                        </button>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-4" id="methodology-pool"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Tile 3: Framework Intelligence -->
-                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-owasp">
-                    <div class="tile-header flex justify-between items-center mb-8">
+                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-owasp" data-id="owasp">
+                    <div class="tile-header flex justify-between items-center mb-8 text-white" onclick="toggleTile('tile-owasp')">
                         <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined drag-handle" onclick="event.stopPropagation()">drag_indicator</span>
                             <span class="material-symbols-outlined text-primary text-3xl">security</span>
-                            <h2 class="text-xl font-bold text-white">Framework Intelligence</h2>
+                            <h2 class="text-xl font-bold">Framework Intelligence</h2>
                         </div>
-                        <label class="switch">
-                            <input type="checkbox" id="check-owasp" onchange="toggleTile('owasp')" checked>
-                            <span class="slider"></span>
-                        </label>
+                        <span class="material-symbols-outlined collapse-icon">expand_more</span>
                     </div>
-                    <div class="grid grid-cols-1 gap-6" id="owasp-frameworks"></div>
+                    <div class="tile-content">
+                        <div class="grid grid-cols-1 gap-6" id="owasp-frameworks"></div>
+                    </div>
                 </div>
 
                 <!-- Tile 4: Severity Definitions -->
-                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-severity">
-                    <div class="tile-header flex justify-between items-center mb-6">
+                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-severity" data-id="severity">
+                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('tile-severity')">
                         <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined drag-handle" onclick="event.stopPropagation()">drag_indicator</span>
                             <span class="material-symbols-outlined text-primary text-3xl">priority_high</span>
-                            <h2 class="text-xl font-bold text-white">Severity Matrix</h2>
+                            <h2 class="text-xl font-bold">Severity Matrix</h2>
                         </div>
-                        <label class="switch">
-                            <input type="checkbox" id="check-severity" onchange="toggleTile('severity')" checked>
-                            <span class="slider"></span>
-                        </label>
+                        <span class="material-symbols-outlined collapse-icon">expand_more</span>
                     </div>
-                    <div class="overflow-hidden border border-neutral-800 rounded-lg bg-black/20">
-                        <table class="w-full text-left text-sm border-collapse">
-                            <thead class="bg-neutral-900/50 border-b border-neutral-800">
-                                <tr class="text-[10px] uppercase font-semibold text-neutral-500 tracking-widest">
-                                    <th class="px-6 py-4 border-r border-neutral-800 w-32 text-center">Severity</th>
-                                    <th class="px-6 py-4">Contextual Criteria (Editable)</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-neutral-800" id="severity-tbody"></tbody>
-                        </table>
+                    <div class="tile-content">
+                        <div class="overflow-hidden border border-neutral-800 rounded-lg bg-black/20">
+                            <table class="w-full text-left text-sm border-collapse">
+                                <thead class="bg-neutral-900/50 border-b border-neutral-800">
+                                    <tr class="text-[10px] uppercase font-semibold text-neutral-500 tracking-widest">
+                                        <th class="px-6 py-4 border-r border-neutral-800 w-32 text-center">Severity</th>
+                                        <th class="px-6 py-4">Contextual Criteria (Editable)</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-neutral-800" id="severity-tbody"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Tile 4.5: Risk Overview -->
-                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-risk">
-                    <div class="tile-header flex justify-between items-center mb-6">
+                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-risk" data-id="risk">
+                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('tile-risk')">
                         <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined drag-handle" onclick="event.stopPropagation()">drag_indicator</span>
                             <span class="material-symbols-outlined text-primary text-3xl">analytics</span>
-                            <h2 class="text-xl font-bold text-white">Risk Overview</h2>
+                            <h2 class="text-xl font-bold">Risk Overview</h2>
                         </div>
-                        <label class="switch">
-                            <input type="checkbox" id="check-risk" onchange="toggleTile('risk')" checked>
-                            <span class="slider"></span>
-                        </label>
+                        <span class="material-symbols-outlined collapse-icon">expand_more</span>
                     </div>
                     
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <!-- Table Section -->
-                        <div class="space-y-4">
-                            <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Findings Summary</p>
-                            <div class="overflow-hidden border border-neutral-800 rounded-lg">
-                                <table class="w-full text-left text-[11px] border-collapse bg-black/20">
-                                    <thead class="bg-neutral-900/50 border-b border-neutral-800 text-neutral-500 uppercase font-bold">
-                                        <tr>
-                                            <th class="px-4 py-3 w-12 text-center">#</th>
-                                            <th class="px-4 py-3">Vulnerability Title</th>
-                                            <th class="px-4 py-3 w-24 text-center">Severity</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="risk-table-body" class="divide-y divide-neutral-900">
-                                        <!-- Populated via JS -->
-                                    </tbody>
-                                </table>
+                    <div class="tile-content">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div class="space-y-4">
+                                <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Findings Summary</p>
+                                <div class="overflow-hidden border border-neutral-800 rounded-lg">
+                                    <table class="w-full text-left text-[11px] border-collapse bg-black/20">
+                                        <thead class="bg-neutral-900/50 border-b border-neutral-800 text-neutral-500 uppercase font-bold">
+                                            <tr>
+                                                <th class="px-4 py-3 w-12 text-center">#</th>
+                                                <th class="px-4 py-3">Vulnerability Title</th>
+                                                <th class="px-4 py-3 w-24 text-center">Severity</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="risk-table-body" class="divide-y divide-neutral-900"></tbody>
+                                    </table>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- Chart Section -->
-                        <div class="space-y-4">
-                            <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Severity Distribution</p>
-                            <div class="flex items-center justify-center p-6 bg-black/40 border border-neutral-800 rounded-lg min-h-[250px] relative">
-                                <div id="chart-loading" class="text-neutral-600 italic text-xs">Generating analytics...</div>
-                                <canvas id="risk-chart-canvas" class="max-h-[220px]"></canvas>
+                            <div class="space-y-4">
+                                <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Severity Distribution</p>
+                                <div class="flex items-center justify-center p-6 bg-black/40 border border-neutral-800 rounded-lg min-h-[250px] relative">
+                                    <div id="chart-loading" class="text-neutral-600 italic text-xs">Generating analytics...</div>
+                                    <canvas id="risk-chart-canvas" class="max-h-[220px]"></canvas>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <!-- Keep hidden input for compatibility if needed, though we'll update Master API logic -->
                     <input type="hidden" id="val-risk-summary">
                 </div>
 
                 <!-- Tile 5: Conclusion -->
-                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-conclusion">
-                    <div class="tile-header flex justify-between items-center mb-6">
+                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-conclusion" data-id="conclusion">
+                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('tile-conclusion')">
                         <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined drag-handle" onclick="event.stopPropagation()">drag_indicator</span>
                             <span class="material-symbols-outlined text-primary text-3xl">summarize</span>
-                            <h2 class="text-xl font-bold text-white">Executive Conclusion</h2>
+                            <h2 class="text-xl font-bold">Executive Conclusion</h2>
                         </div>
-                        <label class="switch">
-                            <input type="checkbox" id="check-conclusion" onchange="toggleTile('conclusion')" checked>
-                            <span class="slider"></span>
-                        </label>
+                        <span class="material-symbols-outlined collapse-icon">expand_more</span>
                     </div>
-                    <textarea id="val-conclusion" rows="6" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-6 text-sm focus:border-primary outline-none transition-colors rounded-lg"></textarea>
+                    <div class="tile-content">
+                        <textarea id="val-conclusion" rows="6" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-6 text-sm focus:border-primary outline-none transition-colors rounded-lg"></textarea>
+                    </div>
                 </div>
             </div>
         </div>
@@ -339,6 +348,22 @@
         let organizationLogoBase64 = null;
         let clientLogoBase64 = null;
         let riskChartInstance = null;
+
+        function toggleTile(tileId) {
+            const tile = document.getElementById(tileId);
+            if (!tile) return;
+            const isCollapsed = tile.classList.toggle('collapsed');
+            
+            // Persist collapsed state
+            const collapsedTiles = JSON.parse(localStorage.getItem(`collapsed-tiles-${pentestId}`) || '[]');
+            if (isCollapsed) {
+                if (!collapsedTiles.includes(tileId)) collapsedTiles.push(tileId);
+            } else {
+                const index = collapsedTiles.indexOf(tileId);
+                if (index > -1) collapsedTiles.splice(index, 1);
+            }
+            localStorage.setItem(`collapsed-tiles-${pentestId}`, JSON.stringify(collapsedTiles));
+        }
 
         function triggerLogoUpload(type) {
             currentTarget = 'logo_' + type;
@@ -386,16 +411,13 @@
                 div.className = `fw-card p-6 rounded-xl border transition-all cursor-pointer ${isEnabled ? 'enabled' : 'border-neutral-800'}`;
                 div.id = `fw-card-${fw.id}`;
                 div.onclick = (e) => {
-                    if (e.target.closest('.switch')) return;
+                    if (e.target.type === 'checkbox') return;
                     toggleFrameworkDetails(fw.id);
                 };
                 div.innerHTML = `
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-4">
-                            <label class="switch">
-                                <input type="checkbox" id="check-fw-${fw.id}" onchange="toggleFrameworkSelection('${fw.id}')" ${isEnabled ? 'checked' : ''}>
-                                <span class="slider"></span>
-                            </label>
+                            <input type="checkbox" id="check-fw-${fw.id}" onchange="toggleFrameworkSelection('${fw.id}')" ${isEnabled ? 'checked' : ''} class="w-5 h-5 bg-black border-neutral-700 text-primary rounded focus:ring-primary">
                             <div>
                                 <h4 class="text-sm font-bold text-white">${fw.title}</h4>
                                 <p class="text-[10px] text-neutral-500 mt-1">${fw.desc}</p>
@@ -481,10 +503,6 @@
             });
         }
 
-        function toggleTile(id) {
-            document.getElementById(`tile-${id}`).classList.toggle('disabled', !document.getElementById(`check-${id}`).checked);
-        }
-
         function toggleMethodImage(id) {
             if (selectedMethodImages.includes(id)) selectedMethodImages = selectedMethodImages.filter(x => x !== id);
             else selectedMethodImages.push(id);
@@ -532,12 +550,40 @@
 
         const defaultTemplates = {
             disclaimer: "This report is confidential and intended solely for the use of the client. The findings represent the security posture at the time of assessment only. No security assessment can guarantee 100% protection against all threats. The information contained herein is sensitive and should be handled with appropriate care, following industry best practices for data protection.",
+            executiveSummary: "The security assessment of the target application revealed a varied landscape of security controls and vulnerabilities. Our testing identified several critical areas that require immediate attention to prevent potential exploitation. This summary highlights the key risks and provides a high-level overview of the assessment's findings, aiming to guide stakeholders in prioritizing remediation efforts effectively.",
             methodology: "Our assessment follows a structured approach combining automated scanning with deep manual exploitation. We utilize industry-standard tools and custom scripts to validate security controls and identify potential attack vectors. The process includes reconnaissance, vulnerability identification, exploitation, and post-exploitation analysis to provide a comprehensive security overview of the target environment.",
             conclusion: "The assessment identified several security findings that should be addressed to improve the overall security posture. While some areas showed strong security controls, the discovered vulnerabilities present potential risks that require remediation. We recommend prioritizing Critical and High risk items immediately to mitigate potential exploitation paths and strengthen the defense-in-depth architecture."
         };
 
         async function loadProjectData() {
             try {
+                const el = document.getElementById('tiles-container');
+                Sortable.create(el, {
+                    animation: 150,
+                    handle: '.drag-handle',
+                    ghostClass: 'sortable-ghost',
+                    onEnd: function() {
+                        const order = this.toArray();
+                        localStorage.setItem(`tiles-order-${pentestId}`, JSON.stringify(order));
+                    }
+                });
+
+                const savedOrder = localStorage.getItem(`tiles-order-${pentestId}`);
+                if (savedOrder) {
+                    const orderArr = JSON.parse(savedOrder);
+                    orderArr.forEach(id => {
+                        const item = el.querySelector(`[data-id="${id}"]`);
+                        if (item) el.appendChild(item);
+                    });
+                }
+
+                // Restore collapsed state
+                const collapsedTiles = JSON.parse(localStorage.getItem(`collapsed-tiles-${pentestId}`) || '[]');
+                collapsedTiles.forEach(tileId => {
+                    const tile = document.getElementById(tileId);
+                    if (tile) tile.classList.add('collapsed');
+                });
+
                 const userRes = await fetch('/api/users');
                 if (userRes.ok) {
                     const users = await userRes.json();
@@ -572,10 +618,8 @@
                         if (sev === 'INFO') sev = 'INFORMATIONAL';
                         const sNormalized = sev.charAt(0).toUpperCase() + sev.slice(1).toLowerCase();
                         counts[sNormalized] = (counts[sNormalized] || 0) + 1;
-                        
                         const colorMap = { 'Critical': '#ff7351', 'High': '#ff9f40', 'Medium': '#4FFE49', 'Low': '#4bc0c0', 'Informational': '#36a2eb' };
                         const color = colorMap[sNormalized] || '#999';
-                        
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
                             <td class="px-4 py-3 text-center text-neutral-600 font-mono">${idx + 1}</td>
@@ -596,38 +640,20 @@
                             datasets: [{
                                 data: [counts['Critical'], counts['High'], counts['Medium'], counts['Low'], counts['Informational']],
                                 backgroundColor: ['#ff7351', '#ff9f40', '#4FFE49', '#4bc0c0', '#36a2eb'],
-                                borderRadius: 4,
-                                barThickness: 30
+                                borderRadius: 4, barThickness: 30
                             }]
                         },
                         plugins: [ChartDataLabels],
                         options: {
-                            indexAxis: 'x',
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { display: false },
-                                datalabels: { anchor: 'end', align: 'top', color: '#fff', font: { weight: 'bold', size: 10 } }
-                            },
+                            indexAxis: 'x', responsive: true, maintainAspectRatio: false,
+                            plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'top', color: '#fff', font: { weight: 'bold', size: 10 } } },
                             scales: {
-                                x: {
-                                    title: { display: true, text: 'Type of vulnerability', color: '#666', font: { size: 10, weight: 'bold' } },
-                                    grid: { display: false },
-                                    ticks: { color: '#fff', font: { weight: '600', size: 10 } }
-                                },
-                                y: {
-                                    beginAtZero: true,
-                                    title: { display: true, text: 'No of Vulnerabilities', color: '#666', font: { size: 10, weight: 'bold' } },
-                                    grid: { color: 'rgba(255,255,255,0.05)' },
-                                    ticks: { color: '#666', stepSize: 1, precision: 0 }
-                                }
+                                x: { title: { display: true, text: 'Type of vulnerability', color: '#666', font: { size: 10, weight: 'bold' } }, grid: { display: false }, ticks: { color: '#fff', font: { weight: '600', size: 10 } } },
+                                y: { beginAtZero: true, title: { display: true, text: 'No of Vulnerabilities', color: '#666', font: { size: 10, weight: 'bold' } }, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#666', stepSize: 1, precision: 0 } }
                             }
                         }
                     });
                     document.getElementById('chart-loading').classList.add('hidden');
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="3" class="px-4 py-8 text-center text-neutral-600 italic">No vulnerabilities recorded yet.</td></tr>';
-                    document.getElementById('chart-loading').innerText = 'No data available for charting.';
                 }
 
                 organizationLogoBase64 = p.organizationLogo;
@@ -665,13 +691,8 @@
                 enabledFrameworks = p.owaspTop10 ? p.owaspTop10.split(',') : [];
                 selectedMethodImages = p.selectedMethodologyImages ? p.selectedMethodologyImages.split(',') : [];
                 
-                try {
-                    methodologyCustomImages = (p.methodologyImage && p.methodologyImage.trim()) ? JSON.parse(p.methodologyImage) : [];
-                } catch(e) { methodologyCustomImages = []; }
-                
-                try {
-                    if (p.severityDefinitions && p.severityDefinitions.trim()) severityMatrix = JSON.parse(p.severityDefinitions);
-                } catch(e) {}
+                try { methodologyCustomImages = (p.methodologyImage && p.methodologyImage.trim()) ? JSON.parse(p.methodologyImage) : []; } catch(e) { methodologyCustomImages = []; }
+                try { if (p.severityDefinitions && p.severityDefinitions.trim()) severityMatrix = JSON.parse(p.severityDefinitions); } catch(e) {}
                 
                 initFrameworks();
                 initMethodologyPool();
@@ -681,17 +702,9 @@
                 const radio = document.querySelector(`input[name="method-mode"][value="${mode}"]`);
                 if (radio) radio.checked = true;
 
-                ['branding', 'organization', 'disclaimer', 'methodology', 'conclusion', 'owasp', 'severity', 'risk'].forEach(s => {
-                    const check = document.getElementById(`check-${s}`);
-                    if (!check) return;
-                    const enabledKey = (s === 'risk') ? 'riskOverviewEnabled' : 
-                                       (s === 'organization') ? 'organizationDetailsEnabled' : 
-                                       (s === 'branding') ? 'brandingEnabled' : `${s}Enabled`;
-                    check.checked = (p[enabledKey] !== false);
-                    toggleTile(s);
-                    
+                ['disclaimer', 'executiveSummary', 'methodology', 'conclusion', 'risk'].forEach(s => {
                     const valArea = document.getElementById(`val-${s === 'risk' ? 'risk-summary' : s}`);
-                    if (valArea && s !== 'organization' && s !== 'branding') {
+                    if (valArea) {
                         const dataKey = s === 'risk' ? 'riskSummary' : s;
                         valArea.value = (p[dataKey] && p[dataKey].trim() !== "") ? p[dataKey] : (defaultTemplates[s] || "");
                     }
@@ -711,29 +724,31 @@
                 const methodModeEl = document.querySelector('input[name="method-mode"]:checked');
                 const methodMode = methodModeEl ? methodModeEl.value : 'BOTH';
                 const data = {
-                    brandingEnabled: document.getElementById('check-branding').checked,
+                    brandingEnabled: true,
                     organizationLogo: organizationLogoBase64,
                     clientLogo: clientLogoBase64,
-                    organizationDetailsEnabled: document.getElementById('check-organization').checked,
+                    organizationDetailsEnabled: true,
                     organizationName: document.getElementById('val-org-name').value,
                     organizationEmail: document.getElementById('val-org-email').value,
                     organizationPhone: document.getElementById('val-org-phone').value,
                     organizationAddress: document.getElementById('val-org-address').value,
                     reportApproverId: document.getElementById('val-report-approver').value || null,
-                    disclaimerEnabled: document.getElementById('check-disclaimer').checked,
+                    disclaimerEnabled: true,
                     disclaimer: document.getElementById('val-disclaimer').value,
-                    methodologyEnabled: document.getElementById('check-methodology').checked,
+                    executiveSummaryEnabled: true,
+                    executiveSummary: document.getElementById('val-executiveSummary').value,
+                    methodologyEnabled: true,
                     methodologyDisplayMode: methodMode,
                     methodology: document.getElementById('val-methodology').value,
                     methodologyImage: JSON.stringify(methodologyCustomImages),
                     selectedMethodologyImages: selectedMethodImages.join(','),
-                    owaspEnabled: document.getElementById('check-owasp').checked,
+                    owaspEnabled: true,
                     owaspTop10: enabledFrameworks.join(','),
-                    riskOverviewEnabled: document.getElementById('check-risk').checked,
+                    riskOverviewEnabled: true,
                     riskSummary: document.getElementById('val-risk-summary').value,
-                    severityEnabled: document.getElementById('check-severity').checked,
+                    severityEnabled: true,
                     severityDefinitions: JSON.stringify(severityMatrix),
-                    conclusionEnabled: document.getElementById('check-conclusion').checked,
+                    conclusionEnabled: true,
                     conclusion: document.getElementById('val-conclusion').value
                 };
                 const res = await fetch(`/api/pentests/${pentestId}/report-details`, {
