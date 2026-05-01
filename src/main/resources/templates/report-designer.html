@@ -83,34 +83,67 @@
             </div>
 
             <div class="space-y-12" id="tiles-container">
-                <!-- Tile 0: Client Logo -->
+                <!-- Tile 0: Client Details -->
                 <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-branding" data-id="branding">
                     <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('tile-branding')">
                         <div class="flex items-center gap-4">
                             <span class="material-symbols-outlined drag-handle" onclick="event.stopPropagation()">drag_indicator</span>
                             <span class="material-symbols-outlined text-primary text-3xl">branding_watermark</span>
-                            <h2 class="text-xl font-bold">Client Logo</h2>
+                            <h2 class="text-xl font-bold">Client Details</h2>
                         </div>
                         <span class="material-symbols-outlined collapse-icon">expand_more</span>
                     </div>
                     <div class="tile-content">
-                        <div class="flex flex-col items-center gap-4 p-6 bg-black/40 border border-neutral-800 rounded-lg max-w-md mx-auto">
-                            <div id="client-logo-placeholder" class="h-20 w-full flex items-center justify-center border-2 border-dashed border-neutral-800 text-neutral-700">
-                                <span class="material-symbols-outlined text-4xl">add_photo_alternate</span>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div class="space-y-4">
+                                <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Client Logo</p>
+                                <div class="flex flex-col items-center gap-4 p-6 bg-black/40 border border-neutral-800 rounded-lg">
+                                    <div id="client-logo-placeholder" class="h-20 w-full flex items-center justify-center border-2 border-dashed border-neutral-800 text-neutral-700">
+                                        <span class="material-symbols-outlined text-4xl">add_photo_alternate</span>
+                                    </div>
+                                    <img id="img-client-logo" src="" class="h-20 object-contain mb-2 hidden">
+                                    <button onclick="triggerLogoUpload('client')" class="w-full px-4 py-2 border border-neutral-700 text-[10px] font-bold uppercase hover:bg-white/5 transition-colors">Update Logo</button>
+                                </div>
                             </div>
-                            <img id="img-client-logo" src="" class="h-20 object-contain mb-2 hidden">
-                            <button onclick="triggerLogoUpload('client')" class="w-full px-4 py-2 border border-neutral-700 text-[10px] font-bold uppercase hover:bg-white/5 transition-colors">Update Client Logo</button>
+                            <div class="lg:col-span-2 space-y-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Client Name</label>
+                                        <input type="text" id="val-client-name" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">SPOC Name</label>
+                                        <input type="text" id="val-client-spoc-name" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">SPOC Contact</label>
+                                        <input type="text" id="val-client-spoc-contact" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
+                                    </div>
+                                </div>
+                                
+                                <div class="pt-6 border-t border-neutral-800 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Recipient Name (Submitted To)</label>
+                                        <input type="text" id="val-submitted-to-name" placeholder="e.g. Jinesh Savla" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Recipient Designation & Org</label>
+                                        <input type="text" id="val-submitted-to-designation" placeholder="e.g. CEO, KSL Limited" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
+                                    </div>
+                                </div>
+                                <p class="text-[9px] text-neutral-600 italic">* Values fetched from Pentest settings. Recipient details will appear on the cover page.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Tile 0.5: Organization Details -->
-                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-organization" data-id="organization">
+                <!-- Tile 0.5: Pentest Conducting Organization Details -->
+                <div class="tile-card p-8 rounded-xl shadow-2xl mb-12" id="tile-organization" data-id="organization">
                     <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('tile-organization')">
                         <div class="flex items-center gap-4">
                             <span class="material-symbols-outlined drag-handle" onclick="event.stopPropagation()">drag_indicator</span>
                             <span class="material-symbols-outlined text-primary text-3xl">corporate_fare</span>
-                            <h2 class="text-xl font-bold">Organization Details</h2>
+                            <h2 class="text-xl font-bold">Pentest Conducting Organization Details</h2>
                         </div>
                         <span class="material-symbols-outlined collapse-icon">expand_more</span>
                     </div>
@@ -133,6 +166,10 @@
                                     <div class="space-y-2">
                                         <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Organization Name</label>
                                         <input type="text" id="val-org-name" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Organization Legal Name</label>
+                                        <input type="text" id="val-org-legal-name" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
                                     </div>
                                     <div class="space-y-2">
                                         <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Official Email</label>
@@ -160,7 +197,7 @@
                 </div>
 
                 <!-- Tile 1: Disclaimer -->
-                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-disclaimer" data-id="disclaimer">
+                <div class="tile-card p-8 rounded-xl shadow-2xl mb-12" id="tile-disclaimer" data-id="disclaimer">
                     <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('tile-disclaimer')">
                         <div class="flex items-center gap-4">
                             <span class="material-symbols-outlined drag-handle" onclick="event.stopPropagation()">drag_indicator</span>
@@ -175,7 +212,7 @@
                 </div>
 
                 <!-- Tile 1.5: Executive Summary -->
-                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-executiveSummary" data-id="executiveSummary">
+                <div class="tile-card p-8 rounded-xl shadow-2xl mb-12" id="tile-executiveSummary" data-id="executiveSummary">
                     <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('tile-executiveSummary')">
                         <div class="flex items-center gap-4">
                             <span class="material-symbols-outlined drag-handle" onclick="event.stopPropagation()">drag_indicator</span>
@@ -190,7 +227,7 @@
                 </div>
 
                 <!-- Tile 2: Methodology -->
-                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-methodology" data-id="methodology">
+                <div class="tile-card p-8 rounded-xl shadow-2xl mb-12" id="tile-methodology" data-id="methodology">
                     <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('tile-methodology')">
                         <div class="flex items-center gap-4">
                             <span class="material-symbols-outlined drag-handle" onclick="event.stopPropagation()">drag_indicator</span>
@@ -237,7 +274,7 @@
                 </div>
 
                 <!-- Tile 3: Framework Intelligence -->
-                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-owasp" data-id="owasp">
+                <div class="tile-card p-8 rounded-xl shadow-2xl mb-12" id="tile-owasp" data-id="owasp">
                     <div class="tile-header flex justify-between items-center mb-8 text-white" onclick="toggleTile('tile-owasp')">
                         <div class="flex items-center gap-4">
                             <span class="material-symbols-outlined drag-handle" onclick="event.stopPropagation()">drag_indicator</span>
@@ -252,7 +289,7 @@
                 </div>
 
                 <!-- Tile 4: Severity Definitions -->
-                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-severity" data-id="severity">
+                <div class="tile-card p-8 rounded-xl shadow-2xl mb-12" id="tile-severity" data-id="severity">
                     <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('tile-severity')">
                         <div class="flex items-center gap-4">
                             <span class="material-symbols-outlined drag-handle" onclick="event.stopPropagation()">drag_indicator</span>
@@ -277,7 +314,7 @@
                 </div>
 
                 <!-- Tile 4.5: Risk Overview -->
-                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-risk" data-id="risk">
+                <div class="tile-card p-8 rounded-xl shadow-2xl mb-12" id="tile-risk" data-id="risk">
                     <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('tile-risk')">
                         <div class="flex items-center gap-4">
                             <span class="material-symbols-outlined drag-handle" onclick="event.stopPropagation()">drag_indicator</span>
@@ -288,9 +325,14 @@
                     </div>
                     
                     <div class="tile-content">
+                        <div class="mb-8 space-y-3">
+                            <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Executive Risk Summary (Editable)</p>
+                            <textarea id="val-risk-summary" rows="3" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-4 text-sm focus:border-primary outline-none transition-colors rounded-lg" placeholder="Autogenerated summary will appear here..."></textarea>
+                        </div>
+
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             <div class="space-y-4">
-                                <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Findings Summary</p>
+                                <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Vulnerabilities Summary</p>
                                 <div class="overflow-hidden border border-neutral-800 rounded-lg">
                                     <table class="w-full text-left text-[11px] border-collapse bg-black/20">
                                         <thead class="bg-neutral-900/50 border-b border-neutral-800 text-neutral-500 uppercase font-bold">
@@ -306,7 +348,7 @@
                             </div>
 
                             <div class="space-y-4">
-                                <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Severity Distribution</p>
+                                <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Threat Risk Overview</p>
                                 <div class="flex items-center justify-center p-6 bg-black/40 border border-neutral-800 rounded-lg min-h-[250px] relative">
                                     <div id="chart-loading" class="text-neutral-600 italic text-xs">Generating analytics...</div>
                                     <canvas id="risk-chart-canvas" class="max-h-[220px]"></canvas>
@@ -314,11 +356,10 @@
                             </div>
                         </div>
                     </div>
-                    <input type="hidden" id="val-risk-summary">
                 </div>
 
                 <!-- Tile 5: Conclusion -->
-                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-conclusion" data-id="conclusion">
+                <div class="tile-card p-8 rounded-xl shadow-2xl mb-12" id="tile-conclusion" data-id="conclusion">
                     <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('tile-conclusion')">
                         <div class="flex items-center gap-4">
                             <span class="material-symbols-outlined drag-handle" onclick="event.stopPropagation()">drag_indicator</span>
@@ -370,10 +411,23 @@
             document.getElementById('image-upload').click();
         }
 
-        function resetOrgLogo() {
-            organizationLogoBase64 = null;
-            document.getElementById('img-org-logo').src = '/images/logo.png';
-            document.getElementById('img-org-logo').classList.add('opacity-80');
+        async function resetOrgLogo() {
+            try {
+                const res = await fetch('/api/organization');
+                if (res.ok) {
+                    const globalOrg = await res.json();
+                    organizationLogoBase64 = globalOrg.logo;
+                    if (organizationLogoBase64) {
+                        document.getElementById('img-org-logo').src = organizationLogoBase64;
+                        document.getElementById('img-org-logo').classList.remove('opacity-80');
+                    } else {
+                        document.getElementById('img-org-logo').src = '/images/logo.png';
+                        document.getElementById('img-org-logo').classList.add('opacity-80');
+                    }
+                }
+            } catch (err) {
+                console.error('Reset logo error:', err);
+            }
         }
         
         const frameworks = [
@@ -399,7 +453,8 @@
             { level: 'Critical', color: 'error', impact: 'Immediate risk to critical infrastructure. Exploitation results in full system compromise.' },
             { level: 'High', color: 'orange-500', impact: 'Serious security flaw that could result in unauthorized access or data exposure.' },
             { level: 'Medium', color: 'primary', impact: 'Vulnerability that requires specific conditions to exploit. Potential for limited impact.' },
-            { level: 'Low', color: 'tertiary', impact: 'Minor security oversight with limited impact. Exploitation is difficult.' }
+            { level: 'Low', color: 'tertiary', impact: 'Minor security oversight with limited impact. Exploitation is difficult.' },
+            { level: 'Info', color: 'blue-500', impact: 'Informational observation. No immediate security risk but highlights best practices.' }
         ];
 
         function initFrameworks() {
@@ -659,11 +714,21 @@
                 organizationLogoBase64 = p.organizationLogo;
                 clientLogoBase64 = p.clientLogo;
 
+                // Client Details (Read-only labels)
+                document.getElementById('val-client-name').value = p.clientName || 'N/A';
+                document.getElementById('val-client-spoc-name').value = p.clientSpocName || 'N/A';
+                document.getElementById('val-client-spoc-contact').value = p.clientSpocContact || 'N/A';
+
+                // Submission Details
+                document.getElementById('val-submitted-to-name').value = p.submittedToName || '';
+                document.getElementById('val-submitted-to-designation').value = p.submittedToDesignation || '';
+
                 if (!p.organizationName) {
                     const orgRes = await fetch('/api/organization');
                     if (orgRes.ok) {
                         const globalOrg = await orgRes.json();
                         document.getElementById('val-org-name').value = globalOrg.name || '';
+                        document.getElementById('val-org-legal-name').value = globalOrg.legalName || '';
                         document.getElementById('val-org-email').value = globalOrg.email || '';
                         document.getElementById('val-org-phone').value = globalOrg.phone || '';
                         document.getElementById('val-org-address').value = globalOrg.address || '';
@@ -671,6 +736,7 @@
                     }
                 } else {
                     document.getElementById('val-org-name').value = p.organizationName || '';
+                    document.getElementById('val-org-legal-name').value = p.organizationLegalName || '';
                     document.getElementById('val-org-email').value = p.organizationEmail || '';
                     document.getElementById('val-org-phone').value = p.organizationPhone || '';
                     document.getElementById('val-org-address').value = p.organizationAddress || '';
@@ -692,7 +758,18 @@
                 selectedMethodImages = p.selectedMethodologyImages ? p.selectedMethodologyImages.split(',') : [];
                 
                 try { methodologyCustomImages = (p.methodologyImage && p.methodologyImage.trim()) ? JSON.parse(p.methodologyImage) : []; } catch(e) { methodologyCustomImages = []; }
-                try { if (p.severityDefinitions && p.severityDefinitions.trim()) severityMatrix = JSON.parse(p.severityDefinitions); } catch(e) {}
+                try { 
+                    if (p.severityDefinitions && p.severityDefinitions.trim()) {
+                        const savedMatrix = JSON.parse(p.severityDefinitions);
+                        // Merge saved matrix with defaults to ensure new levels like 'Info' are present
+                        severityMatrix.forEach((defaultSev, idx) => {
+                            const savedSev = savedMatrix.find(s => s.level === defaultSev.level);
+                            if (savedSev) {
+                                severityMatrix[idx].impact = savedSev.impact;
+                            }
+                        });
+                    }
+                } catch(e) {}
                 
                 initFrameworks();
                 initMethodologyPool();
@@ -706,7 +783,15 @@
                     const valArea = document.getElementById(`val-${s === 'risk' ? 'risk-summary' : s}`);
                     if (valArea) {
                         const dataKey = s === 'risk' ? 'riskSummary' : s;
-                        valArea.value = (p[dataKey] && p[dataKey].trim() !== "") ? p[dataKey] : (defaultTemplates[s] || "");
+                        let val = (p[dataKey] && p[dataKey].trim() !== "") ? p[dataKey] : (defaultTemplates[s] || "");
+                        
+                        // Autogenerate risk summary if it's the default or empty
+                        if (s === 'risk' && (val === "" || val === defaultTemplates.risk)) {
+                            const total = (p.vulnerabilities || []).length;
+                            const type = p.pentestType || 'target';
+                            val = `Overall, there were total ${total} Observations recorded by security auditors for above ${type} application, out of which ${counts['Critical']} Critical, ${counts['High']} High, ${counts['Medium']} Medium, ${counts['Low']} Low and ${counts['Informational']} Info observations were found.`;
+                        }
+                        valArea.value = val;
                     }
                 });
                 updateMethodMode();
@@ -723,15 +808,24 @@
                 saveBtn.innerText = 'SAVING...';
                 const methodModeEl = document.querySelector('input[name="method-mode"]:checked');
                 const methodMode = methodModeEl ? methodModeEl.value : 'BOTH';
+                const canvas = document.getElementById('risk-chart-canvas');
+                const chartImageBase64 = canvas ? canvas.toDataURL('image/png') : null;
+
                 const data = {
                     brandingEnabled: true,
                     organizationLogo: organizationLogoBase64,
                     clientLogo: clientLogoBase64,
+                    clientName: document.getElementById('val-client-name').value,
+                    clientSpocName: document.getElementById('val-client-spoc-name').value,
+                    clientSpocContact: document.getElementById('val-client-spoc-contact').value,
                     organizationDetailsEnabled: true,
                     organizationName: document.getElementById('val-org-name').value,
+                    organizationLegalName: document.getElementById('val-org-legal-name').value,
                     organizationEmail: document.getElementById('val-org-email').value,
                     organizationPhone: document.getElementById('val-org-phone').value,
                     organizationAddress: document.getElementById('val-org-address').value,
+                    submittedToName: document.getElementById('val-submitted-to-name').value,
+                    submittedToDesignation: document.getElementById('val-submitted-to-designation').value,
                     reportApproverId: document.getElementById('val-report-approver').value || null,
                     disclaimerEnabled: true,
                     disclaimer: document.getElementById('val-disclaimer').value,
@@ -746,6 +840,7 @@
                     owaspTop10: enabledFrameworks.join(','),
                     riskOverviewEnabled: true,
                     riskSummary: document.getElementById('val-risk-summary').value,
+                    riskOverviewChart: chartImageBase64,
                     severityEnabled: true,
                     severityDefinitions: JSON.stringify(severityMatrix),
                     conclusionEnabled: true,

@@ -45,6 +45,8 @@ public class ReportDataService {
         Map<String, Object> section1 = new LinkedHashMap<>();
         String projectName = hasValue(p.getPentestName()) ? p.getPentestName() : p.getApplicationName();
         section1.put("projectName", hasValue(projectName) ? projectName : "N/A");
+        section1.put("submittedToName", hasValue(p.getSubmittedToName()) ? p.getSubmittedToName() : "N/A");
+        section1.put("submittedToDesignation", hasValue(p.getSubmittedToDesignation()) ? p.getSubmittedToDesignation() : "N/A");
         section1.put("pentestType", hasValue(p.getPentestType()) ? p.getPentestType() : "N/A");
         section1.put("currentDateTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         masterPackage.put("section1", section1);
@@ -113,6 +115,7 @@ public class ReportDataService {
         Map<String, Object> section6 = new LinkedHashMap<>();
         section6.put("enabled", p.getOrganizationDetailsEnabled() != null ? p.getOrganizationDetailsEnabled() : true);
         section6.put("orgName", hasValue(p.getOrganizationName()) ? p.getOrganizationName() : "N/A");
+        section6.put("orgLegalName", hasValue(p.getOrganizationLegalName()) ? p.getOrganizationLegalName() : "N/A");
         section6.put("headquarterAddress", hasValue(p.getOrganizationAddress()) ? p.getOrganizationAddress() : "N/A");
         section6.put("officialEmail", hasValue(p.getOrganizationEmail()) ? p.getOrganizationEmail() : "N/A");
         section6.put("officialPhone", hasValue(p.getOrganizationPhone()) ? p.getOrganizationPhone() : "N/A");
@@ -178,6 +181,12 @@ public class ReportDataService {
         
         section8.put("riskOverviewEnabled", p.getRiskOverviewEnabled() != null ? p.getRiskOverviewEnabled() : true);
         section8.put("riskSummary", p.getRiskSummary() != null ? p.getRiskSummary() : "");
+        
+        if (hasValue(p.getRiskOverviewChart())) {
+            String chartId = "CHART_RISK_OVERVIEW";
+            imageLibrary.put(chartId, p.getRiskOverviewChart());
+            section8.put("riskChartImageId", chartId);
+        }
 
         List<Map<String, String>> summaryTable = new ArrayList<>();
         List<Vulnerability> vs = p.getVulnerabilities() != null ? p.getVulnerabilities() : new ArrayList<>();
@@ -196,9 +205,18 @@ public class ReportDataService {
 
         section8.put("severityEnabled", p.getSeverityEnabled() != null ? p.getSeverityEnabled() : true);
         try { 
-            section8.put("severityMatrix", hasValue(p.getSeverityDefinitions()) ? objectMapper.readValue(p.getSeverityDefinitions(), List.class) : new ArrayList<>()); 
+            List<Map<String, String>> matrix = hasValue(p.getSeverityDefinitions()) ? objectMapper.readValue(p.getSeverityDefinitions(), List.class) : new ArrayList<>();
+            Map<String, String> severityText = new LinkedHashMap<>();
+            for (Map<String, String> item : matrix) {
+                String level = item.get("level");
+                String impact = item.get("impact");
+                if (level != null && impact != null) {
+                    severityText.put(level.toUpperCase(), impact);
+                }
+            }
+            section8.put("severityMatrix", severityText); 
         } catch (Exception e) { 
-            section8.put("severityMatrix", new ArrayList<>()); 
+            section8.put("severityMatrix", new LinkedHashMap<>()); 
         }
         masterPackage.put("section8", section8);
 
