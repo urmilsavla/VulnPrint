@@ -43,22 +43,24 @@ public class ReportDataService {
 
         // --- SECTION 1: BASIC DETAILED ---
         Map<String, Object> section1 = new LinkedHashMap<>();
-        String projectName = (p.getPentestName() != null && !p.getPentestName().isEmpty()) ? p.getPentestName() : p.getApplicationName();
-        section1.put("projectName", projectName != null ? projectName : "N/A");
-        section1.put("pentestType", p.getPentestType() != null ? p.getPentestType() : "N/A");
+        String projectName = hasValue(p.getPentestName()) ? p.getPentestName() : p.getApplicationName();
+        section1.put("projectName", hasValue(projectName) ? projectName : "N/A");
+        section1.put("pentestType", hasValue(p.getPentestType()) ? p.getPentestType() : "N/A");
         section1.put("currentDateTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         masterPackage.put("section1", section1);
 
         // --- SECTION 2: DISCLAIMER ---
         Map<String, Object> section2 = new LinkedHashMap<>();
-        section2.put("disclaimer", p.getDisclaimer() != null ? p.getDisclaimer() : "");
+        section2.put("enabled", p.getDisclaimerEnabled() != null ? p.getDisclaimerEnabled() : true);
+        section2.put("disclaimer", hasValue(p.getDisclaimer()) ? p.getDisclaimer() : "");
         masterPackage.put("section2", section2);
 
         // --- SECTION 3: CLIENT DETAILS ---
         Map<String, Object> section3 = new LinkedHashMap<>();
-        section3.put("clientOrgName", p.getClientName() != null ? p.getClientName() : "N/A");
-        section3.put("clientSpocName", p.getClientSpocName() != null ? p.getClientSpocName() : "N/A");
-        section3.put("clientSpocContact", p.getClientSpocContact() != null ? p.getClientSpocContact() : "N/A");
+        section3.put("enabled", p.getBrandingEnabled() != null ? p.getBrandingEnabled() : true);
+        section3.put("clientOrgName", hasValue(p.getClientName()) ? p.getClientName() : "N/A");
+        section3.put("clientSpocName", hasValue(p.getClientSpocName()) ? p.getClientSpocName() : "N/A");
+        section3.put("clientSpocContact", hasValue(p.getClientSpocContact()) ? p.getClientSpocContact() : "N/A");
         if (hasValue(p.getClientLogo())) {
             String imgId = "LOGO_CLIENT";
             imageLibrary.put(imgId, p.getClientLogo());
@@ -68,8 +70,8 @@ public class ReportDataService {
 
         // --- SECTION 4: PROJECT DETAILS ---
         Map<String, Object> section4 = new LinkedHashMap<>();
-        section4.put("projectName", projectName != null ? projectName : "N/A");
-        section4.put("pentestType", p.getPentestType() != null ? p.getPentestType() : "N/A");
+        section4.put("projectName", hasValue(projectName) ? projectName : "N/A");
+        section4.put("pentestType", hasValue(p.getPentestType()) ? p.getPentestType() : "N/A");
         section4.put("projectInitiationDate", p.getCreatedDate() != null ? p.getCreatedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) : "N/A");
         
         String riskIndexValue = calculateRiskIndex(p.getVulnerabilities());
@@ -109,9 +111,11 @@ public class ReportDataService {
 
         // --- SECTION 6: PENTESTING ORG DETAILS ---
         Map<String, Object> section6 = new LinkedHashMap<>();
-        section6.put("orgName", p.getOrganizationName() != null ? p.getOrganizationName() : "N/A");
-        section6.put("headquarterAddress", p.getOrganizationAddress() != null ? p.getOrganizationAddress() : "N/A");
-        section6.put("officialEmail", p.getOrganizationEmail() != null ? p.getOrganizationEmail() : "N/A");
+        section6.put("enabled", p.getOrganizationDetailsEnabled() != null ? p.getOrganizationDetailsEnabled() : true);
+        section6.put("orgName", hasValue(p.getOrganizationName()) ? p.getOrganizationName() : "N/A");
+        section6.put("headquarterAddress", hasValue(p.getOrganizationAddress()) ? p.getOrganizationAddress() : "N/A");
+        section6.put("officialEmail", hasValue(p.getOrganizationEmail()) ? p.getOrganizationEmail() : "N/A");
+        section6.put("officialPhone", hasValue(p.getOrganizationPhone()) ? p.getOrganizationPhone() : "N/A");
         if (hasValue(p.getOrganizationLogo())) {
             String imgId = "LOGO_ORG";
             imageLibrary.put(imgId, p.getOrganizationLogo());
@@ -121,6 +125,8 @@ public class ReportDataService {
 
         // --- SECTION 7: PENTEST METHODOLOGY ---
         Map<String, Object> section7 = new LinkedHashMap<>();
+        section7.put("enabled", p.getMethodologyEnabled() != null ? p.getMethodologyEnabled() : true);
+        section7.put("methodologyDisplayMode", p.getMethodologyDisplayMode() != null ? p.getMethodologyDisplayMode() : "BOTH");
         section7.put("methodologyText", p.getMethodology() != null ? p.getMethodology() : "");
         List<String> methImgIds = new ArrayList<>();
         if (hasValue(p.getSelectedMethodologyImages())) {
@@ -148,13 +154,31 @@ public class ReportDataService {
             }
         }
         section7.put("methodologyImageIds", methImgIds);
-        section7.put("selectedFramework", p.getSelectedOwaspCategories() != null ? Arrays.asList(p.getSelectedOwaspCategories().split("\\|\\|")) : new ArrayList<>());
+        
+        // --- FRAMEWORK CONSOLIDATION ---
+        // UI saves to owaspTop10 (comma separated IDs), while historical data might use selectedOwaspCategories (|| separated)
+        section7.put("frameworkEnabled", p.getOwaspEnabled() != null ? p.getOwaspEnabled() : true);
+        String frameworkData = hasValue(p.getSelectedOwaspCategories()) ? p.getSelectedOwaspCategories() : p.getOwaspTop10();
+        List<Map<String, Object>> frameworkList = new ArrayList<>();
+        if (hasValue(frameworkData)) {
+            String[] parts = frameworkData.contains("||") ? frameworkData.split("\\|\\|") : frameworkData.split(",");
+            for (String part : parts) {
+                if (hasValue(part)) {
+                    frameworkList.add(resolveFrameworkDetails(part.trim()));
+                }
+            }
+        }
+        section7.put("selectedFramework", frameworkList);
         masterPackage.put("section7", section7);
 
         // --- SECTION 8: PENTEST SUMMARY ---
         Map<String, Object> section8 = new LinkedHashMap<>();
+        section8.put("executiveSummaryEnabled", p.getExecutiveSummaryEnabled() != null ? p.getExecutiveSummaryEnabled() : true);
         section8.put("executiveSummary", p.getExecutiveSummary() != null ? p.getExecutiveSummary() : "");
         
+        section8.put("riskOverviewEnabled", p.getRiskOverviewEnabled() != null ? p.getRiskOverviewEnabled() : true);
+        section8.put("riskSummary", p.getRiskSummary() != null ? p.getRiskSummary() : "");
+
         List<Map<String, String>> summaryTable = new ArrayList<>();
         List<Vulnerability> vs = p.getVulnerabilities() != null ? p.getVulnerabilities() : new ArrayList<>();
         for (Vulnerability v : vs) {
@@ -170,6 +194,7 @@ public class ReportDataService {
             "INFO", vs.stream().filter(v -> "Info".equalsIgnoreCase(v.getSeverity()) || "Informational".equalsIgnoreCase(v.getSeverity())).count()
         ));
 
+        section8.put("severityEnabled", p.getSeverityEnabled() != null ? p.getSeverityEnabled() : true);
         try { 
             section8.put("severityMatrix", hasValue(p.getSeverityDefinitions()) ? objectMapper.readValue(p.getSeverityDefinitions(), List.class) : new ArrayList<>()); 
         } catch (Exception e) { 
@@ -236,7 +261,10 @@ public class ReportDataService {
         masterPackage.put("section9", Map.of("vulnerabilities", findings));
 
         // --- SECTION 10: CONCLUSION ---
-        masterPackage.put("section10", Map.of("conclusion", p.getConclusion() != null ? p.getConclusion() : ""));
+        Map<String, Object> section10 = new LinkedHashMap<>();
+        section10.put("enabled", p.getConclusionEnabled() != null ? p.getConclusionEnabled() : true);
+        section10.put("conclusion", p.getConclusion() != null ? p.getConclusion() : "");
+        masterPackage.put("section10", section10);
 
         // Global Image Library
         masterPackage.put("imageLibrary", imageLibrary);
@@ -290,5 +318,31 @@ public class ReportDataService {
             byte[] bytes = resource.getInputStream().readAllBytes();
             return "data:image/png;base64," + Base64.getEncoder().encodeToString(bytes);
         } catch (IOException e) { return null; }
+    }
+
+    private Map<String, Object> resolveFrameworkDetails(String id) {
+        Map<String, List<String>> frameworkItems = Map.of(
+            "web", List.of("A01:2021 – Broken Access Control", "A02:2021 – Cryptographic Failures", "A03:2021 – Injection", "A04:2021 – Insecure Design", "A05:2021 – Security Misconfiguration", "A06:2021 – Vulnerable and Outdated Components", "A07:2021 – Identification and Authentication Failures", "A08:2021 – Software and Data Integrity Failures", "A09:2021 – Security Logging and Monitoring Failures", "A10:2021 – Server-Side Request Forgery (SSRF)"),
+            "api", List.of("API1:2023 – Broken Object Level Authorization (BOLA)", "API2:2023 – Broken Authentication", "API3:2023 – Broken Object Property Level Authorization", "API4:2023 – Unrestricted Resource Consumption", "API5:2023 – Broken Function Level Authorization", "API6:2023 – Unrestricted Access to Sensitive Business Flows", "API7:2023 – Server-Side Request Forgery (SSRF)", "API8:2023 – Security Misconfiguration", "API9:2023 – Improper Inventory Management", "API10:2023 – Unsafe Consumption of APIs"),
+            "mobile", List.of("M1 – Improper Credential Usage", "M2 – Inadequate Supply Chain Security", "M3 – Insecure Authentication/Authorization", "M4 – Insufficient Input/Output Validation", "M5 – Insecure Communication", "M6 – Inadequate Privacy Controls", "M7 – Insufficient Binary Protections", "M8 – Security Misconfiguration", "M9 – Insecure Data Storage", "M10 – Insufficient Cryptography"),
+            "ai", List.of("LLM01 – Prompt Injection", "LLM02 – Insecure Output Handling", "LLM03 – Training Data Poisoning", "LLM04 – Model Denial of Service", "LLM05 – Supply Chain Vulnerabilities", "LLM06 – Sensitive Information Disclosure", "LLM07 – Insecure Plugin Design", "LLM08 – Excessive Agency", "LLM09 – Overreliance", "LLM10 – Model Theft"),
+            "infra", List.of("ISR01 – Outdated/Unpatched Software", "ISR02 – Insufficient Threat Detection & Response", "ISR03 – Insecure System Configurations", "ISR04 – Insecure Identity & Access Management (IAM)", "ISR05 – Insecure Use of Cryptography (Weak Ciphers)", "ISR06 – Insecure Network Segregation", "ISR07 – Default Credentials & Weak Auth", "ISR08 – Information Leakage via Metadata/Logs", "ISR09 – Insecure Remote Management (SSH/RDP)", "ISR10 – Insufficient Asset Inventory"),
+            "code", List.of("CWE-79 – Cross-Site Scripting (XSS)", "CWE-787 – Out-of-bounds Write", "CWE-89 – SQL Injection", "CWE-862 – Missing Authorization", "CWE-20 – Improper Input Validation", "CWE-125 – Out-of-bounds Read", "CWE-416 – Use After Free", "CWE-352 – Cross-Site Request Forgery (CSRF)", "CWE-22 – Path Traversal", "CWE-476 – Null Pointer Dereference", "CWE-94 – Code Injection", "CWE-78 – OS Command Injection", "CWE-502 – Deserialization of Untrusted Data", "CWE-269 – Improper Privilege Management", "CWE-306 – Missing Authentication", "CWE-362 – Race Condition", "CWE-400 – Uncontrolled Resource Consumption", "CWE-611 – Improper Restriction of XML External Entity Reference (XXE)", "CWE-732 – Incorrect Permission Assignment for Critical Resource", "CWE-295 – Improper Certificate Validation", "CWE-312 – Cleartext Storage of Sensitive Information", "CWE-327 – Use of a Broken or Risky Cryptographic Algorithm", "CWE-522 – Insufficiently Protected Credentials", "CWE-601 – Open Redirect", "CWE-770 – Allocation of Resources Without Limits")
+        );
+
+        Map<String, String> titles = Map.of(
+            "web", "Web Application Security Risks (OWASP Top 10: 2021)",
+            "api", "API Security Risks (OWASP Top 10: 2023)",
+            "mobile", "Mobile Application Security Risks (OWASP Top 10: 2024)",
+            "ai", "LLM & GenAI Security Risks (OWASP Top 10: 2025 Update)",
+            "infra", "Infrastructure Security (Modern Enterprise Risks)",
+            "code", "Code Review/SAST (CWE Top 25: 2025)"
+        );
+
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("id", id);
+        details.put("title", titles.getOrDefault(id, id));
+        details.put("items", frameworkItems.getOrDefault(id, new ArrayList<>()));
+        return details;
     }
 }

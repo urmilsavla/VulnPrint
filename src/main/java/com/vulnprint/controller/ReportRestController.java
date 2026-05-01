@@ -36,11 +36,15 @@ public class ReportRestController {
         }
     }
 
-    @GetMapping("/master-data/v2/{pentestId}")
+    @GetMapping("/master-api/{pentestId}")
     public ResponseEntity<?> getMasterReportDataV2(@PathVariable Long pentestId) {
         try {
             Map<String, Object> data = reportDataService.getMasterReportDataV2(pentestId);
-            return ResponseEntity.ok(data);
+            return ResponseEntity.ok()
+                    .header("Cache-Control", "no-cache, no-store, must-revalidate")
+                    .header("Pragma", "no-cache")
+                    .header("Expires", "0")
+                    .body(data);
         } catch (RuntimeException e) {
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());

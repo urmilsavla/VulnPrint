@@ -76,8 +76,8 @@ public class ViewController {
         return "report-designer";
     }
 
-    @GetMapping("/report-mapping-docs")
-    public String reportMappingDocs() {
+    @GetMapping("/template-guide")
+    public String templateGuide() {
         return "report-mapping-docs";
     }
 
