@@ -1,16 +1,34 @@
 openapi: 3.0.3
 info:
-  title: VulnPrint API Documentation
-  description: API documentation for VulnPrint, a vulnerable web application for pentest reporting.
-  version: 1.0.0
+  title: VulnPrint API Registry
+  description: Professional API documentation for the VulnPrint Pentest Management Platform.
+  version: 1.1.0
+  contact:
+    name: System Administrator
 servers:
   - url: http://localhost:8080
-    description: Local development server
+    description: Local Development Node
+
+tags:
+  - name: Authentication
+    description: Authorization and session management
+  - name: Dashboard
+    description: High-level metrics and project summaries
+  - name: Pentest
+    description: Management of security audit nodes
+  - name: Vulnerability
+    description: Documentation of technical security findings
+  - name: Organization
+    description: Global identity and branding configuration
+  - name: User
+    description: System user and role management
+  - name: Report
+    description: Consolidated data packages for generation
 
 paths:
   /api/auth/login:
     post:
-      summary: Login a user
+      summary: Initialize Authorization
       tags:
         - Authentication
       requestBody:
@@ -26,75 +44,30 @@ paths:
                   type: string
       responses:
         '200':
-          description: Login successful
+          description: Access Granted
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  token:
-                    type: string
-                    description: Username used as token
-                  email:
-                    type: string
-                  firstName:
-                    type: string
-                  lastName:
-                    type: string
-                  role:
-                    type: string
-                  profileImage:
-                    type: string
-                  message:
-                    type: string
+                $ref: '#/components/schemas/AuthResponse'
         '401':
-          description: Invalid credentials
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+          description: Access Denied
 
   /api/dashboard/metrics:
     get:
-      summary: Get dashboard metrics
+      summary: Retrieve System-Wide Metrics
       tags:
         - Dashboard
       responses:
         '200':
-          description: Successful response
+          description: Aggregated security data
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  totalPentests:
-                    type: integer
-                  totalVulnerabilities:
-                    type: integer
-                  critical:
-                    type: integer
-                  high:
-                    type: integer
-                  medium:
-                    type: integer
-                  low:
-                    type: integer
-                  info:
-                    type: integer
-                  globalRiskScore:
-                    type: string
+                $ref: '#/components/schemas/DashboardMetrics'
 
   /api/dashboard/pentests:
     get:
-      summary: Get enriched list of pentests
+      summary: List Project Nodes
       tags:
         - Dashboard
       parameters:
@@ -102,7 +75,7 @@ paths:
           in: query
           schema:
             type: string
-          description: Filter by pentest type (Web, Mobile, etc.)
+          description: Filter by Pentest Category
         - name: page
           in: query
           schema:
@@ -115,66 +88,11 @@ paths:
             default: 3
       responses:
         '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: integer
-                    pentestName:
-                      type: string
-                    applicationName:
-                      type: string
-                    clientName:
-                      type: string
-                    clientSpocName:
-                      type: string
-                    clientSpocContact:
-                      type: string
-                    pentestType:
-                      type: string
-                    target:
-                      type: string
-                    url:
-                      type: string
-                    apiDomain:
-                      type: string
-                    ipRanges:
-                      type: string
-                    createdDate:
-                      type: string
-                      format: date-time
-                    lastModifiedDate:
-                      type: string
-                      format: date-time
-                    status:
-                      type: string
-                    assignedPentesters:
-                      type: array
-                      items:
-                        $ref: '#/components/schemas/User'
-                    lastModifiedTimeAgo:
-                      type: string
-                    critical:
-                      type: integer
-                    high:
-                      type: integer
-                    medium:
-                      type: integer
-                    low:
-                      type: integer
-                    info:
-                      type: integer
-                    riskIndex:
-                      type: string
+          description: Enriched project list
 
   /api/pentests:
     post:
-      summary: Create a new pentest
+      summary: Register New Pentest Node
       tags:
         - Pentest
       requestBody:
@@ -185,15 +103,11 @@ paths:
               $ref: '#/components/schemas/Pentest'
       responses:
         '200':
-          description: Pentest created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Pentest'
+          description: Node Initialized
 
   /api/pentests/{id}:
     get:
-      summary: Get a pentest by ID
+      summary: Retrieve Node Attributes
       tags:
         - Pentest
       parameters:
@@ -204,58 +118,11 @@ paths:
             type: integer
       responses:
         '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Pentest'
-        '404':
-          description: Pentest not found
-    delete:
-      summary: Delete a pentest by ID
-      tags:
-        - Pentest
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Pentest deleted
-        '404':
-          description: Pentest not found
-
-  /api/pentests/{id}/status:
-    patch:
-      summary: Update pentest status
-      tags:
-        - Pentest
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                status:
-                  type: string
-      responses:
-        '200':
-          description: Status updated
-        '404':
-          description: Pentest not found
+          description: Project metadata
 
   /api/pentests/{id}/report-details:
     put:
-      summary: Update report designer details
+      summary: Synchronize Report Design Attributes
       tags:
         - Pentest
       parameters:
@@ -269,158 +136,51 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                disclaimerEnabled:
-                  type: boolean
-                disclaimer:
-                  type: string
-                methodologyEnabled:
-                  type: boolean
-                methodologyDisplayMode:
-                  type: string
-                  enum: [TEXT_ONLY, IMAGE_ONLY, BOTH]
-                methodology:
-                  type: string
-                methodologyImage:
-                  type: string
-                  description: JSON string containing array of Base64 custom images
-                selectedMethodologyImages:
-                  type: string
-                  description: Comma-separated IDs of selected pool images
-                owaspEnabled:
-                  type: boolean
-                owaspTop10:
-                  type: string
-                  description: Comma-separated IDs of enabled frameworks
-                selectedOwaspCategories:
-                  type: string
-                  description: Double-pipe (||) separated framework item strings
-                riskOverviewEnabled:
-                  type: boolean
-                riskSummary:
-                  type: string
-                severityEnabled:
-                  type: boolean
-                severityDefinitions:
-                  type: string
-                  description: JSON string containing severity levels and impact criteria
-                conclusionEnabled:
-                  type: boolean
-                conclusion:
-                  type: string
+              $ref: '#/components/schemas/ReportDetails'
       responses:
         '200':
-          description: Report details updated
-        '404':
-          description: Pentest not found
+          description: Configuration updated
 
-  /api/reports/master-data/{pentestId}:
+  /api/organization:
     get:
-      summary: Get all data for a report in a single consolidated package
+      summary: Retrieve Global Branding
       tags:
-        - Report
+        - Organization
+      responses:
+        '200':
+          description: Master organizational data
+    put:
+      summary: Update Master Branding
+      tags:
+        - Organization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Organization'
+      responses:
+        '200':
+          description: Branding synchronized
+
+  /api/users/profile/{username}:
+    get:
+      summary: Retrieve Operator Profile
+      tags:
+        - User
       parameters:
-        - name: pentestId
+        - name: username
           in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Successful consolidated data package
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  assessmentMetadata:
-                    type: object
-                  reportConfiguration:
-                    type: object
-                  securityFindings:
-                    type: array
-                    items:
-                      type: object
-        '404':
-          description: Pentest not found
-
-  /api/users:
-    get:
-      summary: Get all users
-      tags:
-        - User
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-
-  /api/users/profile:
-    get:
-      summary: Get user profile by email
-      tags:
-        - User
-      parameters:
-        - name: email
-          in: query
           required: true
           schema:
             type: string
       responses:
         '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-    put:
-      summary: Update user profile
-      tags:
-        - User
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                firstName:
-                  type: string
-                lastName:
-                  type: string
-                address:
-                  type: string
-                qualification:
-                  type: string
-                profileImage:
-                  type: string
-      responses:
-        '200':
-          description: Profile updated
-
-  /api/users/register:
-    post:
-      summary: Register a new user
-      tags:
-        - User
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        '200':
-          description: User created successfully
+          description: User attributes
 
   /api/vulnerabilities:
     post:
-      summary: Create a new vulnerability
+      summary: Register Security Finding
       tags:
         - Vulnerability
       requestBody:
@@ -431,240 +191,75 @@ paths:
               $ref: '#/components/schemas/Vulnerability'
       responses:
         '200':
-          description: Vulnerability created
-
-  /api/vulnerabilities/{id}:
-    get:
-      summary: Get vulnerability by ID
-      tags:
-        - Vulnerability
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Vulnerability'
-    put:
-      summary: Update vulnerability by ID
-      tags:
-        - Vulnerability
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Vulnerability'
-      responses:
-        '200':
-          description: Vulnerability updated
-    delete:
-      summary: Delete vulnerability by ID
-      tags:
-        - Vulnerability
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Vulnerability deleted
+          description: Finding synced
 
 components:
   schemas:
+    AuthResponse:
+      type: object
+      properties:
+        status: { type: string }
+        token: { type: string }
+        email: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
+        role: { type: string }
+        profileImage: { type: string }
+
+    DashboardMetrics:
+      type: object
+      properties:
+        totalPentests: { type: integer }
+        totalVulnerabilities: { type: integer }
+        critical: { type: integer }
+        high: { type: integer }
+        medium: { type: integer }
+        low: { type: integer }
+        info: { type: integer }
+        globalRiskScore: { type: string }
+
     User:
       type: object
       properties:
-        id:
-          type: integer
-        username:
-          type: string
-        password:
-          type: string
-          writeOnly: true
-        email:
-          type: string
-        firstName:
-          type: string
-        lastName:
-          type: string
-        role:
-          type: string
-        address:
-          type: string
-        qualification:
-          type: string
-        profileImage:
-          type: string
+        id: { type: integer }
+        username: { type: string }
+        email: { type: string }
+        role: { type: string }
+
+    Organization:
+      type: object
+      properties:
+        name: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        address: { type: string }
+        logo: { type: string }
 
     Pentest:
       type: object
       properties:
-        id:
-          type: integer
-        applicationName:
-          type: string
-        pentestName:
-          type: string
-        clientName:
-          type: string
-        clientSpocName:
-          type: string
-        clientSpocContact:
-          type: string
-        target:
-          type: string
-        pentestType:
-          type: string
-          enum: [Web, Mobile, API, Network, Source Code]
-        createdDate:
-          type: string
-          format: date-time
-        lastModifiedDate:
-          type: string
-          format: date-time
-        status:
-          type: string
-        assignedPentesters:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        url:
-          type: string
-        osType:
-          type: string
-        apiDomain:
-          type: string
-        ipRanges:
-          type: string
-        zipHash:
-          type: string
-        version:
-          type: string
-        techStack:
-          type: string
-        packageName:
-          type: string
-        apiType:
-          type: string
-        targetType:
-          type: string
-        repoUrl:
-          type: string
-        branchName:
-          type: string
-        language:
-          type: string
-        disclaimerEnabled:
-          type: boolean
-        disclaimer:
-          type: string
-        methodologyEnabled:
-          type: boolean
-        methodologyDisplayMode:
-          type: string
-        methodology:
-          type: string
-        methodologyImage:
-          type: string
-        selectedMethodologyImages:
-          type: string
-        owaspEnabled:
-          type: boolean
-        owaspTop10:
-          type: string
-        selectedOwaspCategories:
-          type: string
-        riskOverviewEnabled:
-          type: boolean
-        riskSummary:
-          type: string
-        severityEnabled:
-          type: boolean
-        severityDefinitions:
-          type: string
-        conclusionEnabled:
-          type: boolean
-        conclusion:
-          type: string
-        vulnerabilities:
-          type: array
-          items:
-            $ref: '#/components/schemas/Vulnerability'
+        id: { type: integer }
+        pentestName: { type: string }
+        clientName: { type: string }
+        pentestType: { type: string }
+        status: { type: string }
 
     Vulnerability:
       type: object
       properties:
-        id:
-          type: integer
-        title:
-          type: string
-        cweReference:
-          type: string
-        owasp:
-          type: string
-        description:
-          type: string
-        impact:
-          type: string
-        mitigation:
-          type: string
-        cvssScore:
-          type: number
-        cvssVector:
-          type: string
-        severity:
-          type: string
-        status:
-          type: string
-        evidenceMode:
-          type: string
-          enum: [STEPS, REQRES, SOURCE]
-        requestResponse:
-          type: string
-        fileName:
-          type: string
-        lineNumber:
-          type: string
-        codeSnippet:
-          type: string
-        steps:
-          type: array
-          items:
-            $ref: '#/components/schemas/VulnerabilityStep'
+        id: { type: integer }
+        title: { type: string }
+        severity: { type: string }
+        cvssScore: { type: number }
+        cvssVector: { type: string }
+        evidenceMode: { type: string, enum: [STEPS, REQRES, SOURCE] }
 
-    VulnerabilityStep:
+    ReportDetails:
       type: object
       properties:
-        id:
-          type: integer
-        stepNumber:
-          type: integer
-        description:
-          type: string
-        request:
-          type: string
-        response:
-          type: string
-        fileName:
-          type: string
-        lineNumber:
-          type: string
-        imagePaths:
-          type: array
-          items:
-            type: string
+        disclaimerEnabled: { type: boolean }
+        methodologyEnabled: { type: boolean }
+        methodologyDisplayMode: { type: string }
+        owaspEnabled: { type: boolean }
+        riskOverviewEnabled: { type: boolean }
+        conclusionEnabled: { type: boolean }

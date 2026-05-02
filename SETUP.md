@@ -1,62 +1,49 @@
-# Setup Guide: Running VulnPrint from Scratch
+# Setup Guide: VulnPrint Deployment
 
 Follow these steps to get the VulnPrint project up and running on your local machine.
 
 ## 1. Prerequisites
 Ensure you have the following installed:
-- **Java Development Kit (JDK) 17** or higher.
-- **Apache Maven 3.8+** (or use the provided `./mvnw` wrapper).
-- **PostgreSQL 15+**.
-- **Git** (for cloning the repository).
+- **Java Development Kit (JDK) 17**
+- **Maven 3.8+**
+- **PostgreSQL 14+**
+- **Git**
 
 ## 2. Database Configuration
-1. **Start PostgreSQL:** Ensure your PostgreSQL server is active.
-2. **Create Database:** Open your terminal or a tool like `pgAdmin` and create a new database named `vulnprint`:
-   ```sql
-   CREATE DATABASE vulnprint;
-   ```
-3. **Create User:** Create a dedicated user for the application (matches default project settings):
-   ```sql
-   CREATE USER vulnuser WITH PASSWORD 'vulnpassword';
-   GRANT ALL PRIVILEGES ON DATABASE vulnprint TO vulnuser;
+1. Create a new PostgreSQL database named `vulnprint`.
+2. Create a user `vulnuser` with password `vulnpassword`.
+3. Update `src/main/resources/application.properties` if you wish to use different credentials.
+   ```properties
+   spring.datasource.url=jdbc:postgresql://localhost:5432/vulnprint?options=-c%20timezone=UTC
+   spring.datasource.username=vulnuser
+   spring.datasource.password=vulnpassword
    ```
 
-## 3. Application Properties
-Open `src/main/resources/application.properties` and verify the settings:
-- **Datasource URL:** `jdbc:postgresql://localhost:5432/vulnprint?options=-c%20timezone=UTC`
-- **Credentials:** Username `vulnuser` and Password `vulnpassword`.
-- **Timezone:** It is critical that the database connection uses `UTC` to prevent startup errors.
-
-## 4. Build and Run
-Navigate to the project root directory and execute:
-
-### Using Maven Wrapper (Recommended)
-**Windows:**
-```cmd
-mvnw.cmd clean install
-mvnw.cmd spring-boot:run
-```
-
-**Linux/macOS:**
+## 3. Clone and Initialize
 ```bash
-./mvnw clean install
-./mvnw spring-boot:run
+git clone <repository-url>
+cd VulnPrint
 ```
 
-## 5. Access the Application
-- **Frontend UI:** Open your browser and go to `http://localhost:8080/`.
-- **Initial Login:** Use the credentials seeded by `DataInitializer.java`:
-  - **Username:** `admin`
-  - **Password:** `admin123`
-- **API Documentation:** View the Swagger UI at `http://localhost:8080/swagger.html`.
-
-## 6. (Optional) Using Docker
-If you prefer Docker, you can start the database using the provided `docker-compose.yml`:
+## 4. Run the Application
+You can start the server using Maven:
 ```bash
-docker-compose up -d
+mvn spring-boot:run
 ```
-Then run the Spring Boot application locally.
+The application will be accessible at `http://localhost:8080`.
+
+## 5. Initial Access
+- **Default Login:** Use the credentials established by the `DataInitializer` (typically `admin` / `password123`).
+- **Authorization Node:** The login screen provides secure entry into the platform.
+
+## 6. Project Structure
+- `/dashboard`: High-level metrics and active project nodes.
+- `/pentest/add`: Initialize new security audit nodes.
+- `/user-management`: System-wide user and role configuration.
+- `/organization-settings`: Global reporting identity management.
+- `/template-guide`: API mapping reference for report designers.
 
 ## Troubleshooting
-- **Port Conflict:** If port `8080` is already in use, change `server.port` in `application.properties`.
-- **Timezone Error:** If you see `FATAL: invalid value for parameter "TimeZone"`, ensure the connection URL includes `?options=-c%20timezone=UTC`.
+- **Port Conflict:** If port `8080` is in use, change `server.port` in `application.properties`.
+- **Timezone Errors:** Ensure the PostgreSQL connection string includes `?options=-c%20timezone=UTC`.
+- **Upload Limits:** Max file size is configured to 50MB for evidence captures.

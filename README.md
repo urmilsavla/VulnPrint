@@ -1,24 +1,28 @@
 # VulnPrint
 
-VulnPrint is a modern, high-performance pentest reporting and management platform designed for security professionals. This project features a robust Spring Boot backend, a dynamic Thymeleaf/Tailwind CSS frontend, and integrated (intentional) vulnerabilities for educational and testing purposes.
+VulnPrint is a modern, high-performance pentest reporting and management platform designed for security professionals. It features a robust Spring Boot backend, a sleek "Security Terminal" themed frontend, and integrated report design capabilities.
 
 ## Key Features
-- **Project Registry:** Manage Web, Mobile, API, Infrastructure, and Source Code pentests.
-- **Vulnerability Matrix:** Dynamic tracking of findings with CVSS v3.1 scoring and automated risk index calculation.
-- **Evidence Management:** Seamless intake of reproduction steps and POC images.
-- **Real-time Metrics:** Global and project-specific risk scoring.
-- **System Alerts:** Integrated notification system (supports intentional XSS testing).
+- **Sleek Tiled UI:** A consistent, high-tech interface with interactive, collapsible tiles and neon-green accents.
+- **Project Lifecycle Management:** Track assessments from initialization to completion across various categories (Web, Mobile, API, Network, Source Code).
+- **Vulnerability Registry:** Detailed documentation of findings with support for reproduction steps, request/response captures, and source code context.
+- **Automated CVSS v3.1:** Integrated calculator for real-time risk scoring and vector generation.
+- **Report Designer:** Modular, drag-and-drop report customization including legal disclaimers, methodology selection, and analytics visualization.
+- **API Mapping Registry:** Comprehensive documentation for template tags and dynamic data mapping.
+- **Administrative Suite:** Manage users, roles, and global organizational branding.
 
-## Technical Stack
-- **Backend:** Java 17, Spring Boot 3.2.4, Spring Data JPA.
-- **Database:** PostgreSQL.
-- **Frontend:** HTML5, Thymeleaf, Tailwind CSS, JavaScript.
-- **API:** RESTful architecture with integrated Swagger documentation.
+## Architecture
+- **Backend:** Spring Boot (Java 17), Spring Data JPA, Hibernate.
+- **Database:** PostgreSQL (with UTC timezone enforcement).
+- **Frontend:** Thymeleaf templates, Tailwind CSS, Vanilla JavaScript, Chart.js, SortableJS.
+- **UI System:** "Cyber-Industrial Terminal" aesthetic with charcoal surfaces (`#0e0e0e`) and neon primary accents (`#4FFE49`).
 
-## Security Note
-This application is **intentionally vulnerable** to specific security flaws (e.g., SQL Injection, XSS, Path Traversal) to facilitate security training and tool testing. It is intended for use in controlled, authorized environments only.
+## Documentation
+- **API Guide:** Accessible via `/swagger.html` when the server is running.
+- **Template Mapping:** Comprehensive documentation available at `/template-guide`.
 
-## Setup
-1. Configure your PostgreSQL instance in `src/main/resources/application.properties`.
-2. Ensure the database timezone is set to `UTC`.
-3. Run the application using Maven: `./mvnw spring-boot:run`.
+## Security Warning
+This application is designed for security professionals to manage authorized pentest data. Ensure it is deployed in controlled, authorized environments only.
+
+## License
+MIT License - See the project repository for details.
