@@ -5,114 +5,101 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>VulnPrint | My Profile</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-    <style>
-        .material-symbols-outlined {
-            font-family: 'Material Symbols Outlined' !important;
-            font-weight: normal;
-            font-style: normal;
-            font-size: 24px;
-            line-height: 1;
-            letter-spacing: normal;
-            text-transform: none;
-            display: inline-block;
-            white-space: nowrap;
-            word-wrap: normal;
-            direction: ltr;
-            -webkit-font-feature-settings: 'liga';
-            -webkit-font-smoothing: antialiased;
-        }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #000000; }
-        ::-webkit-scrollbar-thumb { background: #262626; }
-        ::-webkit-scrollbar-thumb:hover { background: #39FF14; }
-        html, body { height: auto; min-height: 100%; background: black; color: white; }
-        #main-content { padding-top: 100px; margin-left: 64px; transition: margin-left 0.3s ease; min-height: 100vh; }
-        body.sidebar-expanded #main-content { margin-left: 256px; }
-        body.sidebar-expanded #header { left: 256px; }
-        @media (max-width: 1024px) { #main-content { margin-left: 0 !important; } }
-    </style>
     <script id="tailwind-config">
         tailwind.config = {
-          darkMode: "class",
+          darkMode: 'class',
           theme: {
             extend: {
               colors: {
-                "primary": "#39FF14", "surface": "#0e0e0e", "on-surface": "#ffffff",
-                "surface-container-low": "#131313", "error": "#ff7351",
+                "primary": "#4FFE49",
+                "surface": "#0e0e0e",
+                "on-surface": "#ffffff",
+                "error": "#ff7351"
               },
-              fontFamily: { "headline": ["Space Grotesk"], "body": ["Inter"] }
+              fontFamily: { headline: ['Space Grotesk'], body: ['Inter'], label: ['Space Grotesk'] }
             }
           }
         }
     </script>
+    <style>
+        :root { color-scheme: dark; }
+        body { margin: 0; }
+        #main-content { padding-top: 100px; margin-left: 64px; transition: margin-left 0.3s ease; }
+        body.sidebar-expanded #main-content { margin-left: 256px; }
+        body.sidebar-expanded #header { left: 256px; }
+        @media (max-width: 1024px) { #main-content { margin-left: 0 !important; } }
+
+        .tile-card { background: rgba(19, 19, 19, 0.4); border: 1px solid #262626; transition: all 0.3s ease; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #4FFE49; }
+    </style>
 </head>
-<body class="bg-black">
+<body class="radar-bg min-h-screen text-on-surface font-body selection:bg-primary selection:text-black">
 
     <div th:replace="~{fragments/sidebar :: sidebar}"></div>
     <div th:replace="~{fragments/header :: header}"></div>
 
     <main id="main-content" class="px-8 pb-20">
-        <div class="max-w-2xl mx-auto">
-            <div class="mb-12">
-                <div class="flex items-center gap-3 mb-2">
-                    <span class="h-[1px] w-12 bg-[#39FF14]"></span>
-                    <span class="text-[10px] text-[#39FF14] uppercase tracking-[0.3em] font-black">Authorized Access</span>
+        <div class="max-w-4xl mx-auto">
+            <div class="flex justify-between items-center mb-12 border-b border-neutral-800 pb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-white uppercase">My Profile</h1>
+                    <p class="text-neutral-400 mt-1">Manage your personal identity and professional credentials</p>
                 </div>
-                <h1 class="font-headline text-5xl font-black uppercase text-white tracking-tighter leading-none mb-2">
-                    Hello, <span id="display-username" class="text-[#39FF14] drop-shadow-[0_0_15px_rgba(57,255,20,0.4)]">...</span>
-                </h1>
-                <p class="text-neutral-500 font-label text-xs uppercase tracking-widest font-bold">System Auditor & Security Professional</p>
+                <button type="button" onclick="document.getElementById('profile-form').requestSubmit()" class="px-8 py-2 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg">Save Profile</button>
             </div>
-            
-            <div class="bg-[#131313] border border-neutral-900 p-10 rounded-sm shadow-2xl relative overflow-hidden group">
-                <!-- Decorative background elements -->
-                <div class="absolute top-0 right-0 w-32 h-32 bg-[#39FF14]/5 -mr-16 -mt-16 rounded-full blur-3xl group-hover:bg-[#39FF14]/10 transition-all"></div>
-                
+
+            <!-- Profile Tile -->
+            <div class="tile-card p-10 rounded-xl shadow-2xl relative overflow-hidden group">
+                <div class="flex items-center gap-4 mb-10 text-white">
+                    <span class="material-symbols-outlined text-primary text-3xl">account_circle</span>
+                    <h2 class="text-xl font-bold">Profile Attributes</h2>
+                </div>
+
                 <div class="flex flex-col items-center mb-12 relative z-10">
                     <div class="relative cursor-pointer group" onclick="document.getElementById('img-upload').click()">
-                        <img id="profile-preview" class="w-32 h-32 rounded-full border-2 border-[#39FF14]/20 object-cover group-hover:border-[#39FF14] transition-all" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAr7e2o-BtyJZ7Y_xVKPl6XoYky985WrO4JKV4yLl8WDiOFf4PQ5JDGd5vKTQD2Xps-2qM5eFUTH92zoxgfd0N8ugIQhBTVgecR5nNfLiDIC9WiL7GCaNqBe-YF81ukDt5L08_uikMr4_6G2fcc1cE2QmoU8F7GFi5z7qnP1TKiSSFG7zY859tudWDbInnPgrFcFrrAVCBFQTAy2c9OXp9uIQG3fyV1gt5n_ebNU8iizSMTZTQLAa5XGM3It2v-s7xOtYVmZaoU6_BQ">
-                        <div class="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                        <img id="profile-preview" class="w-32 h-32 rounded-full border-2 border-primary/20 object-cover group-hover:border-primary transition-all shadow-[0_0_30px_rgba(79,254,73,0.1)]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAr7e2o-BtyJZ7Y_xVKPl6XoYky985WrO4JKV4yLl8WDiOFf4PQ5JDGd5vKTQD2Xps-2qM5eFUTH92zoxgfd0N8ugIQhBTVgecR5nNfLiDIC9WiL7GCaNqBe-YF81ukDt5L08_uikMr4_6G2fcc1cE2QmoU8F7GFi5z7qnP1TKiSSFG7zY859tudWDbInnPgrFcFrrAVCBFQTAy2c9OXp9uIQG3fyV1gt5n_ebNU8iizSMTZTQLAa5XGM3It2v-s7xOtYVmZaoU6_BQ">
+                        <div class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                             <span class="material-symbols-outlined text-white">upload</span>
                         </div>
                     </div>
                     <input type="file" id="img-upload" class="hidden" accept="image/*" onchange="previewImage(this)">
-                    <p class="text-[8px] font-label text-neutral-500 uppercase tracking-widest mt-4">Click avatar to update</p>
+                    <p class="text-[8px] font-label text-neutral-500 uppercase tracking-widest mt-4 font-black">Click avatar to update</p>
                 </div>
 
-                <form id="profile-form" class="space-y-6">
-                    <div>
-                        <label class="block text-[10px] font-label text-[#39FF14]/60 uppercase tracking-widest mb-2 font-bold">Email Address</label>
-                        <input type="email" name="email" readonly class="w-full bg-black/50 border border-neutral-800 text-neutral-500 p-3 text-sm outline-none cursor-not-allowed">
-                    </div>
-                    <div class="grid grid-cols-2 gap-6">
+                <form id="profile-form" class="space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div>
-                            <label class="block text-[10px] font-label text-[#39FF14]/60 uppercase tracking-widest mb-2 font-bold">First Name</label>
-                            <input type="text" name="firstName" required class="w-full bg-black border border-neutral-800 text-white p-3 text-sm focus:border-[#39FF14] outline-none">
+                            <label class="block text-[10px] font-label text-primary/60 uppercase tracking-widest mb-3 font-bold">Email Address</label>
+                            <input type="email" name="email" readonly class="w-full bg-black/40 border border-neutral-800 text-neutral-500 p-4 text-sm outline-none cursor-not-allowed rounded-lg">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-label text-[#39FF14]/60 uppercase tracking-widest mb-2 font-bold">Last Name</label>
-                            <input type="text" name="lastName" required class="w-full bg-black border border-neutral-800 text-white p-3 text-sm focus:border-[#39FF14] outline-none">
+                            <label class="block text-[10px] font-label text-primary/60 uppercase tracking-widest mb-3 font-bold">Role / Designation</label>
+                            <input type="text" name="role" readonly class="w-full bg-black/40 border border-neutral-800 text-neutral-500 p-4 text-sm outline-none cursor-not-allowed rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-label text-primary/60 uppercase tracking-widest mb-3 font-bold">First Name</label>
+                            <input type="text" name="firstName" required class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-colors rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-label text-primary/60 uppercase tracking-widest mb-3 font-bold">Last Name</label>
+                            <input type="text" name="lastName" required class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-colors rounded-lg">
                         </div>
                     </div>
                     <div>
-                        <label class="block text-[10px] font-label text-[#39FF14]/60 uppercase tracking-widest mb-2 font-bold">Role / Designation</label>
-                        <input type="text" name="role" readonly class="w-full bg-black/50 border border-neutral-800 text-neutral-500 p-3 text-sm outline-none cursor-not-allowed">
+                        <label class="block text-[10px] font-label text-primary/60 uppercase tracking-widest mb-3 font-bold">Location / Address</label>
+                        <textarea name="address" rows="2" class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-colors resize-none rounded-lg"></textarea>
                     </div>
                     <div>
-                        <label class="block text-[10px] font-label text-[#39FF14]/60 uppercase tracking-widest mb-2 font-bold">Location / Address</label>
-                        <textarea name="address" rows="2" class="w-full bg-black border border-neutral-800 text-white p-3 text-sm focus:border-[#39FF14] outline-none"></textarea>
-                    </div>
-                    <div>
-                        <div class="flex justify-between items-center mb-2">
-                            <label class="block text-[10px] font-label text-[#39FF14]/60 uppercase tracking-widest font-bold">Professional Qualifications</label>
-                            <span class="text-[8px] text-neutral-500 uppercase font-bold tracking-tighter">Will be displayed in reports</span>
+                        <div class="flex justify-between items-center mb-3">
+                            <label class="block text-[10px] font-label text-primary/60 uppercase tracking-widest font-bold">Professional Qualifications</label>
+                            <span class="text-[8px] text-neutral-600 uppercase font-black tracking-widest">Included in reports</span>
                         </div>
-                        <textarea name="qualification" rows="3" class="w-full bg-black border border-neutral-800 text-white p-3 text-sm focus:border-[#39FF14] outline-none" placeholder="e.g. OSCP, CISSP, CEH..."></textarea>
-                    </div>
-                    <div class="pt-6">
-                        <button type="submit" class="w-full bg-[#39FF14] text-black font-headline font-black py-4 uppercase text-xs tracking-widest hover:opacity-90 transition-all shadow-lg">Save Profile Changes</button>
+                        <textarea name="qualification" rows="3" class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-colors resize-none rounded-lg" placeholder="e.g. OSCP, CISSP, CEH..."></textarea>
                     </div>
                 </form>
             </div>
@@ -164,8 +151,6 @@
                 location.href = '/login';
                 return;
             }
-
-            document.getElementById('display-username').textContent = username;
 
             try {
                 const res = await fetch(`/api/users/profile/${username}`);

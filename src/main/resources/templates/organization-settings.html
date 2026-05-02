@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>VulnPrint | Organization Settings</title>
+    <title>VulnPrint | Organization Details</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     <script id="tailwind-config">
         tailwind.config = {
@@ -15,68 +15,101 @@
               colors: {
                 "primary": "#4FFE49",
                 "surface": "#0e0e0e",
-                "on-surface": "#ffffff"
+                "on-surface": "#ffffff",
+                "error": "#ff7351"
               },
-              fontFamily: { body: ['Inter'] }
+              fontFamily: { headline: ['Space Grotesk'], body: ['Inter'], label: ['Space Grotesk'] }
             }
           }
         }
     </script>
     <style>
         :root { color-scheme: dark; }
-        body { margin: 0; font-family: 'Inter', sans-serif; background: #050505; }
+        body { margin: 0; }
         #main-content { padding-top: 100px; margin-left: 64px; transition: margin-left 0.3s ease; }
         body.sidebar-expanded #main-content { margin-left: 256px; }
+        body.sidebar-expanded #header { left: 256px; }
+        @media (max-width: 1024px) { #main-content { margin-left: 0 !important; } }
+
+        .tile-card { background: rgba(19, 19, 19, 0.4); border: 1px solid #262626; transition: all 0.3s ease; }
+        .tile-header { cursor: pointer; }
+        .tile-content { max-height: 5000px; overflow: visible; transition: all 0.5s cubic-bezier(0, 1, 0, 1); }
+        .collapse-icon { transition: transform 0.3s ease; color: #525252; }
+        .tile-card.collapsed .tile-content { max-height: 0; opacity: 0; padding: 0 !important; margin: 0 !important; overflow: hidden; pointer-events: none; }
+        .tile-card.collapsed .collapse-icon { transform: rotate(-90deg); }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #4FFE49; }
     </style>
 </head>
-<body class="text-on-surface font-body">
+<body class="radar-bg min-h-screen text-on-surface font-body selection:bg-primary selection:text-black">
 
     <div th:replace="~{fragments/sidebar :: sidebar}"></div>
     <div th:replace="~{fragments/header :: header}"></div>
 
     <main id="main-content" class="px-8 pb-20">
-        <div class="max-w-4xl mx-auto">
+        <div class="max-w-6xl mx-auto">
             <div class="flex justify-between items-center mb-12 border-b border-neutral-800 pb-8">
                 <div>
-                    <h1 class="text-3xl font-bold text-white">Organization Profile</h1>
-                    <p class="text-neutral-400 mt-1">Global reporting identity and contact information</p>
+                    <h1 class="text-3xl font-bold text-white uppercase">Organization Details</h1>
+                    <p class="text-neutral-400 mt-1">Configure global reporting identity and branding</p>
                 </div>
                 <button onclick="saveSettings()" class="px-8 py-2 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg">Save Profile</button>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                <!-- Logo Upload -->
-                <div class="space-y-6">
-                    <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Master Logo</p>
-                    <div class="flex flex-col items-center gap-6 p-8 bg-neutral-900/40 border border-neutral-800 rounded-2xl">
-                        <div id="logo-preview-container" class="h-40 w-full flex items-center justify-center bg-black/40 rounded-xl overflow-hidden border border-neutral-800">
-                            <img id="img-logo" src="/images/logo.png" class="max-h-32 object-contain opacity-80">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                <!-- Tile 1: Master Branding -->
+                <div class="tile-card p-8 rounded-xl shadow-2xl h-fit" id="tile-branding">
+                    <div class="tile-header flex justify-between items-center mb-8 text-white" onclick="toggleTile('tile-branding')">
+                        <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined text-primary text-3xl">palette</span>
+                            <h2 class="text-xl font-bold">Branding</h2>
                         </div>
-                        <button onclick="document.getElementById('logo-input').click()" class="w-full px-4 py-2 border border-neutral-700 text-[10px] font-bold uppercase hover:bg-white/5 transition-colors rounded-lg">Update Master Logo</button>
-                        <input type="file" id="logo-input" class="hidden" accept="image/*" onchange="handleLogoUpload(event)">
-                        <p class="text-[9px] text-neutral-600 text-center italic leading-relaxed">This logo serves as the default branding for all new assessments and report covers.</p>
+                        <span class="material-symbols-outlined collapse-icon">expand_more</span>
+                    </div>
+                    <div class="tile-content">
+                        <div class="space-y-6">
+                            <div id="logo-preview-container" class="h-48 w-full flex items-center justify-center bg-black/40 rounded-xl overflow-hidden border border-neutral-800 p-4">
+                                <img id="img-logo" src="/images/logo.png" class="max-h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity">
+                            </div>
+                            <button onclick="document.getElementById('logo-input').click()" class="w-full px-4 py-3 border border-neutral-800 bg-neutral-900/50 text-[10px] font-bold uppercase hover:text-primary transition-colors rounded-lg">Update Master Logo</button>
+                            <input type="file" id="logo-input" class="hidden" accept="image/*" onchange="handleLogoUpload(event)">
+                            <p class="text-[9px] text-neutral-600 text-center italic leading-relaxed">This logo serves as the default branding for all new assessments and report covers.</p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Form -->
-                <div class="lg:col-span-2 space-y-8">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="space-y-2">
-                            <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Organization Name</label>
-                            <input type="text" id="org-name" class="w-full bg-neutral-900/60 border border-neutral-800 rounded-lg p-3 text-sm focus:border-primary outline-none transition-all">
+                <!-- Tile 2: Core Identity -->
+                <div class="tile-card p-8 rounded-xl shadow-2xl lg:col-span-2" id="tile-identity">
+                    <div class="tile-header flex justify-between items-center mb-8 text-white" onclick="toggleTile('tile-identity')">
+                        <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined text-primary text-3xl">business</span>
+                            <h2 class="text-xl font-bold">Core Identity</h2>
                         </div>
-                        <div class="space-y-2">
-                            <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Official Email</label>
-                            <input type="email" id="org-email" class="w-full bg-neutral-900/60 border border-neutral-800 rounded-lg p-3 text-sm focus:border-primary outline-none transition-all">
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Contact Number</label>
-                            <input type="text" id="org-phone" class="w-full bg-neutral-900/60 border border-neutral-800 rounded-lg p-3 text-sm focus:border-primary outline-none transition-all">
-                        </div>
+                        <span class="material-symbols-outlined collapse-icon">expand_more</span>
                     </div>
-                    <div class="space-y-2">
-                        <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest">Headquarters Address</label>
-                        <textarea id="org-address" rows="4" class="w-full bg-neutral-900/60 border border-neutral-800 rounded-lg p-3 text-sm focus:border-primary outline-none transition-all resize-none"></textarea>
+                    <div class="tile-content">
+                        <div class="space-y-8">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div class="space-y-2">
+                                    <label class="text-[10px] uppercase font-bold text-primary/60 tracking-widest">Organization Name</label>
+                                    <input type="text" id="org-name" class="w-full bg-black/60 border border-neutral-800 rounded-lg p-4 text-sm focus:border-primary outline-none transition-all">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] uppercase font-bold text-primary/60 tracking-widest">Official Email</label>
+                                    <input type="email" id="org-email" class="w-full bg-black/60 border border-neutral-800 rounded-lg p-4 text-sm focus:border-primary outline-none transition-all">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] uppercase font-bold text-primary/60 tracking-widest">Contact Number</label>
+                                    <input type="text" id="org-phone" class="w-full bg-black/60 border border-neutral-800 rounded-lg p-4 text-sm focus:border-primary outline-none transition-all">
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-[10px] uppercase font-bold text-primary/60 tracking-widest">Headquarters Address</label>
+                                <textarea id="org-address" rows="5" class="w-full bg-black/60 border border-neutral-800 rounded-lg p-4 text-sm focus:border-primary outline-none transition-all resize-none"></textarea>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -85,6 +118,11 @@
 
     <script>
         let logoBase64 = null;
+
+        function toggleTile(tileId) {
+            const tile = document.getElementById(tileId);
+            tile.classList.toggle('collapsed');
+        }
 
         async function loadSettings() {
             const res = await fetch('/api/organization');
