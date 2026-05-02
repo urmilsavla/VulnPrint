@@ -94,11 +94,6 @@ public class ViewController {
         return "add-vulnerability"; // We can reuse the same form for edit
     }
 
-    @GetMapping("/vulnerability-database")
-    public String vulnerabilityDatabase() {
-        return "vulnerability-database";
-    }
-
     @GetMapping("/user-management")
     public String userManagement() {
         return "user-management";
