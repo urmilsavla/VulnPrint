@@ -17,10 +17,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-/**
- * Service responsible for consolidating all pentest and vulnerability data into a structured Master Package for reporting.
- * Follows the strict 10-Section Architectural Requirement.
- */
 @Service
 public class ReportDataService {
 
@@ -33,104 +29,138 @@ public class ReportDataService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Transactional(readOnly = true)
-    public Map<String, Object> getMasterReportDataV2(Long pentestId) {
+    public Map<String, Object> getReportGenerationData(Long pentestId) {
         Pentest p = pentestRepository.findById(pentestId)
                 .orElseThrow(() -> new RuntimeException("Assessment ID " + pentestId + " not found."));
 
-        Map<String, Object> masterPackage = new LinkedHashMap<>();
+        Map<String, Object> repGenPackage = new LinkedHashMap<>();
         Map<String, String> imageLibrary = new LinkedHashMap<>();
         int imgCounter = 1;
+        
+        // --- 1. PENTEST DETAILS ---
+        Map<String, Object> pentestDetails = new LinkedHashMap<>();
+        pentestDetails.put("projectName", hasValue(p.getPentestName()) ? p.getPentestName() : "N/A");
+        pentestDetails.put("pentestType", hasValue(p.getPentestType()) ? p.getPentestType() : "N/A");
+        
+        List<Map<String, String>> technicalScopes = new ArrayList<>();
+        if (hasValue(p.getTarget())) technicalScopes.add(Map.of("technicalScopeKey", "Target", "technicalScopeValue", p.getTarget()));
+        if (hasValue(p.getUrl())) technicalScopes.add(Map.of("technicalScopeKey", "URL", "technicalScopeValue", p.getUrl()));
+        if (hasValue(p.getTechStack())) technicalScopes.add(Map.of("technicalScopeKey", "Tech Stack", "technicalScopeValue", p.getTechStack()));
+        if (hasValue(p.getIpRanges())) technicalScopes.add(Map.of("technicalScopeKey", "IP Ranges", "technicalScopeValue", p.getIpRanges()));
+        if (hasValue(p.getPackageName())) technicalScopes.add(Map.of("technicalScopeKey", "Package Name", "technicalScopeValue", p.getPackageName()));
+        if (hasValue(p.getOsType())) technicalScopes.add(Map.of("technicalScopeKey", "OS Type", "technicalScopeValue", p.getOsType()));
+        if (hasValue(p.getApiDomain())) technicalScopes.add(Map.of("technicalScopeKey", "API Domain", "technicalScopeValue", p.getApiDomain()));
+        if (hasValue(p.getApiType())) technicalScopes.add(Map.of("technicalScopeKey", "API Type", "technicalScopeValue", p.getApiType()));
+        if (hasValue(p.getTargetType())) technicalScopes.add(Map.of("technicalScopeKey", "Target Type", "technicalScopeValue", p.getTargetType()));
+        if (hasValue(p.getRepoUrl())) technicalScopes.add(Map.of("technicalScopeKey", "Repo URL", "technicalScopeValue", p.getRepoUrl()));
+        if (hasValue(p.getBranchName())) technicalScopes.add(Map.of("technicalScopeKey", "Branch", "technicalScopeValue", p.getBranchName()));
+        if (hasValue(p.getLanguage())) technicalScopes.add(Map.of("technicalScopeKey", "Language", "technicalScopeValue", p.getLanguage()));
+        if (hasValue(p.getVersion())) technicalScopes.add(Map.of("technicalScopeKey", "Version", "technicalScopeValue", p.getVersion()));
+        
+        pentestDetails.put("technicalScopes", technicalScopes);
+        pentestDetails.put("projectInitiationDate", p.getCreatedDate() != null ? p.getCreatedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) : "N/A");
+        pentestDetails.put("projectCompletionDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        repGenPackage.put("pentestDetails", pentestDetails);
 
-        // --- SECTION 1: BASIC DETAILED ---
-        Map<String, Object> section1 = new LinkedHashMap<>();
-        String projectName = hasValue(p.getPentestName()) ? p.getPentestName() : p.getApplicationName();
-        section1.put("projectName", hasValue(projectName) ? projectName : "N/A");
-        section1.put("submittedToName", hasValue(p.getSubmittedToName()) ? p.getSubmittedToName() : "N/A");
-        section1.put("submittedToDesignation", hasValue(p.getSubmittedToDesignation()) ? p.getSubmittedToDesignation() : "N/A");
-        section1.put("pentestType", hasValue(p.getPentestType()) ? p.getPentestType() : "N/A");
-        section1.put("currentDateTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-        masterPackage.put("section1", section1);
-
-        // --- SECTION 2: DISCLAIMER ---
-        Map<String, Object> section2 = new LinkedHashMap<>();
-        section2.put("enabled", p.getDisclaimerEnabled() != null ? p.getDisclaimerEnabled() : true);
-        section2.put("disclaimer", hasValue(p.getDisclaimer()) ? p.getDisclaimer() : "");
-        masterPackage.put("section2", section2);
-
-        // --- SECTION 3: CLIENT DETAILS ---
-        Map<String, Object> section3 = new LinkedHashMap<>();
-        section3.put("enabled", p.getBrandingEnabled() != null ? p.getBrandingEnabled() : true);
-        section3.put("clientOrgName", hasValue(p.getClientName()) ? p.getClientName() : "N/A");
-        section3.put("clientSpocName", hasValue(p.getClientSpocName()) ? p.getClientSpocName() : "N/A");
-        section3.put("clientSpocContact", hasValue(p.getClientSpocContact()) ? p.getClientSpocContact() : "N/A");
-        if (hasValue(p.getClientLogo())) {
+        // --- 2. CLIENT DETAILS ---
+        Map<String, Object> clientDetails = new LinkedHashMap<>();
+        clientDetails.put("clientName", p.getClientName() != null ? p.getClientName() : "N/A");
+        clientDetails.put("clientSpocName", p.getClientSpocName() != null ? p.getClientSpocName() : "N/A");
+        clientDetails.put("clientSpocContact", p.getClientSpocContact() != null ? p.getClientSpocContact() : "N/A");
+        clientDetails.put("reportRecipientName", p.getSubmittedToName() != null ? p.getSubmittedToName() : "N/A");
+        clientDetails.put("reportRecipientDesignation", p.getSubmittedToDesignation() != null ? p.getSubmittedToDesignation() : "N/A");
+        
+        String cLogo = p.getClientLogo();
+        if (cLogo != null && !cLogo.isEmpty()) {
             String imgId = "LOGO_CLIENT";
-            imageLibrary.put(imgId, p.getClientLogo());
-            section3.put("clientLogoId", imgId);
+            imageLibrary.put(imgId, cLogo);
+            clientDetails.put("clientLogoId", imgId);
         }
-        masterPackage.put("section3", section3);
+        repGenPackage.put("clientDetails", clientDetails);
 
-        // --- SECTION 4: PROJECT DETAILS ---
-        Map<String, Object> section4 = new LinkedHashMap<>();
-        section4.put("projectName", hasValue(projectName) ? projectName : "N/A");
-        section4.put("pentestType", hasValue(p.getPentestType()) ? p.getPentestType() : "N/A");
-        section4.put("projectInitiationDate", p.getCreatedDate() != null ? p.getCreatedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) : "N/A");
-        
-        String riskIndexValue = calculateRiskIndex(p.getVulnerabilities());
-        section4.put("technicalScore", riskIndexValue); 
-        section4.put("overallPentestRiskIndex", riskIndexValue);
-        
-        // Deep Factor Addition: Technical Scope items included in Project Details for completeness
-        List<Map<String, String>> scopeItems = new ArrayList<>();
-        if (hasValue(p.getTarget())) scopeItems.add(Map.of("label", "Scope Target", "value", p.getTarget()));
-        if (hasValue(p.getUrl())) scopeItems.add(Map.of("label", "URL", "value", p.getUrl()));
-        if (hasValue(p.getTechStack())) scopeItems.add(Map.of("label", "Tech Stack", "value", p.getTechStack()));
-        if (hasValue(p.getIpRanges())) scopeItems.add(Map.of("label", "IP Ranges", "value", p.getIpRanges()));
-        section4.put("scopeItems", scopeItems);
-        masterPackage.put("section4", section4);
-
-        // --- SECTION 5: TESTERS DETAILS ---
-        Map<String, Object> section5 = new LinkedHashMap<>();
-        List<Map<String, Object>> testers = new ArrayList<>();
-        if (p.getAssignedPentesters() != null) {
-            for (User u : p.getAssignedPentesters()) {
-                Map<String, Object> t = new LinkedHashMap<>();
-                t.put("name", u.getFirstName() + " " + u.getLastName());
-                t.put("designation", u.getRole() != null ? u.getRole() : "Pentester");
-                t.put("qualification", u.getQualification() != null ? u.getQualification() : "Certified Professional");
-                testers.add(t);
-            }
-        }
-        section5.put("testers", testers);
+        // --- 3. PENTEST CONDUCTING ORGANIZATION DETAILS ---
+        Map<String, Object> conductingOrganizationDetails = new LinkedHashMap<>();
+        conductingOrganizationDetails.put("organizationName", hasValue(p.getOrganizationName()) ? p.getOrganizationName() : "N/A");
+        conductingOrganizationDetails.put("organizationLegalName", hasValue(p.getOrganizationLegalName()) ? p.getOrganizationLegalName() : "N/A");
+        conductingOrganizationDetails.put("officialEmail", hasValue(p.getOrganizationEmail()) ? p.getOrganizationEmail() : "N/A");
+        conductingOrganizationDetails.put("officialContactNumber", hasValue(p.getOrganizationPhone()) ? p.getOrganizationPhone() : "N/A");
+        conductingOrganizationDetails.put("headquartersAddress", hasValue(p.getOrganizationAddress()) ? p.getOrganizationAddress() : "N/A");
         
         if (p.getReportApprover() != null) {
-            User a = p.getReportApprover();
-            section5.put("approverName", a.getFirstName() + " " + a.getLastName());
+            User approver = p.getReportApprover();
+            conductingOrganizationDetails.put("reportApproverName", approver.getFirstName() + " " + approver.getLastName());
+            conductingOrganizationDetails.put("reportApproverDesignation", approver.getRole() != null ? approver.getRole() : "Authorized Signatory");
         } else {
-            section5.put("approverName", "Authorized Signatory");
+            conductingOrganizationDetails.put("reportApproverName", "N/A");
+            conductingOrganizationDetails.put("reportApproverDesignation", "N/A");
         }
-        masterPackage.put("section5", section5);
 
-        // --- SECTION 6: PENTESTING ORG DETAILS ---
-        Map<String, Object> section6 = new LinkedHashMap<>();
-        section6.put("enabled", p.getOrganizationDetailsEnabled() != null ? p.getOrganizationDetailsEnabled() : true);
-        section6.put("orgName", hasValue(p.getOrganizationName()) ? p.getOrganizationName() : "N/A");
-        section6.put("orgLegalName", hasValue(p.getOrganizationLegalName()) ? p.getOrganizationLegalName() : "N/A");
-        section6.put("headquarterAddress", hasValue(p.getOrganizationAddress()) ? p.getOrganizationAddress() : "N/A");
-        section6.put("officialEmail", hasValue(p.getOrganizationEmail()) ? p.getOrganizationEmail() : "N/A");
-        section6.put("officialPhone", hasValue(p.getOrganizationPhone()) ? p.getOrganizationPhone() : "N/A");
-        if (hasValue(p.getOrganizationLogo())) {
+        String oLogo = p.getOrganizationLogo();
+        if (oLogo != null && !oLogo.isEmpty()) {
             String imgId = "LOGO_ORG";
-            imageLibrary.put(imgId, p.getOrganizationLogo());
-            section6.put("orgLogoId", imgId);
+            imageLibrary.put(imgId, oLogo);
+            conductingOrganizationDetails.put("organizationLogoId", imgId);
         }
-        masterPackage.put("section6", section6);
+        repGenPackage.put("pentestConductingOrgDetails", conductingOrganizationDetails);
 
-        // --- SECTION 7: PENTEST METHODOLOGY ---
-        Map<String, Object> section7 = new LinkedHashMap<>();
-        section7.put("enabled", p.getMethodologyEnabled() != null ? p.getMethodologyEnabled() : true);
-        section7.put("methodologyDisplayMode", p.getMethodologyDisplayMode() != null ? p.getMethodologyDisplayMode() : "BOTH");
-        section7.put("methodologyText", p.getMethodology() != null ? p.getMethodology() : "");
+        // --- PENTEST CONDUCTING TESTERS ---
+        List<Map<String, Object>> pentestConductingTesters = new ArrayList<>();
+        if (p.getAssignedPentesters() != null) {
+            List<User> testers = p.getAssignedPentesters();
+            for (int i = 0; i < testers.size(); i++) {
+                User u = testers.get(i);
+                Map<String, Object> t = new LinkedHashMap<>();
+                t.put("srNo", i + 1);
+                t.put("name", u.getFirstName() + " " + u.getLastName());
+                t.put("qualification", u.getQualification() != null ? u.getQualification() : "N/A");
+                pentestConductingTesters.add(t);
+            }
+        }
+        repGenPackage.put("pentestConductingTesters", pentestConductingTesters);
+
+        // --- 4. DISCLAIMER AND CONCLUSION ---
+        Map<String, Object> disclaimerAndConclusion = new LinkedHashMap<>();
+        disclaimerAndConclusion.put("disclaimer", p.getDisclaimer() != null ? p.getDisclaimer() : "");
+        disclaimerAndConclusion.put("conclusion", p.getConclusion() != null ? p.getConclusion() : "");
+        repGenPackage.put("disclaimerAndConclusion", disclaimerAndConclusion);
+
+        // --- 5. PENTEST EXECUTIVE SUMMARY ---
+        Map<String, Object> pentestExecutiveSummary = new LinkedHashMap<>();
+        pentestExecutiveSummary.put("executiveSummary", p.getExecutiveSummary() != null ? p.getExecutiveSummary() : "");
+        pentestExecutiveSummary.put("riskSummary", p.getRiskSummary() != null ? p.getRiskSummary() : "");
+        
+        if (hasValue(p.getRiskOverviewChart())) {
+            String chartId = "CHART_RISK_OVERVIEW";
+            imageLibrary.put(chartId, p.getRiskOverviewChart());
+            pentestExecutiveSummary.put("riskChartImageId", chartId);
+        }
+
+        List<Vulnerability> vs = p.getVulnerabilities() != null ? p.getVulnerabilities() : new ArrayList<>();
+        pentestExecutiveSummary.put("severityMetrics", Map.of(
+            "CRITICAL", vs.stream().filter(v -> "Critical".equalsIgnoreCase(v.getSeverity())).count(),
+            "HIGH", vs.stream().filter(v -> "High".equalsIgnoreCase(v.getSeverity())).count(),
+            "MEDIUM", vs.stream().filter(v -> "Medium".equalsIgnoreCase(v.getSeverity())).count(),
+            "LOW", vs.stream().filter(v -> "Low".equalsIgnoreCase(v.getSeverity())).count(),
+            "INFO", vs.stream().filter(v -> "Info".equalsIgnoreCase(v.getSeverity()) || "Informational".equalsIgnoreCase(v.getSeverity())).count()
+        ));
+
+        List<Map<String, Object>> summaryTable = new ArrayList<>();
+        for (int i = 0; i < vs.size(); i++) {
+            Vulnerability v = vs.get(i);
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("srNo", i + 1);
+            row.put("title", v.getTitle());
+            row.put("severity", v.getSeverity() != null ? v.getSeverity() : "Info");
+            summaryTable.add(row);
+        }
+        pentestExecutiveSummary.put("vulnerabilitiesSummaryTable", summaryTable);
+        repGenPackage.put("pentestExecutiveSummary", pentestExecutiveSummary);
+
+        // --- 6. PENTEST METHODOLOGY AND FRAMEWORKS ---
+        Map<String, Object> pentestMethodologyAndFrameworks = new LinkedHashMap<>();
+        pentestMethodologyAndFrameworks.put("methodologyDisplayMode", p.getMethodologyDisplayMode() != null ? p.getMethodologyDisplayMode() : "BOTH");
+        pentestMethodologyAndFrameworks.put("methodologyText", p.getMethodology() != null ? p.getMethodology() : "");
+        
         List<String> methImgIds = new ArrayList<>();
         if (hasValue(p.getSelectedMethodologyImages())) {
             for (String mid : p.getSelectedMethodologyImages().split(",")) {
@@ -152,160 +182,102 @@ public class ReportDataService {
                         methImgIds.add(imgId);
                     }
                 }
-            } catch (Exception e) {
-                // Ignore parsing errors for custom images
-            }
+            } catch (Exception e) { }
         }
-        section7.put("methodologyImageIds", methImgIds);
+        pentestMethodologyAndFrameworks.put("methodologyImageIds", methImgIds);
         
-        // --- FRAMEWORK CONSOLIDATION ---
-        // UI saves to owaspTop10 (comma separated IDs), while historical data might use selectedOwaspCategories (|| separated)
-        section7.put("frameworkEnabled", p.getOwaspEnabled() != null ? p.getOwaspEnabled() : true);
         String frameworkData = hasValue(p.getSelectedOwaspCategories()) ? p.getSelectedOwaspCategories() : p.getOwaspTop10();
-        List<Map<String, Object>> frameworkList = new ArrayList<>();
+        List<Map<String, Object>> selectedFrameworks = new ArrayList<>();
         if (hasValue(frameworkData)) {
             String[] parts = frameworkData.contains("||") ? frameworkData.split("\\|\\|") : frameworkData.split(",");
             for (String part : parts) {
                 if (hasValue(part)) {
-                    frameworkList.add(resolveFrameworkDetails(part.trim()));
+                    selectedFrameworks.add(resolveFrameworkDetails(part.trim()));
                 }
             }
         }
-        section7.put("selectedFramework", frameworkList);
-        masterPackage.put("section7", section7);
+        pentestMethodologyAndFrameworks.put("selectedFrameworks", selectedFrameworks);
+        repGenPackage.put("pentestMethodologyAndFrameworks", pentestMethodologyAndFrameworks);
 
-        // --- SECTION 8: PENTEST SUMMARY ---
-        Map<String, Object> section8 = new LinkedHashMap<>();
-        section8.put("executiveSummaryEnabled", p.getExecutiveSummaryEnabled() != null ? p.getExecutiveSummaryEnabled() : true);
-        section8.put("executiveSummary", p.getExecutiveSummary() != null ? p.getExecutiveSummary() : "");
-        
-        section8.put("riskOverviewEnabled", p.getRiskOverviewEnabled() != null ? p.getRiskOverviewEnabled() : true);
-        section8.put("riskSummary", p.getRiskSummary() != null ? p.getRiskSummary() : "");
-        
-        if (hasValue(p.getRiskOverviewChart())) {
-            String chartId = "CHART_RISK_OVERVIEW";
-            imageLibrary.put(chartId, p.getRiskOverviewChart());
-            section8.put("riskChartImageId", chartId);
+        // --- 7. VULNERABILITY DETAILS (Metadata) ---
+        List<Map<String, Object>> vulnerabilityDetailsList = new ArrayList<>();
+        for (int i = 0; i < vs.size(); i++) {
+            Vulnerability v = vs.get(i);
+            Map<String, Object> f = new LinkedHashMap<>();
+            f.put("srNo", i + 1);
+            f.put("referenceId", "VULN-" + String.format("%03d", v.getId()));
+            f.put("vulnerabilityTitle", v.getTitle());
+            f.put("severity", v.getSeverity());
+            f.put("cvssScore", v.getCvssScore());
+            f.put("cvssVector", v.getCvssVector());
+            f.put("status", v.getStatus());
+            f.put("cweReference", v.getCweReference());
+            f.put("owaspReference", v.getOwasp());
+            f.put("description", v.getDescription());
+            f.put("impact", v.getImpact());
+            f.put("mitigation", v.getMitigation());
+            vulnerabilityDetailsList.add(f);
         }
+        repGenPackage.put("vulnerabilityDetailsList", vulnerabilityDetailsList);
 
-        List<Map<String, String>> summaryTable = new ArrayList<>();
-        List<Vulnerability> vs = p.getVulnerabilities() != null ? p.getVulnerabilities() : new ArrayList<>();
+        // --- 8. VULNERABILITY EVIDENCES (Technical Deep Dive) ---
+        List<Map<String, Object>> vulnerabilityEvidencesList = new ArrayList<>();
         for (Vulnerability v : vs) {
-            summaryTable.add(Map.of("title", v.getTitle(), "severity", v.getSeverity() != null ? v.getSeverity() : "Info"));
-        }
-        section8.put("riskSummaryTable", summaryTable);
-
-        section8.put("severityMetrics", Map.of(
-            "CRITICAL", vs.stream().filter(v -> "Critical".equalsIgnoreCase(v.getSeverity())).count(),
-            "HIGH", vs.stream().filter(v -> "High".equalsIgnoreCase(v.getSeverity())).count(),
-            "MEDIUM", vs.stream().filter(v -> "Medium".equalsIgnoreCase(v.getSeverity())).count(),
-            "LOW", vs.stream().filter(v -> "Low".equalsIgnoreCase(v.getSeverity())).count(),
-            "INFO", vs.stream().filter(v -> "Info".equalsIgnoreCase(v.getSeverity()) || "Informational".equalsIgnoreCase(v.getSeverity())).count()
-        ));
-
-        section8.put("severityEnabled", p.getSeverityEnabled() != null ? p.getSeverityEnabled() : true);
-        try { 
-            List<Map<String, String>> matrix = hasValue(p.getSeverityDefinitions()) ? objectMapper.readValue(p.getSeverityDefinitions(), List.class) : new ArrayList<>();
-            Map<String, String> severityText = new LinkedHashMap<>();
-            for (Map<String, String> item : matrix) {
-                String level = item.get("level");
-                String impact = item.get("impact");
-                if (level != null && impact != null) {
-                    severityText.put(level.toUpperCase(), impact);
-                }
+            Map<String, Object> ev = new LinkedHashMap<>();
+            ev.put("vulnerabilityTitle", v.getTitle());
+            ev.put("referenceId", "VULN-" + String.format("%03d", v.getId()));
+            ev.put("evidenceMode", v.getEvidenceMode());
+            ev.put("globalFileName", v.getFileName());
+            ev.put("globalLineNumber", v.getLineNumber());
+            ev.put("globalRequestResponse", v.getRequestResponse());
+            
+            if (hasValue(v.getCodeSnippet())) {
+                String imgId = "SNIPPET_" + v.getId();
+                imageLibrary.put(imgId, v.getCodeSnippet());
+                ev.put("codeSnippetImageId", imgId);
             }
-            section8.put("severityMatrix", severityText); 
-        } catch (Exception e) { 
-            section8.put("severityMatrix", new LinkedHashMap<>()); 
-        }
-        masterPackage.put("section8", section8);
 
-        // --- SECTION 9: VULNERABILITIES IN DETAIL ---
-        List<Map<String, Object>> findings = new ArrayList<>();
-        if (p.getVulnerabilities() != null) {
-            for (Vulnerability v : p.getVulnerabilities()) {
-                Map<String, Object> f = new LinkedHashMap<>();
-                f.put("refId", "VULN-" + String.format("%03d", v.getId()));
-                f.put("title", v.getTitle());
-                f.put("severity", v.getSeverity());
-                f.put("cvssScore", v.getCvssScore());
-                f.put("cvssVector", v.getCvssVector());
-                f.put("status", v.getStatus());
-                f.put("cwe", v.getCweReference());
-                f.put("owasp", v.getOwasp());
-                f.put("description", v.getDescription());
-                f.put("impact", v.getImpact());
-                f.put("mitigation", v.getMitigation());
-                f.put("evidenceMode", v.getEvidenceMode());
-                f.put("globalFileName", v.getFileName());
-                f.put("globalLineNumber", v.getLineNumber());
-                f.put("globalRequestResponse", v.getRequestResponse());
-                if (hasValue(v.getCodeSnippet())) {
-                    String imgId = "SNIPPET_" + v.getId();
-                    imageLibrary.put(imgId, v.getCodeSnippet());
-                    f.put("codeSnippetImageId", imgId);
-                }
-
-                List<Map<String, Object>> steps = new ArrayList<>();
-                if (v.getSteps() != null) {
-                    for (VulnerabilityStep s : v.getSteps()) {
-                        Map<String, Object> st = new LinkedHashMap<>();
-                        st.put("order", s.getStepNumber());
-                        st.put("description", s.getDescription());
-                        st.put("request", s.getRequest());
-                        st.put("response", s.getResponse());
-                        st.put("fileName", s.getFileName());
-                        st.put("lineNumber", s.getLineNumber());
-                        
-                        List<String> stepImgIds = new ArrayList<>();
-                        if (s.getImagePaths() != null) {
-                            for (String imgName : s.getImagePaths()) {
-                                String b64 = encodeFileToBase64(v.getPocFolderPath(), imgName);
-                                if (b64 != null) {
-                                    String imgId = "VULN_POC_" + imgCounter++;
-                                    imageLibrary.put(imgId, b64);
-                                    stepImgIds.add(imgId);
-                                }
+            List<Map<String, Object>> reproductionSteps = new ArrayList<>();
+            if (v.getSteps() != null) {
+                for (int j = 0; j < v.getSteps().size(); j++) {
+                    VulnerabilityStep s = v.getSteps().get(j);
+                    Map<String, Object> st = new LinkedHashMap<>();
+                    st.put("stepLabel", "Step " + (j + 1));
+                    st.put("stepNumber", s.getStepNumber());
+                    st.put("stepDescription", s.getDescription());
+                    st.put("requestData", s.getRequest());
+                    st.put("responseData", s.getResponse());
+                    st.put("fileName", s.getFileName());
+                    st.put("lineNumber", s.getLineNumber());
+                    
+                    List<String> stepImgIds = new ArrayList<>();
+                    if (s.getImagePaths() != null) {
+                        for (String imgName : s.getImagePaths()) {
+                            String b64 = encodeFileToBase64(v.getPocFolderPath(), imgName);
+                            if (b64 != null) {
+                                String imgId = "VULN_POC_" + imgCounter++;
+                                imageLibrary.put(imgId, b64);
+                                stepImgIds.add(imgId);
                             }
                         }
-                        st.put("pocImageIds", stepImgIds);
-                        steps.add(st);
                     }
+                    st.put("proofOfConceptImageIds", stepImgIds);
+                    reproductionSteps.add(st);
                 }
-                f.put("reproductionSteps", steps);
-                findings.add(f);
             }
+            ev.put("reproductionSteps", reproductionSteps);
+            vulnerabilityEvidencesList.add(ev);
         }
-        masterPackage.put("section9", Map.of("vulnerabilities", findings));
-
-        // --- SECTION 10: CONCLUSION ---
-        Map<String, Object> section10 = new LinkedHashMap<>();
-        section10.put("enabled", p.getConclusionEnabled() != null ? p.getConclusionEnabled() : true);
-        section10.put("conclusion", p.getConclusion() != null ? p.getConclusion() : "");
-        masterPackage.put("section10", section10);
+        repGenPackage.put("vulnerabilityEvidencesList", vulnerabilityEvidencesList);
 
         // Global Image Library
-        masterPackage.put("imageLibrary", imageLibrary);
-
-        return masterPackage;
+        repGenPackage.put("imageLibrary", imageLibrary);
+        
+        return repGenPackage;
     }
 
     private boolean hasValue(String s) {
         return s != null && !s.trim().isEmpty();
-    }
-
-    private String calculateRiskIndex(List<Vulnerability> vulns) {
-        if (vulns == null || vulns.isEmpty()) return "0.0";
-        double weighted = 0;
-        for (Vulnerability v : vulns) {
-            String s = v.getSeverity() != null ? v.getSeverity().toUpperCase() : "LOW";
-            if (s.equals("CRITICAL")) weighted += 10;
-            else if (s.equals("HIGH")) weighted += 7;
-            else if (s.equals("MEDIUM")) weighted += 4;
-            else if (s.equals("LOW")) weighted += 2;
-            else weighted += 0.1;
-        }
-        return String.format("%.1f", Math.min(10.0, weighted / vulns.size()));
     }
 
     private String encodeFileToBase64(String folderPath, String fileName) {
@@ -358,9 +330,9 @@ public class ReportDataService {
         );
 
         Map<String, Object> details = new LinkedHashMap<>();
-        details.put("id", id);
-        details.put("title", titles.getOrDefault(id, id));
-        details.put("items", frameworkItems.getOrDefault(id, new ArrayList<>()));
+        details.put("frameworkId", id);
+        details.put("frameworkTitle", titles.getOrDefault(id, id));
+        details.put("frameworkRisks", frameworkItems.getOrDefault(id, new ArrayList<>()));
         return details;
     }
 }

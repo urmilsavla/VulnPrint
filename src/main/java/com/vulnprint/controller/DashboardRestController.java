@@ -3,6 +3,7 @@ package com.vulnprint.controller;
 import com.vulnprint.model.Alert;
 import com.vulnprint.model.Pentest;
 import com.vulnprint.model.Vulnerability;
+import com.vulnprint.model.User;
 import com.vulnprint.repository.AlertRepository;
 import com.vulnprint.repository.PentestRepository;
 import com.vulnprint.repository.VulnerabilityRepository;
@@ -33,17 +34,26 @@ public class DashboardRestController {
     @Autowired
     private AlertRepository alertRepository;
 
-    @GetMapping("/metrics")
-    public Map<String, Object> getMetrics() {
-        Map<String, Object> map = new HashMap<>();
+    private List<Pentest> getAuthorizedPentests(User user) {
         List<Pentest> all = pentestRepository.findAll();
-        List<Vulnerability> allVulns = all.stream()
+        if ("Administrator".equalsIgnoreCase(user.getRole())) return all;
+        return all.stream()
+                .filter(p -> p.getAssignedPentesters() != null && 
+                             p.getAssignedPentesters().stream().anyMatch(u -> u.getId().equals(user.getId())))
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/metrics")
+    public Map<String, Object> getMetrics(@RequestAttribute("authenticatedUser") User user) {
+        Map<String, Object> map = new HashMap<>();
+        List<Pentest> authorized = getAuthorizedPentests(user);
+        List<Vulnerability> allVulns = authorized.stream()
                 .filter(p -> p.getVulnerabilities() != null)
                 .flatMap(p -> p.getVulnerabilities().stream())
                 .filter(v -> v != null)
                 .collect(Collectors.toList());
         
-        map.put("totalPentests", all.size());
+        map.put("totalPentests", authorized.size());
         map.put("totalVulnerabilities", allVulns.size());
         
         long crit = allVulns.stream().filter(v -> v.getSeverity() != null && v.getSeverity().equalsIgnoreCase("CRITICAL")).count();
@@ -66,13 +76,21 @@ public class DashboardRestController {
     }
 
     @GetMapping("/recent")
-    public List<Pentest> getRecent() {
-        return pentestRepository.findTop3ByOrderByCreatedDateDesc();
+    public List<Pentest> getRecent(@RequestAttribute("authenticatedUser") User user) {
+        // Simple logic for recent, but filtered by authorization
+        List<Pentest> authorized = getAuthorizedPentests(user);
+        return authorized.stream()
+                .sorted((p1, p2) -> p2.getCreatedDate().compareTo(p1.getCreatedDate()))
+                .limit(3)
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/vulnerabilities")
-    public List<Map<String, Object>> getRecentVulnerabilities() {
-        return vulnerabilityRepository.findAll().stream()
+    public List<Map<String, Object>> getRecentVulnerabilities(@RequestAttribute("authenticatedUser") User user) {
+        List<Pentest> authorized = getAuthorizedPentests(user);
+        return authorized.stream()
+                .filter(p -> p.getVulnerabilities() != null)
+                .flatMap(p -> p.getVulnerabilities().stream())
                 .sorted((v1, v2) -> v2.getId().compareTo(v1.getId()))
                 .limit(15)
                 .map(v -> {
@@ -98,17 +116,20 @@ public class DashboardRestController {
     }
 
     @GetMapping("/pentests")
-    public List<Map<String, Object>> getPentests(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "3") int size, @RequestParam(required = false) String type) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Pentest> pentestPage;
+    public List<Map<String, Object>> getPentests(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "3") int size, @RequestParam(required = false) String type, @RequestAttribute("authenticatedUser") User user) {
+        List<Pentest> authorized = getAuthorizedPentests(user);
         
+        // Apply category filter if needed
         if (type != null && !type.isEmpty() && !type.equalsIgnoreCase("undefined") && !type.equalsIgnoreCase("All") && !type.equalsIgnoreCase("Total")) {
-            pentestPage = pentestRepository.findByPentestType(type, pageable);
-        } else {
-            pentestPage = pentestRepository.findAll(pageable);
+            authorized = authorized.stream().filter(p -> type.equalsIgnoreCase(p.getPentestType())).collect(Collectors.toList());
         }
 
-        return pentestPage.getContent().stream().map(p -> {
+        // Apply manual pagination on the authorized list
+        int start = Math.min(page * size, authorized.size());
+        int end = Math.min(start + size, authorized.size());
+        List<Pentest> paged = authorized.subList(start, end);
+
+        return paged.stream().map(p -> {
             Map<String, Object> map = new HashMap<>();
             map.put("id", p.getId());
             map.put("pentestName", p.getPentestName());

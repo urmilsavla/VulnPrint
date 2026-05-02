@@ -2,6 +2,7 @@ package com.vulnprint.controller;
 
 import com.vulnprint.model.User;
 import com.vulnprint.repository.UserRepository;
+import com.vulnprint.service.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,20 +17,23 @@ public class AuthRestController {
 
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private SecurityUtils securityUtils;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
         String username = credentials.get("username");
         String password = credentials.get("password");
 
-        // Vulnerable to SQLi as per initial design requirements
-        Optional<User> userOpt = userRepository.findByUsernameAndPasswordVulnerable(username, password).stream().findFirst();
+        // Fixed SQLi by using JpaRepository's parameterized query
+        Optional<User> userOpt = userRepository.findByUsername(username);
 
-        if (userOpt.isPresent()) {
+        if (userOpt.isPresent() && securityUtils.verifyPassword(password, userOpt.get().getPassword())) {
             User user = userOpt.get();
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
-            response.put("token", user.getUsername());
+            response.put("token", user.getUsername()); // Simplified token for this project
             response.put("email", user.getEmail());
             response.put("firstName", user.getFirstName());
             response.put("lastName", user.getLastName());

@@ -61,7 +61,7 @@
             <div class="flex justify-between items-center mb-12 border-b border-neutral-800 pb-8">
                 <div>
                     <h1 class="text-3xl font-bold text-white uppercase">Template Guide</h1>
-                    <p class="text-neutral-400 mt-1">Master API mapping documentation for report generation</p>
+                    <p class="text-neutral-400 mt-1">repGenApi Mapping Documentation for Report Generation Engine</p>
                 </div>
                 <div class="flex gap-6">
                     <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-tag-text shadow-[0_0_8px_#3b82f6]"></span> <span class="text-[10px] font-black uppercase tracking-widest text-neutral-500">Text</span></div>
@@ -71,324 +71,474 @@
             </div>
 
             <div class="space-y-6">
-                <!-- Section 1 -->
-                <div class="tile-card p-6 rounded-xl shadow-2xl" id="sec-1">
-                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('sec-1')">
+
+                <!-- Pentest Details -->
+                <div class="tile-card p-6 rounded-xl shadow-2xl" id="sec-pentest">
+                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('sec-pentest')">
                         <div class="flex items-center gap-4">
                             <span class="material-symbols-outlined text-primary">info</span>
-                            <h2 class="text-sm font-black uppercase tracking-[0.2em]">Section 1: Basic Details</h2>
+                            <h2 class="text-sm font-black uppercase tracking-[0.2em]">Pentest Details</h2>
                         </div>
                         <span class="material-symbols-outlined collapse-icon">expand_more</span>
                     </div>
                     <div class="tile-content space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg group">
+                            <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
                                 <span class="text-[10px] uppercase font-bold text-neutral-500">Project Name</span>
-                                <div class="tag-pill text-tag-text" onclick="copyTag('{section1.projectName}')">{section1.projectName}</div>
+                                <div class="tag-pill text-tag-text" onclick="copyTag('{pentestDetails.projectName}')">{pentestDetails.projectName}</div>
                             </div>
-                            <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg group">
-                                <span class="text-[10px] uppercase font-bold text-neutral-500">Submitted To Name</span>
-                                <div class="tag-pill text-tag-text" onclick="copyTag('{section1.submittedToName}')">{section1.submittedToName}</div>
-                            </div>
-                            <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg group">
-                                <span class="text-[10px] uppercase font-bold text-neutral-500">Designation/Org</span>
-                                <div class="tag-pill text-tag-text" onclick="copyTag('{section1.submittedToDesignation}')">{section1.submittedToDesignation}</div>
-                            </div>
-                            <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg group">
+                            <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
                                 <span class="text-[10px] uppercase font-bold text-neutral-500">Pentest Type</span>
-                                <div class="tag-pill text-tag-text" onclick="copyTag('{section1.pentestType}')">{section1.pentestType}</div>
+                                <div class="tag-pill text-tag-text" onclick="copyTag('{pentestDetails.pentestType}')">{pentestDetails.pentestType}</div>
                             </div>
-                            <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg group">
-                                <span class="text-[10px] uppercase font-bold text-neutral-500">Timestamp</span>
-                                <div class="tag-pill text-tag-text" onclick="copyTag('{section1.currentDateTime}')">{section1.currentDateTime}</div>
+                            <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
+                                <span class="text-[10px] uppercase font-bold text-neutral-500">Initiation Date</span>
+                                <div class="tag-pill text-tag-text" onclick="copyTag('{pentestDetails.projectInitiationDate}')">{pentestDetails.projectInitiationDate}</div>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
+                                <span class="text-[10px] uppercase font-bold text-neutral-500">Completion Date</span>
+                                <div class="tag-pill text-tag-text" onclick="copyTag('{pentestDetails.projectCompletionDate}')">{pentestDetails.projectCompletionDate}</div>
+                            </div>
+                        </div>
+
+                        <!-- Technical Scopes Loop -->
+                        <div class="loop-block">
+                            <div class="flex items-center gap-4 mb-4">
+                                <span class="material-symbols-outlined text-tag-loop">reorder</span>
+                                <h3 class="text-xs font-bold text-white uppercase tracking-wider">Technical Scopes Loop</h3>
+                            </div>
+                            <div class="bg-black/60 p-4 border border-neutral-800 rounded-xl font-mono text-sm">
+                                <div class="text-tag-loop mb-2">{#pentestDetails.technicalScopes}</div>
+                                <div class="pl-6 space-y-2">
+                                    <div class="flex gap-4">
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{technicalScopeKey}')">{technicalScopeKey}</div>
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{technicalScopeValue}')">{technicalScopeValue}</div>
+                                    </div>
+                                </div>
+                                <div class="text-tag-loop mt-2">{/pentestDetails.technicalScopes}</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Section 2 -->
-                <div class="tile-card p-6 rounded-xl shadow-2xl" id="sec-2">
-                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('sec-2')">
-                        <div class="flex items-center gap-4">
-                            <span class="material-symbols-outlined text-primary">gavel</span>
-                            <h2 class="text-sm font-black uppercase tracking-[0.2em]">Section 2: Disclaimer</h2>
-                        </div>
-                        <span class="material-symbols-outlined collapse-icon">expand_more</span>
-                    </div>
-                    <div class="tile-content">
-                        <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg group">
-                            <span class="text-[10px] uppercase font-bold text-neutral-500">Disclaimer Text</span>
-                            <div class="tag-pill text-tag-text" onclick="copyTag('{section2.disclaimer}')">{section2.disclaimer}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Section 3 -->
-                <div class="tile-card p-6 rounded-xl shadow-2xl" id="sec-3">
-                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('sec-3')">
+                <!-- Client Details -->
+                <div class="tile-card p-6 rounded-xl shadow-2xl" id="sec-client">
+                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('sec-client')">
                         <div class="flex items-center gap-4">
                             <span class="material-symbols-outlined text-primary">account_box</span>
-                            <h2 class="text-sm font-black uppercase tracking-[0.2em]">Section 3: Client Details</h2>
+                            <h2 class="text-sm font-black uppercase tracking-[0.2em]">Client Details</h2>
                         </div>
                         <span class="material-symbols-outlined collapse-icon">expand_more</span>
                     </div>
                     <div class="tile-content grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
-                            <span class="text-[10px] uppercase font-bold text-neutral-500">Org Name</span>
-                            <div class="tag-pill text-tag-text" onclick="copyTag('{section3.clientOrgName}')">{section3.clientOrgName}</div>
+                            <span class="text-[10px] uppercase font-bold text-neutral-500">Client Name</span>
+                            <div class="tag-pill text-tag-text" onclick="copyTag('{clientDetails.clientName}')">{clientDetails.clientName}</div>
                         </div>
                         <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
                             <span class="text-[10px] uppercase font-bold text-neutral-500">SPOC Name</span>
-                            <div class="tag-pill text-tag-text" onclick="copyTag('{section3.clientSpocName}')">{section3.clientSpocName}</div>
+                            <div class="tag-pill text-tag-text" onclick="copyTag('{clientDetails.clientSpocName}')">{clientDetails.clientSpocName}</div>
                         </div>
                         <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
                             <span class="text-[10px] uppercase font-bold text-neutral-500">SPOC Contact</span>
-                            <div class="tag-pill text-tag-text" onclick="copyTag('{section3.clientSpocContact}')">{section3.clientSpocContact}</div>
+                            <div class="tag-pill text-tag-text" onclick="copyTag('{clientDetails.clientSpocContact}')">{clientDetails.clientSpocContact}</div>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
+                            <span class="text-[10px] uppercase font-bold text-neutral-500">Recipient Name</span>
+                            <div class="tag-pill text-tag-text" onclick="copyTag('{clientDetails.reportRecipientName}')">{clientDetails.reportRecipientName}</div>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
+                            <span class="text-[10px] uppercase font-bold text-neutral-500">Recipient Designation</span>
+                            <div class="tag-pill text-tag-text" onclick="copyTag('{clientDetails.reportRecipientDesignation}')">{clientDetails.reportRecipientDesignation}</div>
                         </div>
                         <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
                             <span class="text-[10px] uppercase font-bold text-neutral-500">Client Logo</span>
-                            <div class="tag-pill text-tag-image" onclick="copyTag('{%imageLibrary.[section3.clientLogoId]}')">{%imageLibrary.[section3.clientLogoId]}</div>
+                            <div class="tag-pill text-tag-image" onclick="copyTag('{%imageLibrary.[clientDetails.clientLogoId]}')">{%imageLibrary.[clientDetails.clientLogoId]}</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Section 4 -->
-                <div class="tile-card p-6 rounded-xl shadow-2xl" id="sec-4">
-                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('sec-4')">
+                <!-- Pentest Conducting Org Details -->
+                <div class="tile-card p-6 rounded-xl shadow-2xl" id="sec-org">
+                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('sec-org')">
                         <div class="flex items-center gap-4">
-                            <span class="material-symbols-outlined text-primary">assessment</span>
-                            <h2 class="text-sm font-black uppercase tracking-[0.2em]">Section 4: Project Details</h2>
-                        </div>
-                        <span class="material-symbols-outlined collapse-icon">expand_more</span>
-                    </div>
-                    <div class="tile-content space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
-                                <span class="text-[10px] uppercase font-bold text-neutral-500">Initiation Date</span>
-                                <div class="tag-pill text-tag-text" onclick="copyTag('{section4.projectInitiationDate}')">{section4.projectInitiationDate}</div>
-                            </div>
-                            <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
-                                <span class="text-[10px] uppercase font-bold text-neutral-500">Risk Index</span>
-                                <div class="tag-pill text-tag-text" onclick="copyTag('{section4.overallPentestRiskIndex}')">{section4.overallPentestRiskIndex}</div>
-                            </div>
-                        </div>
-                        <div class="loop-block font-mono text-[11px]">
-                            <p class="text-[9px] font-black uppercase text-tag-loop mb-3 tracking-widest">// Scope Items Loop</p>
-                            <div class="text-tag-loop">{#section4.scopeItems}</div>
-                            <div class="pl-6 text-neutral-400">{label}: <span class="text-tag-text">{value}</span></div>
-                            <div class="text-tag-loop">{/section4.scopeItems}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Section 5 -->
-                <div class="tile-card p-6 rounded-xl shadow-2xl" id="sec-5">
-                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('sec-5')">
-                        <div class="flex items-center gap-4">
-                            <span class="material-symbols-outlined text-primary">badge</span>
-                            <h2 class="text-sm font-black uppercase tracking-[0.2em]">Section 5: Testers Details</h2>
-                        </div>
-                        <span class="material-symbols-outlined collapse-icon">expand_more</span>
-                    </div>
-                    <div class="tile-content space-y-4">
-                        <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
-                            <span class="text-[10px] uppercase font-bold text-neutral-500">Approver Name</span>
-                            <div class="tag-pill text-tag-text" onclick="copyTag('{section5.approverName}')">{section5.approverName}</div>
-                        </div>
-                        <div class="loop-block font-mono text-[11px]">
-                            <p class="text-[9px] font-black uppercase text-tag-loop mb-3 tracking-widest">// Testers Loop</p>
-                            <div class="text-tag-loop">{#section5.testers}</div>
-                            <div class="pl-6 text-neutral-400">Name: <span class="text-tag-text">{name}</span> | Role: <span class="text-tag-text">{designation}</span></div>
-                            <div class="text-tag-loop">{/section5.testers}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Section 6 -->
-                <div class="tile-card p-6 rounded-xl shadow-2xl" id="sec-6">
-                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('sec-6')">
-                        <div class="flex items-center gap-4">
-                            <span class="material-symbols-outlined text-primary">business_center</span>
-                            <h2 class="text-sm font-black uppercase tracking-[0.2em]">Section 6: Pentesting Org Details</h2>
+                            <span class="material-symbols-outlined text-primary">corporate_fare</span>
+                            <h2 class="text-sm font-black uppercase tracking-[0.2em]">Conducting Organization</h2>
                         </div>
                         <span class="material-symbols-outlined collapse-icon">expand_more</span>
                     </div>
                     <div class="tile-content grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
                             <span class="text-[10px] uppercase font-bold text-neutral-500">Org Name</span>
-                            <div class="tag-pill text-tag-text" onclick="copyTag('{section6.orgName}')">{section6.orgName}</div>
+                            <div class="tag-pill text-tag-text" onclick="copyTag('{pentestConductingOrgDetails.organizationName}')">{pentestConductingOrgDetails.organizationName}</div>
                         </div>
                         <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
-                            <span class="text-[10px] uppercase font-bold text-neutral-500">Legal Name</span>
-                            <div class="tag-pill text-tag-text" onclick="copyTag('{section6.orgLegalName}')">{section6.orgLegalName}</div>
+                            <span class="text-[10px] uppercase font-bold text-neutral-500">Org Legal Name</span>
+                            <div class="tag-pill text-tag-text" onclick="copyTag('{pentestConductingOrgDetails.organizationLegalName}')">{pentestConductingOrgDetails.organizationLegalName}</div>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
+                            <span class="text-[10px] uppercase font-bold text-neutral-500">Official Email</span>
+                            <div class="tag-pill text-tag-text" onclick="copyTag('{pentestConductingOrgDetails.officialEmail}')">{pentestConductingOrgDetails.officialEmail}</div>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
+                            <span class="text-[10px] uppercase font-bold text-neutral-500">Official Contact</span>
+                            <div class="tag-pill text-tag-text" onclick="copyTag('{pentestConductingOrgDetails.officialContactNumber}')">{pentestConductingOrgDetails.officialContactNumber}</div>
                         </div>
                         <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
                             <span class="text-[10px] uppercase font-bold text-neutral-500">Address</span>
-                            <div class="tag-pill text-tag-text" onclick="copyTag('{section6.headquarterAddress}')">{section6.headquarterAddress}</div>
+                            <div class="tag-pill text-tag-text" onclick="copyTag('{pentestConductingOrgDetails.headquartersAddress}')">{pentestConductingOrgDetails.headquartersAddress}</div>
                         </div>
                         <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
-                            <span class="text-[10px] uppercase font-bold text-neutral-500">Email</span>
-                            <div class="tag-pill text-tag-text" onclick="copyTag('{section6.officialEmail}')">{section6.officialEmail}</div>
-                        </div>
-                        <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg md:col-span-2">
                             <span class="text-[10px] uppercase font-bold text-neutral-500">Org Logo</span>
-                            <div class="tag-pill text-tag-image" onclick="copyTag('{%imageLibrary.[section6.orgLogoId]}')">{%imageLibrary.[section6.orgLogoId]}</div>
+                            <div class="tag-pill text-tag-image" onclick="copyTag('{%imageLibrary.[pentestConductingOrgDetails.organizationLogoId]}')">{%imageLibrary.[pentestConductingOrgDetails.organizationLogoId]}</div>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
+                            <span class="text-[10px] uppercase font-bold text-neutral-500">Approver Name</span>
+                            <div class="tag-pill text-tag-text" onclick="copyTag('{pentestConductingOrgDetails.reportApproverName}')">{pentestConductingOrgDetails.reportApproverName}</div>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
+                            <span class="text-[10px] uppercase font-bold text-neutral-500">Approver Designation</span>
+                            <div class="tag-pill text-tag-text" onclick="copyTag('{pentestConductingOrgDetails.reportApproverDesignation}')">{pentestConductingOrgDetails.reportApproverDesignation}</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Section 7 -->
-                <div class="tile-card p-6 rounded-xl shadow-2xl" id="sec-7">
-                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('sec-7')">
+                <!-- Pentest Conducting Testers -->
+                <div class="tile-card p-6 rounded-xl shadow-2xl" id="sec-testers">
+                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('sec-testers')">
                         <div class="flex items-center gap-4">
-                            <span class="material-symbols-outlined text-primary">architecture</span>
-                            <h2 class="text-sm font-black uppercase tracking-[0.2em]">Section 7: Pentest Methodology</h2>
+                            <span class="material-symbols-outlined text-primary">groups</span>
+                            <h2 class="text-sm font-black uppercase tracking-[0.2em]">Pentest Team</h2>
+                        </div>
+                        <span class="material-symbols-outlined collapse-icon">expand_more</span>
+                    </div>
+                    <div class="tile-content">
+                        <div class="loop-block mt-0">
+                            <div class="flex items-center gap-4 mb-4">
+                                <span class="material-symbols-outlined text-tag-loop">reorder</span>
+                                <h3 class="text-xs font-bold text-white uppercase tracking-wider">Testers Loop</h3>
+                            </div>
+                            <div class="bg-black/60 p-4 border border-neutral-800 rounded-xl font-mono text-sm">
+                                <div class="text-tag-loop mb-2">{#pentestConductingTesters}</div>
+                                <div class="pl-6 space-y-2">
+                                    <div class="flex gap-4">
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{srNo}')">{srNo}</div>
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{name}')">{name}</div>
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{qualification}')">{qualification}</div>
+                                    </div>
+                                </div>
+                                <div class="text-tag-loop mt-2">{/pentestConductingTesters}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Disclaimer and Conclusion -->
+                <div class="tile-card p-6 rounded-xl shadow-2xl" id="sec-legal">
+                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('sec-legal')">
+                        <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined text-primary">gavel</span>
+                            <h2 class="text-sm font-black uppercase tracking-[0.2em]">Disclaimer & Conclusion</h2>
+                        </div>
+                        <span class="material-symbols-outlined collapse-icon">expand_more</span>
+                    </div>
+                    <div class="tile-content grid grid-cols-1 gap-4">
+                        <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
+                            <span class="text-[10px] uppercase font-bold text-neutral-500">Disclaimer Text</span>
+                            <div class="tag-pill text-tag-text" onclick="copyTag('{disclaimerAndConclusion.disclaimer}')">{disclaimerAndConclusion.disclaimer}</div>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
+                            <span class="text-[10px] uppercase font-bold text-neutral-500">Conclusion Text</span>
+                            <div class="tag-pill text-tag-text" onclick="copyTag('{disclaimerAndConclusion.conclusion}')">{disclaimerAndConclusion.conclusion}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Executive Summary -->
+                <div class="tile-card p-6 rounded-xl shadow-2xl" id="sec-exec">
+                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('sec-exec')">
+                        <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined text-primary">analytics</span>
+                            <h2 class="text-sm font-black uppercase tracking-[0.2em]">Executive Summary</h2>
+                        </div>
+                        <span class="material-symbols-outlined collapse-icon">expand_more</span>
+                    </div>
+                    <div class="tile-content space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
+                                <span class="text-[10px] uppercase font-bold text-neutral-500">Executive Summary Text</span>
+                                <div class="tag-pill text-tag-text" onclick="copyTag('{pentestExecutiveSummary.executiveSummary}')">{pentestExecutiveSummary.executiveSummary}</div>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
+                                <span class="text-[10px] uppercase font-bold text-neutral-500">Risk Summary Text</span>
+                                <div class="tag-pill text-tag-text" onclick="copyTag('{pentestExecutiveSummary.riskSummary}')">{pentestExecutiveSummary.riskSummary}</div>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
+                                <span class="text-[10px] uppercase font-bold text-neutral-500">Risk Overview Chart</span>
+                                <div class="tag-pill text-tag-image" onclick="copyTag('{%imageLibrary.[pentestExecutiveSummary.riskChartImageId]}')">{%imageLibrary.[pentestExecutiveSummary.riskChartImageId]}</div>
+                            </div>
+                        </div>
+
+                        <!-- Severity Metrics -->
+                        <div class="loop-block bg-black/40 border-l-primary/50">
+                            <div class="flex items-center gap-4 mb-6">
+                                <span class="material-symbols-outlined text-primary">bar_chart</span>
+                                <h3 class="text-xs font-black text-white uppercase tracking-widest">Severity Distribution Metrics</h3>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                <div class="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex flex-col items-center gap-2">
+                                    <span class="text-[9px] font-black text-red-500 uppercase tracking-tighter">Critical</span>
+                                    <div class="tag-pill text-tag-text !bg-red-500/20 !border-red-500/30 hover:!border-red-500" onclick="copyTag('{pentestExecutiveSummary.severityMetrics.CRITICAL}')">...CRITICAL</div>
+                                </div>
+                                <div class="p-3 bg-orange-500/10 border border-orange-500/20 rounded-xl flex flex-col items-center gap-2">
+                                    <span class="text-[9px] font-black text-orange-500 uppercase tracking-tighter">High</span>
+                                    <div class="tag-pill text-tag-text !bg-orange-500/20 !border-orange-500/30 hover:!border-orange-500" onclick="copyTag('{pentestExecutiveSummary.severityMetrics.HIGH}')">...HIGH</div>
+                                </div>
+                                <div class="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl flex flex-col items-center gap-2">
+                                    <span class="text-[9px] font-black text-yellow-500 uppercase tracking-tighter">Medium</span>
+                                    <div class="tag-pill text-tag-text !bg-yellow-500/20 !border-yellow-500/30 hover:!border-yellow-500" onclick="copyTag('{pentestExecutiveSummary.severityMetrics.MEDIUM}')">...MEDIUM</div>
+                                </div>
+                                <div class="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl flex flex-col items-center gap-2">
+                                    <span class="text-[9px] font-black text-blue-500 uppercase tracking-tighter">Low</span>
+                                    <div class="tag-pill text-tag-text !bg-blue-500/20 !border-blue-500/30 hover:!border-blue-500" onclick="copyTag('{pentestExecutiveSummary.severityMetrics.LOW}')">...LOW</div>
+                                </div>
+                                <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex flex-col items-center gap-2">
+                                    <span class="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">Informational</span>
+                                    <div class="tag-pill text-tag-text !bg-emerald-500/20 !border-emerald-500/30 hover:!border-emerald-500" onclick="copyTag('{pentestExecutiveSummary.severityMetrics.INFO}')">...INFO</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Vulnerabilities Summary Table Loop -->
+                        <div class="loop-block mt-4">
+                            <div class="flex items-center gap-4 mb-4">
+                                <span class="material-symbols-outlined text-tag-loop">table_rows</span>
+                                <h3 class="text-xs font-bold text-white uppercase tracking-wider">Vulnerabilities Summary Table Loop</h3>
+                            </div>
+                            <div class="bg-black/60 p-4 border border-neutral-800 rounded-xl font-mono text-sm">
+                                <div class="text-tag-loop mb-2">{#pentestExecutiveSummary.vulnerabilitiesSummaryTable}</div>
+                                <div class="pl-6 space-y-2">
+                                    <div class="flex gap-4">
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{srNo}')">{srNo}</div>
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{title}')">{title}</div>
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{severity}')">{severity}</div>
+                                    </div>
+                                </div>
+                                <div class="text-tag-loop mt-2">{/pentestExecutiveSummary.vulnerabilitiesSummaryTable}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Methodology and Frameworks -->
+                <div class="tile-card p-6 rounded-xl shadow-2xl" id="sec-meth">
+                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('sec-meth')">
+                        <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined text-primary">schema</span>
+                            <h2 class="text-sm font-black uppercase tracking-[0.2em]">Methodology & Frameworks</h2>
                         </div>
                         <span class="material-symbols-outlined collapse-icon">expand_more</span>
                     </div>
                     <div class="tile-content space-y-4">
                         <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
+                            <span class="text-[10px] uppercase font-bold text-neutral-500">Display Mode</span>
+                            <div class="tag-pill text-tag-text" onclick="copyTag('{pentestMethodologyAndFrameworks.methodologyDisplayMode}')">{pentestMethodologyAndFrameworks.methodologyDisplayMode}</div>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
                             <span class="text-[10px] uppercase font-bold text-neutral-500">Methodology Text</span>
-                            <div class="tag-pill text-tag-text" onclick="copyTag('{section7.methodologyText}')">{section7.methodologyText}</div>
+                            <div class="tag-pill text-tag-text" onclick="copyTag('{pentestMethodologyAndFrameworks.methodologyText}')">{pentestMethodologyAndFrameworks.methodologyText}</div>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <div class="loop-block font-mono text-[11px]">
-                                <p class="text-[9px] font-black uppercase text-tag-loop mb-3 tracking-widest">// Methodology Images</p>
-                                <div class="text-tag-loop">{#section7.methodologyImageIds}</div>
-                                <div class="pl-6 text-tag-image">{%imageLibrary.[.]}</div>
-                                <div class="text-tag-loop">{/section7.methodologyImageIds}</div>
+
+                        <!-- Methodology Images Loop -->
+                        <div class="loop-block">
+                            <div class="flex items-center gap-4 mb-4">
+                                <span class="material-symbols-outlined text-tag-loop">data_array</span>
+                                <h3 class="text-xs font-bold text-white uppercase tracking-wider">Methodology Images Loop</h3>
                             </div>
-                            <div class="loop-block font-mono text-[11px]">
-                                <p class="text-[9px] font-black uppercase text-tag-loop mb-3 tracking-widest">// Frameworks Loop</p>
-                                <div class="text-tag-loop">{#section7.selectedFramework}</div>
-                                <div class="pl-6 text-neutral-400">Title: <span class="text-tag-text">{title}</span></div>
-                                <div class="pl-8 text-neutral-500 py-1 my-2 border-l border-neutral-800 italic">
-                                    <div class="text-tag-loop">{#items}</div>
-                                    <div class="pl-4 text-tag-text">{.}</div>
-                                    <div class="text-tag-loop">{/items}</div>
+                            <div class="bg-black/60 p-4 border border-neutral-800 rounded-xl font-mono text-sm">
+                                <div class="text-tag-loop mb-2">{#pentestMethodologyAndFrameworks.methodologyImageIds}</div>
+                                <div class="pl-6">
+                                    <div class="tag-pill text-tag-image inline-block" onclick="copyTag('{%imageLibrary.[.]}')">{%imageLibrary.[.]}</div>
                                 </div>
-                                <div class="text-tag-loop">{/section7.selectedFramework}</div>
+                                <div class="text-tag-loop mt-2">{/pentestMethodologyAndFrameworks.methodologyImageIds}</div>
+                            </div>
+                        </div>
+
+                        <!-- Frameworks Loop -->
+                        <div class="loop-block mt-4">
+                            <div class="flex items-center gap-4 mb-4">
+                                <span class="material-symbols-outlined text-tag-loop">data_array</span>
+                                <h3 class="text-xs font-bold text-white uppercase tracking-wider">Selected Frameworks Loop</h3>
+                            </div>
+                            <div class="bg-black/60 p-4 border border-neutral-800 rounded-xl font-mono text-sm">
+                                <div class="text-tag-loop mb-2">{#pentestMethodologyAndFrameworks.selectedFrameworks}</div>
+                                <div class="pl-6 space-y-2">
+                                    <div class="flex gap-4">
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{frameworkTitle}')">{frameworkTitle}</div>
+                                    </div>
+                                    
+                                    <!-- Nested Risks Loop -->
+                                    <div class="pl-6 mt-2 border-l border-neutral-800">
+                                        <div class="text-[10px] text-neutral-500 mb-1">// Nested Framework Risks Loop</div>
+                                        <div class="text-tag-loop">{#frameworkRisks}</div>
+                                        <div class="pl-4 py-1">
+                                            <div class="tag-pill text-tag-text inline-block" onclick="copyTag('{.}')">{.}</div>
+                                        </div>
+                                        <div class="text-tag-loop">{/frameworkRisks}</div>
+                                    </div>
+                                </div>
+                                <div class="text-tag-loop mt-2">{/pentestMethodologyAndFrameworks.selectedFrameworks}</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Section 8 -->
-                <div class="tile-card p-6 rounded-xl shadow-2xl" id="sec-8">
-                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('sec-8')">
+                <!-- Vulnerability Details (Metadata) -->
+                <div class="tile-card p-6 rounded-xl shadow-2xl" id="sec-vuln-meta">
+                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('sec-vuln-meta')">
                         <div class="flex items-center gap-4">
-                            <span class="material-symbols-outlined text-primary">pie_chart</span>
-                            <h2 class="text-sm font-black uppercase tracking-[0.2em]">Section 8: Pentest Summary</h2>
-                        </div>
-                        <span class="material-symbols-outlined collapse-icon">expand_more</span>
-                    </div>
-                    <div class="tile-content space-y-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
-                                <span class="text-[10px] uppercase font-bold text-neutral-500">Executive Summary</span>
-                                <div class="tag-pill text-tag-text" onclick="copyTag('{section8.executiveSummary}')">{section8.executiveSummary}</div>
-                            </div>
-                            <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
-                                <span class="text-[10px] uppercase font-bold text-neutral-500">Risk Summary Text</span>
-                                <div class="tag-pill text-tag-text" onclick="copyTag('{section8.riskSummary}')">{section8.riskSummary}</div>
-                            </div>
-                            <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg">
-                                <span class="text-[10px] uppercase font-bold text-neutral-500">Risk Chart Image</span>
-                                <div class="tag-pill text-tag-image" onclick="copyTag('{%imageLibrary.[section8.riskChartImageId]}')">{%imageLibrary.[section8.riskChartImageId]}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="loop-block font-mono text-[11px]">
-                                <p class="text-[9px] font-black uppercase text-tag-loop mb-3 tracking-widest">// Findings Table Loop</p>
-                                <div class="text-tag-loop">{#section8.riskSummaryTable}</div>
-                                <div class="pl-6 text-neutral-400"><span class="text-tag-text">{title}</span> | <span class="text-tag-text">{severity}</span></div>
-                                <div class="text-tag-loop">{/section8.riskSummaryTable}</div>
-                            </div>
-                            <div class="space-y-2 p-4 bg-black/40 border border-neutral-800 rounded-xl">
-                                <p class="text-[9px] font-black uppercase text-neutral-600 mb-3 tracking-widest">Severity Metrics (Counts)</p>
-                                <div class="flex justify-between items-center text-[10px] font-mono"><span class="text-error">Critical</span><div class="tag-pill py-1 text-tag-text" onclick="copyTag('{section8.severityMetrics.CRITICAL}')">{section8.severityMetrics.CRITICAL}</div></div>
-                                <div class="flex justify-between items-center text-[10px] font-mono"><span class="text-orange-500">High</span><div class="tag-pill py-1 text-tag-text" onclick="copyTag('{section8.severityMetrics.HIGH}')">{section8.severityMetrics.HIGH}</div></div>
-                                <div class="flex justify-between items-center text-[10px] font-mono"><span class="text-yellow-500">Medium</span><div class="tag-pill py-1 text-tag-text" onclick="copyTag('{section8.severityMetrics.MEDIUM}')">{section8.severityMetrics.MEDIUM}</div></div>
-                            </div>
-                        </div>
-
-                        <div class="loop-block font-mono text-[11px]">
-                            <p class="text-[9px] font-black uppercase text-tag-loop mb-3 tracking-widest">// Severity Matrix Criteria Tags</p>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                                <div class="flex items-center justify-between"><span class="text-[10px] uppercase font-bold text-neutral-600">Critical</span><div class="tag-pill py-1 text-tag-text" onclick="copyTag('{section8.severityMatrix.CRITICAL}')">{section8.severityMatrix.CRITICAL}</div></div>
-                                <div class="flex items-center justify-between"><span class="text-[10px] uppercase font-bold text-neutral-600">High</span><div class="tag-pill py-1 text-tag-text" onclick="copyTag('{section8.severityMatrix.HIGH}')">{section8.severityMatrix.HIGH}</div></div>
-                                <div class="flex items-center justify-between"><span class="text-[10px] uppercase font-bold text-neutral-600">Medium</span><div class="tag-pill py-1 text-tag-text" onclick="copyTag('{section8.severityMatrix.MEDIUM}')">{section8.severityMatrix.MEDIUM}</div></div>
-                                <div class="flex items-center justify-between"><span class="text-[10px] uppercase font-bold text-neutral-600">Low</span><div class="tag-pill py-1 text-tag-text" onclick="copyTag('{section8.severityMatrix.LOW}')">{section8.severityMatrix.LOW}</div></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Section 9 -->
-                <div class="tile-card p-6 rounded-xl shadow-2xl" id="sec-9">
-                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('sec-9')">
-                        <div class="flex items-center gap-4">
-                            <span class="material-symbols-outlined text-primary">bug_report</span>
-                            <h2 class="text-sm font-black uppercase tracking-[0.2em]">Section 9: Vulnerabilities</h2>
+                            <span class="material-symbols-outlined text-primary">format_list_bulleted</span>
+                            <h2 class="text-sm font-black uppercase tracking-[0.2em]">Vulnerability Metadata (Summary)</h2>
                         </div>
                         <span class="material-symbols-outlined collapse-icon">expand_more</span>
                     </div>
                     <div class="tile-content">
-                        <div class="loop-block font-mono text-[11px]">
-                            <div class="text-tag-loop">{#section9.vulnerabilities}</div>
-                            <div class="pl-6 border-l border-neutral-800 my-4 space-y-4">
-                                <div class="flex flex-wrap gap-2">
-                                    <div class="tag-pill text-tag-text" onclick="copyTag('{refId}')">{refId}</div>
-                                    <div class="tag-pill text-tag-text" onclick="copyTag('{title}')">{title}</div>
-                                    <div class="tag-pill text-tag-text" onclick="copyTag('{severity}')">{severity}</div>
-                                </div>
-                                <div class="flex flex-wrap gap-2">
-                                    <div class="tag-pill text-tag-text" onclick="copyTag('{description}')">{description}</div>
-                                    <div class="tag-pill text-tag-text" onclick="copyTag('{impact}')">{impact}</div>
-                                    <div class="tag-pill text-tag-text" onclick="copyTag('{mitigation}')">{mitigation}</div>
+                        <div class="loop-block mt-0 border-l-tag-loop">
+                            <div class="flex items-center gap-4 mb-4">
+                                <span class="material-symbols-outlined text-tag-loop">data_array</span>
+                                <h3 class="text-xs font-bold text-white uppercase tracking-wider">vulnerabilityDetailsList Loop</h3>
+                            </div>
+                            <p class="text-[11px] text-neutral-400 mb-4 italic">Use this loop for high-level finding tables. It does not contain technical evidence or images.</p>
+                            
+                            <div class="bg-black/60 p-4 border border-neutral-800 rounded-xl font-mono text-sm">
+                                <div class="text-tag-loop mb-4">{#vulnerabilityDetailsList}</div>
+                                
+                                <div class="pl-6 space-y-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{srNo}')">{srNo}</div>
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{referenceId}')">{referenceId}</div>
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{vulnerabilityTitle}')">{vulnerabilityTitle}</div>
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{severity}')">{severity}</div>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{cvssScore}')">{cvssScore}</div>
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{cvssVector}')">{cvssVector}</div>
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{status}')">{status}</div>
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{cweReference}')">{cweReference}</div>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{owaspReference}')">{owaspReference}</div>
+                                        <div class="tag-pill text-tag-text text-center" onclick="copyTag('{impact}')">{impact}</div>
+                                        <div class="tag-pill text-tag-text text-center" onclick="copyTag('{mitigation}')">{mitigation}</div>
+                                    </div>
+                                    <div class="grid grid-cols-1 gap-3">
+                                        <div class="tag-pill text-tag-text text-center" onclick="copyTag('{description}')">{description}</div>
+                                    </div>
                                 </div>
                                 
-                                <div class="bg-black/60 p-4 border border-neutral-800 rounded-xl">
-                                    <p class="text-[9px] font-black text-neutral-700 uppercase mb-3 tracking-widest">// Nested Steps Loop</p>
-                                    <div class="text-tag-loop">{#reproductionSteps}</div>
-                                    <div class="pl-6 py-1 text-neutral-400 leading-relaxed">
-                                        {order}: <span class="text-tag-text">{description}</span><br>
-                                        <div class="mt-1 flex items-center gap-2">
-                                            <span class="text-tag-loop">{#pocImageIds}</span> 
-                                            <span class="text-tag-image">{%imageLibrary.[.]}</span> 
-                                            <span class="text-tag-loop">{/pocImageIds}</span>
-                                        </div>
-                                    </div>
-                                    <div class="text-tag-loop">{/reproductionSteps}</div>
-                                </div>
-
-                                <div class="flex gap-4">
-                                    <div class="tag-pill text-tag-image" onclick="copyTag('{%imageLibrary.[codeSnippetImageId]}')">{%imageLibrary.[codeSnippetImageId]}</div>
-                                    <div class="tag-pill text-tag-text" onclick="copyTag('{globalFileName}')">{globalFileName}</div>
-                                </div>
+                                <div class="text-tag-loop mt-4">{/vulnerabilityDetailsList}</div>
                             </div>
-                            <div class="text-tag-loop">{/section9.vulnerabilities}</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Section 10 -->
-                <div class="tile-card p-6 rounded-xl shadow-2xl" id="sec-10">
-                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('sec-10')">
+                <!-- Vulnerability Evidences (Technical) -->
+                <div class="tile-card p-6 rounded-xl shadow-2xl border-primary/20 bg-primary/5" id="sec-vuln-evidence">
+                    <div class="tile-header flex justify-between items-center mb-6 text-white" onclick="toggleTile('sec-vuln-evidence')">
                         <div class="flex items-center gap-4">
-                            <span class="material-symbols-outlined text-primary">done_all</span>
-                            <h2 class="text-sm font-black uppercase tracking-[0.2em]">Section 10: Conclusion</h2>
+                            <span class="material-symbols-outlined text-primary">terminal</span>
+                            <h2 class="text-sm font-black uppercase tracking-[0.2em] text-primary">Technical Evidences (Deep Dive)</h2>
                         </div>
                         <span class="material-symbols-outlined collapse-icon">expand_more</span>
                     </div>
                     <div class="tile-content">
-                        <div class="flex items-center justify-between p-3 bg-black/20 border border-neutral-800 rounded-lg group">
-                            <span class="text-[10px] uppercase font-bold text-neutral-500">Final Conclusion</span>
-                            <div class="tag-pill text-tag-text" onclick="copyTag('{section10.conclusion}')">{section10.conclusion}</div>
+                        
+                        <div class="bg-black/40 border border-primary/20 p-5 rounded-lg mb-6">
+                            <h4 class="text-primary font-bold text-sm mb-2 flex items-center gap-2"><span class="material-symbols-outlined text-sm">lightbulb</span> Docxtemplater Integrator Guide</h4>
+                            <p class="text-xs text-neutral-300 leading-relaxed">
+                                To create dynamic "Step X" formatting, you <b>do not</b> need to code logic in the template. <br/>
+                                1. Wrap the section in <span class="font-mono text-tag-loop">{#reproductionSteps} ... {/reproductionSteps}</span>.<br/>
+                                2. Inside, write exactly <span class="font-mono text-tag-text">{stepLabel}: {stepDescription}</span>.<br/>
+                                3. <b>Style the tags directly in Word.</b> Make <span class="font-mono text-tag-text">{stepLabel}</span> bold, red, and 14pt in Word. The engine will inherit your exact Word formatting for "Step 1", "Step 2", etc.
+                            </p>
+                        </div>
+
+                        <div class="loop-block mt-0 border-l-tag-loop">
+                            <div class="flex items-center gap-4 mb-4">
+                                <span class="material-symbols-outlined text-tag-loop">data_array</span>
+                                <h3 class="text-xs font-bold text-white uppercase tracking-wider">vulnerabilityEvidencesList Loop</h3>
+                            </div>
+                            
+                            <div class="bg-black/60 p-4 border border-neutral-800 rounded-xl font-mono text-sm">
+                                <div class="text-tag-loop mb-4">{#vulnerabilityEvidencesList}</div>
+                                
+                                <div class="pl-6 space-y-4">
+                                    <!-- Global Finding Meta -->
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pb-3 border-b border-neutral-800/50">
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{vulnerabilityTitle}')">{vulnerabilityTitle}</div>
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{referenceId}')">{referenceId}</div>
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{evidenceMode}')">{evidenceMode}</div>
+                                    </div>
+
+                                    <!-- Global Code Context -->
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pb-3 border-b border-neutral-800/50">
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{globalFileName}')">{globalFileName}</div>
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{globalLineNumber}')">{globalLineNumber}</div>
+                                        <div class="tag-pill text-tag-text" onclick="copyTag('{globalRequestResponse}')">{globalRequestResponse}</div>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-1 gap-3 pb-3 border-b border-neutral-800/50">
+                                        <div class="tag-pill text-tag-image inline-block w-max" onclick="copyTag('{%imageLibrary.[codeSnippetImageId]}')">{%imageLibrary.[codeSnippetImageId]}</div>
+                                    </div>
+
+                                    <!-- Nested Reproduction Steps Loop -->
+                                    <div class="pl-4 mt-4 border-l-2 border-tag-loop/50 pb-2">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <span class="material-symbols-outlined text-[14px] text-tag-loop">subdirectory_arrow_right</span>
+                                            <span class="text-[11px] font-bold text-tag-loop uppercase">Nested Reproduction Steps Loop</span>
+                                        </div>
+                                        <div class="text-tag-loop mb-3">{#reproductionSteps}</div>
+                                        
+                                        <div class="pl-4 space-y-3">
+                                            <!-- Dynamic Step Labels -->
+                                            <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                                <div class="tag-pill text-tag-text !bg-blue-900/20 !border-blue-500/50" onclick="copyTag('{stepLabel}')" title="Outputs 'Step 1', 'Step 2', etc.">{stepLabel}</div>
+                                                <div class="tag-pill text-tag-text" onclick="copyTag('{stepNumber}')">{stepNumber}</div>
+                                                <div class="tag-pill text-tag-text" onclick="copyTag('{stepDescription}')">{stepDescription}</div>
+                                            </div>
+                                            
+                                            <!-- Step Context -->
+                                            <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                                                <div class="tag-pill text-tag-text" onclick="copyTag('{fileName}')">{fileName}</div>
+                                                <div class="tag-pill text-tag-text" onclick="copyTag('{lineNumber}')">{lineNumber}</div>
+                                                <div class="tag-pill text-tag-text" onclick="copyTag('{requestData}')">{requestData}</div>
+                                                <div class="tag-pill text-tag-text" onclick="copyTag('{responseData}')">{responseData}</div>
+                                            </div>
+                                            
+                                            <!-- Nested POC Images Loop -->
+                                            <div class="pl-4 mt-3 border-l-2 border-tag-image/50 bg-black/30 p-3 rounded-r-lg">
+                                                <div class="flex items-center gap-2 mb-2">
+                                                    <span class="material-symbols-outlined text-[14px] text-tag-image">image</span>
+                                                    <span class="text-[10px] font-bold text-tag-image uppercase">Nested POC Images Loop</span>
+                                                </div>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-tag-loop">{#proofOfConceptImageIds}</span>
+                                                    <div class="tag-pill text-tag-image inline-block" onclick="copyTag('{%imageLibrary.[.]}')">{%imageLibrary.[.]}</div>
+                                                    <span class="text-tag-loop">{/proofOfConceptImageIds}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="text-tag-loop mt-4">{/reproductionSteps}</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-tag-loop mt-4">{/vulnerabilityEvidencesList}</div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     </main>

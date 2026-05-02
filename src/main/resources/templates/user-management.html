@@ -63,8 +63,7 @@
                 <div class="tile-header flex justify-between items-center mb-8 text-white" onclick="toggleTile('tile-registry')">
                     <div class="flex items-center gap-4">
                         <span class="material-symbols-outlined text-primary text-3xl">group</span>
-                        <h2 class="text-xl font-bold">User Registry</h2>
-                    </div>
+                        <h2 class="text-xl font-bold">User Directory</h2>                    </div>
                     <span class="material-symbols-outlined collapse-icon">expand_more</span>
                 </div>
                 <div class="tile-content">
@@ -151,7 +150,7 @@
                 <tr class="hover:bg-white/[0.02] transition-colors group">
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
-                            <img src="${u.profileImage || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAr7e2o-BtyJZ7Y_xVKPl6XoYky985WrO4JKV4yLl8WDiOFf4PQ5JDGd5vKTQD2Xps-2qM5eFUTH92zoxgfd0N8ugIQhBTVgecR5nNfLiDIC9WiL7GCaNqBe-YF81ukDt5L08_uikMr4_6G2fcc1cE2QmoU8F7GFi5z7qnP1TKiSSFG7zY859tudWDbInnPgrFcFrrAVCBFQTAy2c9OXp9uIQG3fyV1gt5n_ebNU8iizSMTZTQLAa5XGM3It2v-s7xOtYVmZaoU6_BQ'}" class="w-10 h-10 rounded-full border border-neutral-800 object-cover group-hover:border-primary/50 transition-colors">
+                            <img src="${u.profileImage || '/images/user.png'}" class="w-10 h-10 rounded-full border border-neutral-800 object-cover group-hover:border-primary/50 transition-colors">
                             <div>
                                 <p class="text-xs font-bold text-white">${u.firstName} ${u.lastName}</p>
                                 <p class="text-[9px] text-neutral-500 font-mono tracking-wider">@${u.username}</p>
@@ -176,7 +175,7 @@
                 body: JSON.stringify(data)
             });
             if (res.ok) {
-                window.showNotification('User node initialized successfully.', 'success');
+                window.showNotification('User account initialized successfully.', 'success');
                 closeModal();
                 loadUsers();
             } else {
@@ -189,3 +188,4 @@
     </script>
 </body>
 </html>
+l>

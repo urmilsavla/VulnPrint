@@ -113,7 +113,7 @@
                     </div>
                     <div id="alerts-list" class="max-h-96 overflow-y-auto custom-scrollbar divide-y divide-neutral-900">
                         <!-- Alerts populated via JS -->
-                        <div class="p-4 text-center text-[10px] text-neutral-600 uppercase tracking-widest italic">Syncing nodes...</div>
+                        <div class="p-4 text-center text-[10px] text-neutral-600 uppercase tracking-widest italic">Syncing data...</div>
                     </div>
                     <div class="px-4 py-2 border-t border-neutral-800 bg-black/20 text-center">
                         <p class="text-[8px] text-neutral-600 uppercase tracking-tighter">Auto-sync active // v1.0.4</p>
@@ -129,7 +129,7 @@
                     <p id="header-user-role" class="text-[8px] font-bold uppercase text-[#39FF14]">Admin</p>
                 </div>
                 <div class="relative">
-                    <img id="header-profile-img" class="w-10 h-10 rounded-full border border-[#39FF14]/30 object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAr7e2o-BtyJZ7Y_xVKPl6XoYky985WrO4JKV4yLl8WDiOFf4PQ5JDGd5vKTQD2Xps-2qM5eFUTH92zoxgfd0N8ugIQhBTVgecR5nNfLiDIC9WiL7GCaNqBe-YF81ukDt5L08_uikMr4_6G2fcc1cE2QmoU8F7GFi5z7qnP1TKiSSFG7zY859tudWDbInnPgrFcFrrAVCBFQTAy2c9OXp9uIQG3fyV1gt5n_ebNU8iizSMTZTQLAa5XGM3It2v-s7xOtYVmZaoU6_BQ">
+                    <img id="header-profile-img" class="w-10 h-10 rounded-full border border-[#39FF14]/30 object-cover" src="/images/user.png">
                     <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#39FF14] rounded-full border-2 border-black"></div>
                 </div>
             </button>
@@ -161,6 +161,33 @@
     </div>
 
     <script>
+        // Global Security Interceptor for API Requests
+        const originalFetch = window.fetch;
+        window.fetch = async (...args) => {
+            const [resource, config] = args;
+            const token = localStorage.getItem('token');
+            
+            // Auto-inject Auth Token for internal API calls
+            if (resource.toString().startsWith('/api/')) {
+                const newConfig = { ...config };
+                newConfig.headers = {
+                    ...newConfig.headers,
+                    'X-Auth-Token': token || ''
+                };
+                
+                const response = await originalFetch(resource, newConfig);
+                
+                // Centralized Session Termination on 401
+                if (response.status === 401 && !resource.toString().includes('/api/auth/login')) {
+                    localStorage.clear();
+                    window.location.href = '/login';
+                    return Promise.reject('UNAUTHORIZED_ACCESS: REDIRECTING_TO_AUTH_NODE');
+                }
+                return response;
+            }
+            return originalFetch(resource, config);
+        };
+
         window.askPermission = function(message) {
             return new Promise((resolve) => {
                 const modal = document.getElementById('global-confirm-modal');
@@ -267,7 +294,7 @@
             setInterval(loadAlerts, 30000);
         });
         async function logoutWithPermission() {
-            const confirmed = await window.askPermission("Are you sure you want to terminate the current session?");
+            const confirmed = await window.askPermission("Are you sure you want to log out?");
             if (confirmed) {
                 localStorage.clear();
                 window.location.href = '/login';

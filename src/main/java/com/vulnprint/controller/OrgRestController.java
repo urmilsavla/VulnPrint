@@ -1,12 +1,15 @@
 package com.vulnprint.controller;
 
 import com.vulnprint.model.Organization;
+import com.vulnprint.model.User;
 import com.vulnprint.repository.OrganizationRepository;
+import com.vulnprint.service.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/organization")
@@ -14,6 +17,9 @@ public class OrgRestController {
 
     @Autowired
     private OrganizationRepository organizationRepository;
+    
+    @Autowired
+    private SecurityUtils securityUtils;
 
     @GetMapping
     public Organization getSettings() {
@@ -27,11 +33,23 @@ public class OrgRestController {
     }
 
     @PutMapping
-    public Organization updateSettings(@RequestBody Organization org) {
+    public ResponseEntity<?> updateSettings(@RequestBody Organization org, @RequestAttribute("authenticatedUser") User user) {
+        // BAC Fix: Only Administrators can update global organization settings
+        if (!"Administrator".equalsIgnoreCase(user.getRole())) {
+            return ResponseEntity.status(403).body(Map.of("error", "ACCESS_DENIED: ADMINISTRATOR_CLEARANCE_REQUIRED"));
+        }
+
+        // Encode inputs to prevent XSS
+        org.setName(securityUtils.encodeForHTML(org.getName()));
+        org.setEmail(securityUtils.encodeForHTML(org.getEmail()));
+        org.setPhone(securityUtils.encodeForHTML(org.getPhone()));
+        org.setAddress(securityUtils.encodeForHTML(org.getAddress()));
+        org.setLegalName(securityUtils.encodeForHTML(org.getLegalName()));
+
         List<Organization> all = organizationRepository.findAll();
         if (!all.isEmpty()) {
             org.setId(all.get(0).getId());
         }
-        return organizationRepository.save(org);
+        return ResponseEntity.ok(organizationRepository.save(org));
     }
 }

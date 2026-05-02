@@ -1,36 +1,38 @@
 openapi: 3.0.3
 info:
-  title: VulnPrint API Registry
-  description: Professional API documentation for the VulnPrint Pentest Management Platform.
+  title: VulnPrint API Documentation
+  description: |
+    ### Master Node API Documentation
+    Professional endpoint registry for the VulnPrint Pentest Management Platform.
+    
+    **Security Notice:** All data handled by these endpoints is sensitive. 
+    Ensure access is restricted to authorized security personnel.
   version: 1.1.0
-  contact:
-    name: System Administrator
 servers:
   - url: http://localhost:8080
     description: Local Development Node
 
 tags:
   - name: Authentication
-    description: Authorization and session management
+    description: Identity verification and session initialization
   - name: Dashboard
-    description: High-level metrics and project summaries
+    description: System-wide analytics and project summaries
   - name: Pentest
-    description: Management of security audit nodes
+    description: Security audit project management
   - name: Vulnerability
-    description: Documentation of technical security findings
+    description: Technical finding registry and evidence management
   - name: Organization
-    description: Global identity and branding configuration
+    description: Global branding and identity configuration
   - name: User
-    description: System user and role management
+    description: Operator registry and access control
   - name: Report
-    description: Consolidated data packages for generation
+    description: Data consolidation for automated generation
 
 paths:
   /api/auth/login:
     post:
+      tags: [Authentication]
       summary: Initialize Authorization
-      tags:
-        - Authentication
       requestBody:
         required: true
         content:
@@ -38,10 +40,8 @@ paths:
             schema:
               type: object
               properties:
-                username:
-                  type: string
-                password:
-                  type: string
+                username: { type: string }
+                password: { type: string }
       responses:
         '200':
           description: Access Granted
@@ -54,12 +54,11 @@ paths:
 
   /api/dashboard/metrics:
     get:
-      summary: Retrieve System-Wide Metrics
-      tags:
-        - Dashboard
+      tags: [Dashboard]
+      summary: Retrieve Global Analytics
       responses:
         '200':
-          description: Aggregated security data
+          description: Success
           content:
             application/json:
               schema:
@@ -67,34 +66,26 @@ paths:
 
   /api/dashboard/pentests:
     get:
+      tags: [Dashboard]
       summary: List Project Nodes
-      tags:
-        - Dashboard
       parameters:
-        - name: type
-          in: query
-          schema:
-            type: string
-          description: Filter by Pentest Category
         - name: page
           in: query
-          schema:
-            type: integer
-            default: 0
+          schema: { type: integer, default: 0 }
         - name: size
           in: query
-          schema:
-            type: integer
-            default: 3
+          schema: { type: integer, default: 3 }
+        - name: type
+          in: query
+          schema: { type: string }
       responses:
         '200':
           description: Enriched project list
 
   /api/pentests:
     post:
-      summary: Register New Pentest Node
-      tags:
-        - Pentest
+      tags: [Pentest]
+      summary: Register/Update Project Node
       requestBody:
         required: true
         content:
@@ -103,56 +94,62 @@ paths:
               $ref: '#/components/schemas/Pentest'
       responses:
         '200':
-          description: Node Initialized
+          description: Node Synced
 
   /api/pentests/{id}:
     get:
+      tags: [Pentest]
       summary: Retrieve Node Attributes
-      tags:
-        - Pentest
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
       responses:
         '200':
-          description: Project metadata
+          description: Metadata retrieved
+    delete:
+      tags: [Pentest]
+      summary: Terminate Project Node
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Node purged
 
   /api/pentests/{id}/report-details:
     put:
-      summary: Synchronize Report Design Attributes
-      tags:
-        - Pentest
+      tags: [Pentest]
+      summary: Synchronize Report Design
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReportDetails'
+              type: object
+              additionalProperties: true
       responses:
         '200':
           description: Configuration updated
 
   /api/organization:
     get:
-      summary: Retrieve Global Branding
-      tags:
-        - Organization
+      tags: [Organization]
+      summary: Retrieve Master Branding
       responses:
         '200':
-          description: Master organizational data
+          description: Success
     put:
+      tags: [Organization]
       summary: Update Master Branding
-      tags:
-        - Organization
       requestBody:
         required: true
         content:
@@ -161,28 +158,80 @@ paths:
               $ref: '#/components/schemas/Organization'
       responses:
         '200':
-          description: Branding synchronized
+          description: Branding synced
+
+  /api/users:
+    get:
+      tags: [User]
+      summary: List All Operators
+      responses:
+        '200':
+          description: Operator list retrieved
 
   /api/users/profile/{username}:
     get:
+      tags: [User]
       summary: Retrieve Operator Profile
-      tags:
-        - User
       parameters:
         - name: username
           in: path
           required: true
-          schema:
-            type: string
+          schema: { type: string }
       responses:
         '200':
-          description: User attributes
+          description: Profile attributes
+
+  /api/users/profile:
+    post:
+      tags: [User]
+      summary: Update Operator Profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Success
+
+  /api/users/register:
+    post:
+      tags: [User]
+      summary: Initialize New Operator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: Operator created
+
+  /api/users/change-password:
+    post:
+      tags: [User]
+      summary: Update Operator Passcode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username: { type: string }
+                currentPassword: { type: string }
+                newPassword: { type: string }
+      responses:
+        '200':
+          description: Success
 
   /api/vulnerabilities:
     post:
+      tags: [Vulnerability]
       summary: Register Security Finding
-      tags:
-        - Vulnerability
       requestBody:
         required: true
         content:
@@ -191,7 +240,74 @@ paths:
               $ref: '#/components/schemas/Vulnerability'
       responses:
         '200':
-          description: Finding synced
+          description: Finding initialized
+
+  /api/vulnerabilities/{id}:
+    get:
+      tags: [Vulnerability]
+      summary: Retrieve Finding Attributes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Metadata retrieved
+    put:
+      tags: [Vulnerability]
+      summary: Update Finding Data
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Vulnerability'
+      responses:
+        '200':
+          description: Metadata updated
+    delete:
+      tags: [Vulnerability]
+      summary: Purge Finding Registry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Finding removed
+
+  /api/vulnerabilities/poc-image:
+    get:
+      tags: [Vulnerability]
+      summary: Retrieve POC Image Stream
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Image stream binary
+
+  /api/repGenApi/{pentestId}:
+    get:
+      tags: [Report]
+      summary: Generate Final Report Data Package
+      parameters:
+        - name: pentestId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Consolidated report data (V3/repGenApi format)
 
 components:
   schemas:
@@ -205,6 +321,7 @@ components:
         lastName: { type: string }
         role: { type: string }
         profileImage: { type: string }
+        message: { type: string }
 
     DashboardMetrics:
       type: object
@@ -223,12 +340,17 @@ components:
       properties:
         id: { type: integer }
         username: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
         email: { type: string }
         role: { type: string }
+        address: { type: string }
+        qualification: { type: string }
 
     Organization:
       type: object
       properties:
+        id: { type: integer }
         name: { type: string }
         email: { type: string }
         phone: { type: string }
@@ -240,9 +362,14 @@ components:
       properties:
         id: { type: integer }
         pentestName: { type: string }
-        clientName: { type: string }
         pentestType: { type: string }
+        clientName: { type: string }
+        applicationName: { type: string }
         status: { type: string }
+        assignedPentesters:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
 
     Vulnerability:
       type: object
@@ -252,14 +379,28 @@ components:
         severity: { type: string }
         cvssScore: { type: number }
         cvssVector: { type: string }
+        description: { type: string }
+        impact: { type: string }
+        mitigation: { type: string }
         evidenceMode: { type: string, enum: [STEPS, REQRES, SOURCE] }
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/VulnerabilityStep'
+        pentest:
+          type: object
+          properties:
+            id: { type: integer }
 
-    ReportDetails:
+    VulnerabilityStep:
       type: object
       properties:
-        disclaimerEnabled: { type: boolean }
-        methodologyEnabled: { type: boolean }
-        methodologyDisplayMode: { type: string }
-        owaspEnabled: { type: boolean }
-        riskOverviewEnabled: { type: boolean }
-        conclusionEnabled: { type: boolean }
+        stepNumber: { type: integer }
+        description: { type: string }
+        request: { type: string }
+        response: { type: string }
+        fileName: { type: string }
+        lineNumber: { type: string }
+        imagePaths:
+          type: array
+          items: { type: string }

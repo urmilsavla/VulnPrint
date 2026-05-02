@@ -34,11 +34,11 @@ The application will be accessible at `http://localhost:8080`.
 
 ## 5. Initial Access
 - **Default Login:** Use the credentials established by the `DataInitializer` (typically `admin` / `password123`).
-- **Authorization Node:** The login screen provides secure entry into the platform.
+- **Authorization System:** The login screen provides secure entry into the platform.
 
 ## 6. Project Structure
-- `/dashboard`: High-level metrics and active project nodes.
-- `/pentest/add`: Initialize new security audit nodes.
+- `/dashboard`: High-level metrics and active projects.
+- `/pentest/add`: Initialize new security audits.
 - `/user-management`: System-wide user and role configuration.
 - `/organization-settings`: Global reporting identity management.
 - `/template-guide`: API mapping reference for report designers.

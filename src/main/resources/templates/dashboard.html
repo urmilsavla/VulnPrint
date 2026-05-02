@@ -63,7 +63,7 @@
                         <h2 class="text-4xl font-headline font-black text-white" id="stat-pentests">0</h2>
                         <div class="mt-4 flex items-center gap-2 text-[10px] font-label text-primary">
                             <span class="material-symbols-outlined text-xs">trending_up</span>
-                            <span>LIVE REGISTRY SYNC</span>
+                            <span>LIVE DATA SYNC</span>
                         </div>
                     </article>
 
@@ -148,7 +148,7 @@
                     </div>
 
                     <div class="flex items-center justify-between border-t border-neutral-900 bg-neutral-950 px-8 py-4">
-                        <span class="text-[10px] font-label uppercase tracking-[0.22em] text-neutral-600" id="pentest-count-text">Syncing registry...</span>
+                        <span class="text-[10px] font-label uppercase tracking-[0.22em] text-neutral-600" id="pentest-count-text">Syncing data...</span>
                         <div class="flex gap-2">
                             <button onclick="changePage(-1)" class="p-1 text-neutral-500 transition-colors hover:text-primary disabled:opacity-30" id="btn-prev"><span class="material-symbols-outlined text-sm">chevron_left</span></button>
                             <button class="bg-neutral-900 px-3 py-1 text-[10px] font-label text-primary" id="current-page-btn">1</button>
@@ -161,7 +161,7 @@
     </main>
 
     <script>
-        const DEFAULT_IMG = 'https://lh3.googleusercontent.com/aida-public/AB6AXuAr7e2o-BtyJZ7Y_xVKPl6XoYky985WrO4JKV4yLl8WDiOFf4PQ5JDGd5vKTQD2Xps-2qM5eFUTH92zoxgfd0N8ugIQhBTVgecR5nNfLiDIC9WiL7GCaNqBe-YF81ukDt5L08_uikMr4_6G2fcc1cE2QmoU8F7GFi5z7qnP1TKiSSFG7zY859tudWDbInnPgrFcFrrAVCBFQTAy2c9OXp9uIQG3fyV1gt5n_ebNU8iizSMTZTQLAa5XGM3It2v-s7xOtYVmZaoU6_BQ';
+        const DEFAULT_IMG = '/images/user.png';
         let currentPage = 0; const pageSize = 3;
 
         async function updateStatus(event, id, newStatus) {
@@ -172,7 +172,7 @@
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({status: newStatus})
             });
-            if(res.ok) { window.showNotification(`Status updated to ${newStatus}`, 'success'); loadDashboard(); }
+            if(res.ok) { window.showNotification(`Project status updated to ${newStatus}`, 'success'); loadDashboard(); }
         }
 
         async function confirmEdit(url) {
@@ -287,3 +287,4 @@
     </script>
 </body>
 </html>
+l>
