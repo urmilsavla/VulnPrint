@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html class="dark" lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>VulnPrint | Admin Configurations</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+          darkMode: 'class',
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#4FFE49",
+                "surface": "#0e0e0e",
+                "on-surface": "#ffffff",
+                "error": "#ff7351"
+              },
+              fontFamily: { headline: ['Space Grotesk'], body: ['Inter'], label: ['Space Grotesk'] }
+            }
+          }
+        }
+    </script>
+    <style>
+        :root { color-scheme: dark; }
+        body { margin: 0; }
+        #main-content { padding-top: 100px; margin-left: 64px; transition: margin-left 0.3s ease; }
+        body.sidebar-expanded #main-content { margin-left: 256px; }
+        body.sidebar-expanded #header { left: 256px; }
+        @media (max-width: 1024px) { #main-content { margin-left: 0 !important; } }
+
+        .tile-card { background: rgba(19, 19, 19, 0.4); border: 1px solid #262626; transition: all 0.3s ease; }
+        .tile-header { cursor: pointer; }
+        .tile-content { max-height: 5000px; overflow: visible; transition: all 0.5s cubic-bezier(0, 1, 0, 1); }
+        .collapse-icon { transition: transform 0.3s ease; color: #525252; }
+        .tile-card.collapsed .tile-content { max-height: 0; opacity: 0; padding: 0 !important; margin: 0 !important; overflow: hidden; pointer-events: none; }
+        .tile-card.collapsed .collapse-icon { transform: rotate(-90deg); }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #4FFE49; }
+    </style>
+</head>
+<body class="radar-bg min-h-screen text-on-surface font-body selection:bg-primary selection:text-black">
+
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <main id="main-content" class="px-8 pb-20">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex justify-between items-center mb-12 border-b border-neutral-800 pb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-white uppercase">System Configurations</h1>
+                    <p class="text-neutral-400 mt-1">Manage external service integrations and global parameters</p>
+                </div>
+                <button onclick="saveAllConfigs()" class="px-8 py-2 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg">Save Changes</button>
+            </div>
+
+            <div class="grid grid-cols-1 gap-10">
+                <!-- VulnDB Integration -->
+                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-vulndb">
+                    <div class="tile-header flex justify-between items-center mb-8 text-white" onclick="toggleTile('tile-vulndb')">
+                        <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined text-primary text-3xl">database</span>
+                            <h2 class="text-xl font-bold">VulnDB Microservice Integration</h2>
+                        </div>
+                        <span class="material-symbols-outlined collapse-icon">expand_more</span>
+                    </div>
+                    <div class="tile-content">
+                        <div class="space-y-8">
+                            <div class="space-y-4">
+                                <label class="text-[10px] uppercase font-bold text-primary/60 tracking-widest">VulnDB Base URL</label>
+                                <div class="flex gap-4">
+                                    <input type="text" id="vulndb_url" placeholder="http://127.0.0.1:8000" class="flex-1 bg-black/60 border border-neutral-800 rounded-lg p-4 text-sm focus:border-primary outline-none transition-all font-mono">
+                                    <button onclick="testConnection()" class="px-6 py-4 border border-neutral-800 bg-neutral-900/50 text-[10px] font-bold uppercase hover:text-primary transition-colors rounded-lg">Test Connection</button>
+                                </div>
+                                <p class="text-[10px] text-neutral-500 italic">This URL is used to fetch vulnerability data for auto-population during evidence intake.</p>
+                            </div>
+
+                            <div id="connection-status" class="hidden p-4 rounded-lg border flex items-center gap-4">
+                                <span id="status-icon" class="material-symbols-outlined"></span>
+                                <span id="status-text" class="text-xs font-bold uppercase tracking-wider"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function toggleTile(tileId) {
+            const tile = document.getElementById(tileId);
+            tile.classList.toggle('collapsed');
+        }
+
+        async function loadConfigs() {
+            try {
+                const res = await fetch('/api/config/vulndb_url');
+                if (res.ok) {
+                    const config = await res.json();
+                    document.getElementById('vulndb_url').value = config.configValue || 'http://127.0.0.1:8000';
+                }
+            } catch (err) {
+                console.error('Failed to load configs:', err);
+            }
+        }
+
+        async function saveAllConfigs() {
+            const url = document.getElementById('vulndb_url').value;
+            const data = {
+                configKey: 'vulndb_url',
+                configValue: url
+            };
+            
+            try {
+                const res = await fetch('/api/config', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    window.showNotification('Configurations saved successfully.', 'success');
+                } else {
+                    window.showNotification('Failed to save configurations.', 'error');
+                }
+            } catch (err) {
+                window.showNotification('An error occurred during save.', 'error');
+            }
+        }
+
+        async function testConnection() {
+            const statusDiv = document.getElementById('connection-status');
+            const statusIcon = document.getElementById('status-icon');
+            const statusText = document.getElementById('status-text');
+            
+            statusDiv.classList.remove('hidden', 'border-primary', 'bg-primary/5', 'text-primary', 'border-error', 'bg-error/5', 'text-error');
+            statusDiv.classList.add('flex');
+            statusText.innerText = "Testing...";
+            statusIcon.innerText = "sync";
+            statusIcon.classList.add('animate-spin');
+
+            try {
+                // We use our proxy search endpoint to test connection since it uses the configured URL
+                // But wait, the proxy uses the URL FROM THE DATABASE. 
+                // To test a NEW URL, we might need a separate test endpoint or just save then test.
+                // Let's just save then test for simplicity, or add a transient test endpoint.
+                
+                // For now, let's assume the user saves first.
+                await saveAllConfigs();
+
+                const res = await fetch('/api/vulndb/search?q=test');
+                if (res.ok) {
+                    statusDiv.classList.add('border-primary', 'bg-primary/5', 'text-primary');
+                    statusIcon.innerText = "check_circle";
+                    statusText.innerText = "Connection Successful";
+                } else {
+                    throw new Error();
+                }
+            } catch (err) {
+                statusDiv.classList.add('border-error', 'bg-error/5', 'text-error');
+                statusIcon.innerText = "error";
+                statusText.innerText = "Connection Failed";
+            } finally {
+                statusIcon.classList.remove('animate-spin');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadConfigs);
+    </script>
+</body>
+</html>

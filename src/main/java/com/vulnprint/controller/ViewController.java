@@ -109,6 +109,11 @@ public class ViewController {
         return "profile";
     }
 
+    @GetMapping("/configurations")
+    public String configurations() {
+        return "configurations";
+    }
+
     @GetMapping("/reset-password")
     public String resetPassword() {
         return "reset-password";

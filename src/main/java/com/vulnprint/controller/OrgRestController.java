@@ -39,7 +39,7 @@ public class OrgRestController {
             return ResponseEntity.status(403).body(Map.of("error", "ACCESS_DENIED: ADMINISTRATOR_CLEARANCE_REQUIRED"));
         }
 
-        // Encode inputs to prevent XSS
+        // Encode inputs to prevent XSS,
         org.setName(securityUtils.encodeForHTML(org.getName()));
         org.setEmail(securityUtils.encodeForHTML(org.getEmail()));
         org.setPhone(securityUtils.encodeForHTML(org.getPhone()));
