@@ -109,9 +109,14 @@ public class ViewController {
         return "profile";
     }
 
-    @GetMapping("/configurations")
-    public String configurations() {
-        return "configurations";
+    @GetMapping("/microservice-management")
+    public String microserviceManagement() {
+        return "microservice-management";
+    }
+
+    @GetMapping("/generate-report")
+    public String generateReport() {
+        return "generate-report";
     }
 
     @GetMapping("/reset-password")

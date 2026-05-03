@@ -1,6 +1,7 @@
 package com.vulnprint.controller;
 
 import com.vulnprint.service.ReportDataService;
+import com.vulnprint.repository.SystemConfigRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,8 +16,21 @@ public class RepGenRestController {
     @Autowired
     private ReportDataService reportDataService;
 
+    @Autowired
+    private SystemConfigRepository systemConfigRepository;
+
+    private boolean isEnabled() {
+        return systemConfigRepository.findById("repgen_enabled")
+                .map(c -> "true".equalsIgnoreCase(c.getConfigValue()))
+                .orElse(false);
+    }
+
     @GetMapping("/repGenApi/{pentestId}")
     public ResponseEntity<?> getReportGenerationData(@PathVariable Long pentestId) {
+        if (!isEnabled()) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Map.of("error", "Microservice disabled by Admin."));
+        }
         try {
             Map<String, Object> data = reportDataService.getReportGenerationData(pentestId);
             return ResponseEntity.ok()

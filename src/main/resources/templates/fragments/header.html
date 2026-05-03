@@ -81,8 +81,8 @@
     </div>
 
     <div class="flex items-center gap-6">
-        <!-- Template Guide Button -->
-        <a href="/template-guide" class="text-neutral-400 hover:text-[#39FF14] transition-colors p-1 mt-1 flex items-center gap-2 group/doc">
+        <!-- Template Guide Button (Moved/Hidden logic) -->
+        <a id="header-guide-link" href="/template-guide" class="text-neutral-400 hover:text-[#39FF14] transition-colors p-1 mt-1 flex items-center gap-2 group/doc hidden">
             <span class="material-symbols-outlined">auto_stories</span>
         </a>
 
@@ -95,7 +95,8 @@
                     <p class="px-4 py-2 text-[8px] font-black uppercase tracking-widest text-neutral-600 border-b border-neutral-900 mb-1">System Administration</p>
                     <a href="/user-management" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">Manage Users</a>
                     <a href="/organization-settings" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">Organizational Details</a>
-                    <a href="/configurations" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">System Configurations</a>
+                    <a id="header-gen-report-link" href="/generate-report" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">Generate Report</a>
+                    <a href="/microservice-management" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">Microservice Management</a>
                 </div>
             </div>
         </div>
@@ -289,6 +290,21 @@
             if (role === 'Administrator') {
                 const settingsContainer = document.getElementById('admin-settings-container');
                 if (settingsContainer) settingsContainer.classList.remove('hidden');
+                
+                // RepGen Toggle Logic for Header
+                fetch('/api/config/repgen_enabled').then(r => r.json()).then(config => {
+                    const isEnabled = config.configValue === 'true';
+                    const genLink = document.getElementById('header-gen-report-link');
+                    const guideLink = document.getElementById('header-guide-link');
+                    
+                    if (!isEnabled) {
+                        if (genLink) genLink.remove();
+                        if (guideLink) guideLink.remove();
+                    } else {
+                        // Keep guideLink hidden globally as requested (moved to generate-report page)
+                        // but logic remains here if needed for future toggles
+                    }
+                });
             }
 
             loadAlerts();

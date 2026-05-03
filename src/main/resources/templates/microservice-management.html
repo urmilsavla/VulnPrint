@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html class="dark" lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>VulnPrint | Microservice Management</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+          darkMode: 'class',
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#4FFE49",
+                "surface": "#0e0e0e",
+                "on-surface": "#ffffff",
+                "error": "#ff7351"
+              },
+              fontFamily: { headline: ['Space Grotesk'], body: ['Inter'], label: ['Space Grotesk'] }
+            }
+          }
+        }
+    </script>
+    <style>
+        :root { color-scheme: dark; }
+        body { margin: 0; }
+        #main-content { padding-top: 100px; margin-left: 64px; transition: margin-left 0.3s ease; }
+        body.sidebar-expanded #main-content { margin-left: 256px; }
+        body.sidebar-expanded #header { left: 256px; }
+        @media (max-width: 1024px) { #main-content { margin-left: 0 !important; } }
+
+        .tile-card { background: rgba(19, 19, 19, 0.4); border: 1px solid #262626; transition: all 0.3s ease; }
+        .tile-header { cursor: pointer; }
+        .tile-content { max-height: 5000px; overflow: visible; transition: all 0.5s cubic-bezier(0, 1, 0, 1); }
+        .collapse-icon { transition: transform 0.3s ease; color: #525252; }
+        .tile-card.collapsed .tile-content { max-height: 0; opacity: 0; padding: 0 !important; margin: 0 !important; overflow: hidden; pointer-events: none; }
+        .tile-card.collapsed .collapse-icon { transform: rotate(-90deg); }
+        
+        /* Switch Styling */
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #262626; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: #525252; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: rgba(79, 254, 73, 0.2); }
+        input:checked + .slider:before { transform: translateX(20px); background-color: #4FFE49; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #4FFE49; }
+    </style>
+</head>
+<body class="radar-bg min-h-screen text-on-surface font-body selection:bg-primary selection:text-black">
+
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <main id="main-content" class="px-8 pb-20">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex justify-between items-center mb-12 border-b border-neutral-800 pb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-white uppercase">Microservice Management</h1>
+                    <p class="text-neutral-400 mt-1">Configure and toggle external intelligence & generation engines</p>
+                </div>
+                <button onclick="saveAllConfigs()" class="px-8 py-2 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg">Save Changes</button>
+            </div>
+
+            <div class="grid grid-cols-1 gap-10">
+                <!-- VulnDB Integration -->
+                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-vulndb">
+                    <div class="tile-header flex justify-between items-center mb-8 text-white">
+                        <div class="flex items-center gap-4" onclick="toggleTile('tile-vulndb')">
+                            <span class="material-symbols-outlined text-primary text-3xl">database</span>
+                            <h2 class="text-xl font-bold uppercase tracking-tight">VulnDB Intelligence</h2>
+                        </div>
+                        <div class="flex items-center gap-6">
+                            <label class="switch">
+                                <input type="checkbox" id="vulndb_enabled" onchange="toggleService('vulndb')">
+                                <span class="slider"></span>
+                            </label>
+                            <span class="material-symbols-outlined collapse-icon" onclick="toggleTile('tile-vulndb')">expand_more</span>
+                        </div>
+                    </div>
+                    <div class="tile-content">
+                        <div class="space-y-8">
+                            <div class="space-y-4">
+                                <label class="text-[10px] uppercase font-bold text-primary/60 tracking-widest">Base API Endpoint</label>
+                                <div class="flex gap-4">
+                                    <input type="text" id="vulndb_url" placeholder="http://127.0.0.1:8000" class="flex-1 bg-black/60 border border-neutral-800 rounded-lg p-4 text-sm focus:border-primary outline-none transition-all font-mono">
+                                    <button onclick="testConnection('vulndb')" class="px-6 py-4 border border-neutral-800 bg-neutral-900/50 text-[10px] font-bold uppercase hover:text-primary transition-colors rounded-lg">Test Link</button>
+                                </div>
+                                <p class="text-[10px] text-neutral-500 italic">Universal vulnerability database used for auto-populating finding details.</p>
+                            </div>
+
+                            <div id="vulndb-status" class="hidden p-4 rounded-lg border flex items-center gap-4">
+                                <span id="vulndb-status-icon" class="material-symbols-outlined"></span>
+                                <span id="vulndb-status-text" class="text-xs font-bold uppercase tracking-wider"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RepGen Integration -->
+                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-repgen">
+                    <div class="tile-header flex justify-between items-center mb-8 text-white">
+                        <div class="flex items-center gap-4" onclick="toggleTile('tile-repgen')">
+                            <span class="material-symbols-outlined text-tertiary text-3xl">description</span>
+                            <h2 class="text-xl font-bold uppercase tracking-tight">RepGen Engine</h2>
+                        </div>
+                        <div class="flex items-center gap-6">
+                            <label class="switch">
+                                <input type="checkbox" id="repgen_enabled" onchange="toggleService('repgen')">
+                                <span class="slider"></span>
+                            </label>
+                            <span class="material-symbols-outlined collapse-icon" onclick="toggleTile('tile-repgen')">expand_more</span>
+                        </div>
+                    </div>
+                    <div class="tile-content">
+                        <div class="space-y-8">
+                            <div class="space-y-4">
+                                <label class="text-[10px] uppercase font-bold text-tertiary/60 tracking-widest">Base API Endpoint</label>
+                                <div class="flex gap-4">
+                                    <input type="text" id="repgen_url" placeholder="http://127.0.0.1:3000" class="flex-1 bg-black/60 border border-neutral-800 rounded-lg p-4 text-sm focus:border-tertiary outline-none transition-all font-mono">
+                                    <button onclick="testConnection('repgen')" class="px-6 py-4 border border-neutral-800 bg-neutral-900/50 text-[10px] font-bold uppercase hover:text-tertiary transition-colors rounded-lg">Test Link</button>
+                                </div>
+                                <p class="text-[10px] text-neutral-500 italic">Stateless document generation engine for high-fidelity technical reports.</p>
+                            </div>
+
+                            <div id="repgen-status" class="hidden p-4 rounded-lg border flex items-center gap-4">
+                                <span id="repgen-status-icon" class="material-symbols-outlined"></span>
+                                <span id="repgen-status-text" class="text-xs font-bold uppercase tracking-wider"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function toggleTile(tileId) {
+            const tile = document.getElementById(tileId);
+            tile.classList.toggle('collapsed');
+        }
+
+        async function loadConfigs() {
+            try {
+                const res = await fetch('/api/config');
+                if (res.ok) {
+                    const configs = await res.json();
+                    configs.forEach(c => {
+                        const el = document.getElementById(c.configKey);
+                        if (el) {
+                            if (el.type === 'checkbox') el.checked = c.configValue === 'true';
+                            else el.value = c.configValue;
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to load configs:', err);
+            }
+        }
+
+        async function saveConfig(key, value) {
+            const data = { configKey: key, configValue: value };
+            return fetch('/api/config', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        }
+
+        async function saveAllConfigs() {
+            const vulndbUrl = document.getElementById('vulndb_url').value;
+            const repgenUrl = document.getElementById('repgen_url').value;
+            const vulndbEnabled = document.getElementById('vulndb_enabled').checked.toString();
+            const repgenEnabled = document.getElementById('repgen_enabled').checked.toString();
+            
+            try {
+                await Promise.all([
+                    saveConfig('vulndb_url', vulndbUrl),
+                    saveConfig('repgen_url', repgenUrl),
+                    saveConfig('vulndb_enabled', vulndbEnabled),
+                    saveConfig('repgen_enabled', repgenEnabled)
+                ]);
+                window.showNotification('Microservice configurations synchronized.', 'success');
+            } catch (err) {
+                window.showNotification('Synchronization failure.', 'error');
+            }
+        }
+
+        async function toggleService(service) {
+            const enabled = document.getElementById(service + '_enabled').checked.toString();
+            await saveConfig(service + '_enabled', enabled);
+            window.showNotification(`${service.toUpperCase()} engine status updated.`, 'info');
+            setTimeout(() => location.reload(), 800);
+        }
+
+        async function testConnection(service) {
+            const statusDiv = document.getElementById(service + '-status');
+            const statusIcon = document.getElementById(service + '-status-icon');
+            const statusText = document.getElementById(service + '-status-text');
+            const color = service === 'vulndb' ? 'primary' : 'tertiary';
+            
+            statusDiv.classList.remove('hidden', `border-${color}`, `bg-${color}/5`, `text-${color}`, 'border-error', 'bg-error/5', 'text-error');
+            statusDiv.classList.add('flex');
+            statusText.innerText = "PROBING...";
+            statusIcon.innerText = "sync";
+            statusIcon.classList.add('animate-spin');
+
+            try {
+                const url = document.getElementById(service + '_url').value;
+                const res = await fetch(`/api/config/test-connection?url=${encodeURIComponent(url)}`);
+                const data = await res.json();
+                
+                if (data.success) {
+                    statusDiv.classList.add(`border-primary`, `bg-primary/5`, `text-primary`);
+                    statusIcon.innerText = "check_circle";
+                    statusText.innerText = "LINK ESTABLISHED";
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (err) {
+                statusDiv.classList.add('border-error', 'bg-error/5', 'text-error');
+                statusIcon.innerText = "error";
+                statusText.innerText = "LINK FAILED";
+                console.error(err);
+            } finally {
+                statusIcon.classList.remove('animate-spin');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadConfigs);
+    </script>
+</body>
+</html>

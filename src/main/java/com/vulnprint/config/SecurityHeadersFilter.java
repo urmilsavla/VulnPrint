@@ -21,7 +21,7 @@ public class SecurityHeadersFilter implements Filter {
         httpResponse.setHeader("X-Content-Type-Options", "nosniff");
         
         // Basic Content Security Policy (allows inline scripts/styles for this specific project UI)
-        httpResponse.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self';");
+        httpResponse.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' *;");
         
         // Enable HSTS (1 year)
         httpResponse.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");

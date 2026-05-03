@@ -48,6 +48,13 @@ public class DataInitializer implements CommandLineRunner {
         // Data now persists across restarts. 
         // We only initialize mandatory users if the database is empty.
         initializeUsers();
+        initializeConfigs();
+    }
+
+    @Transactional
+    public void initializeConfigs() {
+        jdbcTemplate.execute("INSERT INTO system_configs (config_key, config_value) VALUES ('vulndb_enabled', 'true') ON CONFLICT (config_key) DO NOTHING");
+        jdbcTemplate.execute("INSERT INTO system_configs (config_key, config_value) VALUES ('repgen_enabled', 'true') ON CONFLICT (config_key) DO NOTHING");
     }
 
     @Transactional

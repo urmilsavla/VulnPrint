@@ -28,4 +28,18 @@ public class ConfigRestController {
     public SystemConfig saveConfig(@RequestBody SystemConfig config) {
         return systemConfigRepository.save(config);
     }
+
+    @GetMapping("/test-connection")
+    public java.util.Map<String, Object> testConnection(@RequestParam String url) {
+        try {
+            org.springframework.web.client.RestClient.create()
+                    .get()
+                    .uri(url)
+                    .retrieve()
+                    .toBodilessEntity();
+            return java.util.Map.of("success", true);
+        } catch (Exception e) {
+            return java.util.Map.of("success", false, "error", e.getMessage());
+        }
+    }
 }
