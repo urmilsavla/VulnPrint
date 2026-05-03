@@ -15,4 +15,6 @@ public class Alert {
     private String title; // This will hold the XSS payload
     private String details;
     private String timeAgo;
+    
+    private boolean isRead = false;
 }

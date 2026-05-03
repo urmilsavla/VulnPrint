@@ -93,6 +93,7 @@
             <div class="hidden group-hover:block absolute right-0 mt-0 w-48 pt-2 z-50">
                 <div class="bg-[#131313] border border-neutral-800 p-2 shadow-2xl">
                     <p class="px-4 py-2 text-[8px] font-black uppercase tracking-widest text-neutral-600 border-b border-neutral-900 mb-1">System Administration</p>
+                    <a href="/vulnerability-approver" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-error hover:bg-neutral-800 transition-colors">Vulnerability Approver</a>
                     <a href="/user-management" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">Manage Users</a>
                     <a href="/organization-settings" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">Organizational Details</a>
                     <a id="header-gen-report-link" href="/generate-report" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">Generate Report</a>
@@ -105,7 +106,7 @@
         <div class="relative group">
             <button class="relative text-neutral-400 hover:text-[#39FF14] transition-colors p-1 mt-1">
                 <span class="material-symbols-outlined">notifications</span>
-                <span id="alert-dot" class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-black hidden"></span>
+                <span id="alert-dot" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border border-black text-[9px] font-bold text-white flex items-center justify-center hidden">0</span>
             </button>
             <div class="hidden group-hover:block absolute right-[-50px] mt-0 w-80 pt-2 z-50">
                 <div class="bg-[#131313] border border-neutral-800 shadow-2xl overflow-hidden corner-accent">
@@ -243,6 +244,18 @@
             }, 4000);
         };
 
+        async function markAlertRead(id, event) {
+            event.stopPropagation();
+            try {
+                const res = await fetch(`/api/dashboard/alerts/${id}/read`, { method: 'POST' });
+                if (res.ok) {
+                    loadAlerts();
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
         async function loadAlerts() {
             try {
                 const res = await fetch('/api/dashboard/alerts');
@@ -251,6 +264,7 @@
                 const dot = document.getElementById('alert-dot');
                 
                 if (alerts.length > 0) {
+                    dot.innerText = alerts.length;
                     dot.classList.remove('hidden');
                     list.innerHTML = alerts.map(a => {
                         let color = '#39FF14';
@@ -258,13 +272,16 @@
                         else if (a.level === 'High') color = '#ffb347';
                         
                         return `
-                            <div class="p-4 hover:bg-white/[0.02] transition-colors group/alert">
+                            <div class="p-4 hover:bg-white/[0.02] transition-colors group/alert relative">
                                 <div class="flex justify-between items-start mb-1">
                                     <span class="text-[8px] font-black uppercase tracking-widest" style="color: ${color}">${a.level}</span>
                                     <span class="text-[8px] text-neutral-600 font-mono">${a.timeAgo || 'Now'}</span>
                                 </div>
-                                <p class="text-[11px] text-white font-bold leading-tight uppercase tracking-tight group-hover/alert:text-primary transition-colors mb-1">${a.title}</p>
-                                <p class="text-[10px] text-neutral-500 leading-relaxed">${a.details || ''}</p>
+                                <p class="text-[11px] text-white font-bold leading-tight uppercase tracking-tight group-hover/alert:text-primary transition-colors mb-1 pr-6">${a.title}</p>
+                                <p class="text-[10px] text-neutral-500 leading-relaxed pr-6">${a.details || ''}</p>
+                                <button onclick="markAlertRead(${a.id}, event)" class="absolute top-4 right-4 text-neutral-600 hover:text-white transition-colors opacity-0 group-hover/alert:opacity-100 p-1">
+                                    <span class="material-symbols-outlined text-sm">close</span>
+                                </button>
                             </div>
                         `;
                     }).join('');

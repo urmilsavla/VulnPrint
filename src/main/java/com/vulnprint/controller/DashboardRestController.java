@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.ResponseEntity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -107,12 +108,58 @@ public class DashboardRestController {
                 }).collect(Collectors.toList());
     }
 
+    @GetMapping("/vulnerabilities/pending")
+    public ResponseEntity<List<Map<String, Object>>> getPendingVulnerabilities(@RequestAttribute("authenticatedUser") User user) {
+        if (!"Administrator".equalsIgnoreCase(user.getRole())) {
+            return ResponseEntity.status(403).build();
+        }
+        
+        List<Map<String, Object>> pending = vulnerabilityRepository.findAll().stream()
+                .filter(v -> "Sent for Approval".equalsIgnoreCase(v.getReportingStatus()))
+                .map(v -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("id", v.getId());
+                    m.put("title", v.getTitle());
+                    m.put("severity", v.getSeverity());
+                    m.put("reportingStatus", v.getReportingStatus());
+                    m.put("description", v.getDescription());
+                    m.put("impact", v.getImpact());
+                    m.put("mitigation", v.getMitigation());
+                    m.put("cvssScore", v.getCvssScore());
+                    m.put("cvssVector", v.getCvssVector());
+                    m.put("cweReference", v.getCweReference());
+                    m.put("owasp", v.getOwasp());
+                    m.put("evidenceMode", v.getEvidenceMode());
+                    m.put("steps", v.getSteps());
+                    m.put("pocFolderPath", v.getPocFolderPath());
+                    if (v.getPentest() != null) {
+                        m.put("pentestId", v.getPentest().getId());
+                        m.put("pentestName", v.getPentest().getPentestName());
+                    }
+                    return m;
+                })
+                .collect(Collectors.toList());
+                
+        return ResponseEntity.ok(pending);
+    }
+
     @GetMapping("/alerts")
     public List<Alert> getAlerts() {
         return alertRepository.findAll().stream()
+                .filter(a -> !a.isRead())
                 .sorted((a1, a2) -> a2.getId().compareTo(a1.getId()))
-                .limit(5)
+                .limit(10)
                 .collect(Collectors.toList());
+    }
+
+    @PostMapping("/alerts/{id}/read")
+    @Transactional
+    public ResponseEntity<?> markAlertRead(@PathVariable Long id) {
+        return alertRepository.findById(id).map(a -> {
+            a.setRead(true);
+            alertRepository.save(a);
+            return ResponseEntity.ok().build();
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/pentests")
