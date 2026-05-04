@@ -16,5 +16,6 @@ public class Alert {
     private String details;
     private String timeAgo;
     
+    @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean isRead = false;
 }

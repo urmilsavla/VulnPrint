@@ -59,10 +59,23 @@ public class DataInitializer implements CommandLineRunner {
 
     @Transactional
     public void initializeUsers() {
-        if (userRepository.findAll().isEmpty()) {
-            User admin = createUser("admin", "admin123", "admin@vulnprint.com", "Administrator", "User", "Administrator", "Global HQ", "CISSP, CISM, OSCP, Lead Security Manager");
-            User urmil = createUser("urmil", "urmil123", "urmil@vulnprint.com", "Urmil", "Savla", "Lead Pentester", "Mumbai Office", "OSCP, CRT, CEH");
-            User jinesh = createUser("jinesh", "jinesh123", "jinesh@vulnprint.com", "Jinesh", "Savla", "Lead Pentester", "Dubai Office", "OSWE, GXPN, CISSP");
+        List<User> users = userRepository.findAll();
+        System.out.println("Total users found in DB: " + users.size());
+        if (users.isEmpty()) {
+            System.out.println("No users found. Creating default users...");
+            createUser("admin", "admin123", "admin@vulnprint.com", "Administrator", "User", "Administrator", "Global HQ", "CISSP, CISM, OSCP, Lead Security Manager");
+            createUser("urmil", "urmil123", "urmil@vulnprint.com", "Urmil", "Savla", "Lead Pentester", "Mumbai Office", "OSCP, CRT, CEH");
+            createUser("jinesh", "jinesh123", "jinesh@vulnprint.com", "Jinesh", "Savla", "Lead Pentester", "Dubai Office", "OSWE, GXPN, CISSP");
+            System.out.println("Default users created.");
+        } else {
+            // Fix for existing users with plaintext passwords from older versions
+            for (User u : users) {
+                if (u.getPassword() != null && !u.getPassword().startsWith("$2a$") && !u.getPassword().startsWith("$2b$") && !u.getPassword().startsWith("$2y$")) {
+                    System.out.println("Hashing plaintext password for user: " + u.getUsername());
+                    u.setPassword(securityUtils.hashPassword(u.getPassword()));
+                    userRepository.save(u);
+                }
+            }
         }
     }
 
@@ -71,6 +84,7 @@ public class DataInitializer implements CommandLineRunner {
         u.setUsername(user); 
         u.setPassword(securityUtils.hashPassword(pass)); 
         u.setEmail(email); u.setFirstName(first); u.setLastName(last); u.setRole(role); u.setAddress(address); u.setQualification(qualification);
+        System.out.println("Saving user: " + user);
         return userRepository.save(u);
     }
 }

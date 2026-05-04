@@ -26,21 +26,30 @@ public class AuthRestController {
         String username = credentials.get("username");
         String password = credentials.get("password");
 
+        System.out.println("Login attempt for user: " + username);
+
         // Fixed SQLi by using JpaRepository's parameterized query
         Optional<User> userOpt = userRepository.findByUsername(username);
 
-        if (userOpt.isPresent() && securityUtils.verifyPassword(password, userOpt.get().getPassword())) {
+        if (userOpt.isPresent()) {
             User user = userOpt.get();
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", "success");
-            response.put("token", user.getUsername()); // Simplified token for this project
-            response.put("email", user.getEmail());
-            response.put("firstName", user.getFirstName());
-            response.put("lastName", user.getLastName());
-            response.put("role", user.getRole());
-            response.put("profileImage", user.getProfileImage());
-            response.put("message", "Login successful");
-            return ResponseEntity.ok(response);
+            boolean matches = securityUtils.verifyPassword(password, user.getPassword());
+            System.out.println("User found. Password match: " + matches);
+            
+            if (matches) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("status", "success");
+                response.put("token", user.getUsername()); // Simplified token for this project
+                response.put("email", user.getEmail());
+                response.put("firstName", user.getFirstName());
+                response.put("lastName", user.getLastName());
+                response.put("role", user.getRole());
+                response.put("profileImage", user.getProfileImage());
+                response.put("message", "Login successful");
+                return ResponseEntity.ok(response);
+            }
+        } else {
+            System.out.println("User not found: " + username);
         }
 
         return ResponseEntity.status(401).body(Map.of("status", "error", "message", "Invalid credentials"));
