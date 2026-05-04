@@ -12,6 +12,8 @@ import java.util.Map;
 import com.vulnprint.model.User;
 import com.vulnprint.service.SecurityUtils;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @RestController
 @RequestMapping("/api")
 public class RepGenRestController {
@@ -32,11 +34,8 @@ public class RepGenRestController {
     }
 
     @GetMapping("/repGenApi/{pentestId}")
-    public ResponseEntity<?> getReportGenerationData(@PathVariable Long pentestId, @RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "GENERATE_REPORT")) {
-            return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        }
-        
+    @PreAuthorize("hasAuthority('GENERATE_REPORT') and (hasAuthority('VIEW_ALL_PROJECTS') or @securityService.isAssignedToPentest(#pentestId))")
+    public ResponseEntity<?> getReportGenerationData(@PathVariable Long pentestId) {
         if (!isEnabled()) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                     .body(Map.of("error", "Microservice disabled by Admin."));

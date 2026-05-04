@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @RestController
 @RequestMapping("/api/organization")
 public class OrgRestController {
@@ -22,10 +24,8 @@ public class OrgRestController {
     private SecurityUtils securityUtils;
 
     @GetMapping
-    public ResponseEntity<?> getSettings(@RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "MANAGE_REPORT_DESIGN")) {
-            return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        }
+    @PreAuthorize("hasAuthority('MANAGE_REPORT_DESIGN')")
+    public ResponseEntity<?> getSettings() {
         List<Organization> all = organizationRepository.findAll();
         if (all.isEmpty()) {
             Organization org = new Organization();
@@ -36,17 +36,16 @@ public class OrgRestController {
     }
 
     @PutMapping
-    public ResponseEntity<?> updateSettings(@RequestBody Organization org, @RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "MANAGE_REPORT_DESIGN")) {
-            return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        }
-
+    @PreAuthorize("hasAuthority('MANAGE_REPORT_DESIGN')")
+    public ResponseEntity<?> updateSettings(@jakarta.validation.Valid @RequestBody com.vulnprint.dto.OrganizationDTO dto) {
+        Organization org = new Organization();
         // Encode inputs to prevent XSS
-        org.setName(securityUtils.encodeForHTML(org.getName()));
-        org.setEmail(securityUtils.encodeForHTML(org.getEmail()));
-        org.setPhone(securityUtils.encodeForHTML(org.getPhone()));
-        org.setAddress(securityUtils.encodeForHTML(org.getAddress()));
-        org.setLegalName(securityUtils.encodeForHTML(org.getLegalName()));
+        org.setName(securityUtils.encodeForHTML(dto.getName()));
+        org.setEmail(securityUtils.encodeForHTML(dto.getEmail()));
+        org.setPhone(securityUtils.encodeForHTML(dto.getPhone()));
+        org.setAddress(securityUtils.encodeForHTML(dto.getAddress()));
+        org.setLegalName(securityUtils.encodeForHTML(dto.getLegalName()));
+        org.setLogo(dto.getLogo());
 
         List<Organization> all = organizationRepository.findAll();
         if (!all.isEmpty()) {

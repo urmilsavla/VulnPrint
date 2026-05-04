@@ -391,6 +391,7 @@
             const confirmed = await window.askPermission("Are you sure you want to log out?");
             if (confirmed) {
                 localStorage.clear();
+                document.cookie = "JWT=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
                 window.location.href = '/login';
             }
         }

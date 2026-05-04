@@ -13,6 +13,10 @@ import java.util.Optional;
 
 import com.vulnprint.service.JwtProvider;
 
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthRestController {
@@ -27,7 +31,8 @@ public class AuthRestController {
     private JwtProvider jwtProvider;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials, HttpServletResponse responseObj) {
         String username = credentials.get("username");
         String password = credentials.get("password");
 
@@ -40,6 +45,13 @@ public class AuthRestController {
                     return ResponseEntity.status(403).body(Map.of("status", "error", "message", "Account is disabled. Please contact administrator."));
                 }
                 String token = jwtProvider.generateToken(user);
+                
+                // Set cookie for UI route protection
+                Cookie jwtCookie = new Cookie("JWT", token);
+                jwtCookie.setPath("/");
+                jwtCookie.setMaxAge(24 * 60 * 60); // 1 day
+                jwtCookie.setHttpOnly(false); // Allow JS to clear it on logout
+                responseObj.addCookie(jwtCookie);
                 
                 Map<String, Object> response = new HashMap<>();
                 response.put("status", "success");

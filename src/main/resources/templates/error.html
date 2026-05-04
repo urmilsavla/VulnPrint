@@ -59,8 +59,19 @@
                 
                 <p class="text-white font-mono text-sm leading-relaxed mb-10" th:text="${message}">An unexpected server error occurred.</p>
                 
-                <a href="/dashboard" class="inline-block px-10 py-4 bg-neutral-900 border border-neutral-800 text-neutral-400 font-bold text-xs uppercase tracking-widest hover:text-white hover:border-error/40 transition-all rounded-lg">Return to Dashboard</a>
+                <a id="action-btn" href="/dashboard" class="inline-block px-10 py-4 bg-neutral-900 border border-neutral-800 text-neutral-400 font-bold text-xs uppercase tracking-widest hover:text-white hover:border-error/40 transition-all rounded-lg">Return to Dashboard</a>
             </div>
+            
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const btn = document.getElementById('action-btn');
+                    const hasToken = document.cookie.split(';').some((item) => item.trim().startsWith('JWT='));
+                    if (!hasToken) {
+                        btn.href = '/login';
+                        btn.innerText = 'Go to Login';
+                    }
+                });
+            </script>
             
             <div class="mt-8">
                 <p class="text-[9px] font-black text-neutral-700 uppercase tracking-[0.3em]">Error logged in system</p>

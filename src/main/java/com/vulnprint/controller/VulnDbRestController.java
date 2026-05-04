@@ -12,6 +12,8 @@ import java.util.Map;
 import com.vulnprint.model.User;
 import com.vulnprint.service.SecurityUtils;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @RestController
 @RequestMapping("/api/vulndb")
 public class VulnDbRestController {
@@ -32,11 +34,10 @@ public class VulnDbRestController {
     }
 
     @GetMapping("/search")
+    @PreAuthorize("hasAuthority('MANAGE_MICROSERVICES')")
     public ResponseEntity<?> search(@RequestParam(required = false) String q,
                                      @RequestParam(required = false) String category,
-                                     @RequestParam(required = false) String severity,
-                                     @RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "MANAGE_MICROSERVICES")) return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
+                                     @RequestParam(required = false) String severity) {
         if (!isEnabled()) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                     .body(Map.of("error", "VulnDB service is currently disabled in Microservice Management."));
@@ -45,8 +46,8 @@ public class VulnDbRestController {
     }
 
     @GetMapping("/vulns/{slug}")
-    public ResponseEntity<?> getVulnerability(@PathVariable String slug, @RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "MANAGE_MICROSERVICES")) return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
+    @PreAuthorize("hasAuthority('MANAGE_MICROSERVICES')")
+    public ResponseEntity<?> getVulnerability(@PathVariable String slug) {
         if (!isEnabled()) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                     .body(Map.of("error", "VulnDB service is currently disabled."));

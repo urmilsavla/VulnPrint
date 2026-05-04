@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import java.util.TimeZone;
 import jakarta.annotation.PostConstruct;
 
-@SpringBootApplication(exclude = { org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class })
+@SpringBootApplication
 public class VulnPrintApplication {
     static {
         // Force UTC timezone at the earliest possible moment

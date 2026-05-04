@@ -12,6 +12,8 @@ import java.util.Map;
 import com.vulnprint.model.User;
 import com.vulnprint.service.SecurityUtils;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @RestController
 @RequestMapping("/api/config")
 public class ConfigRestController {
@@ -23,34 +25,27 @@ public class ConfigRestController {
     private SecurityUtils securityUtils;
 
     @GetMapping
-    public ResponseEntity<?> getAllConfigs(@RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "MANAGE_MICROSERVICES")) {
-            return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        }
+    @PreAuthorize("hasAuthority('MANAGE_MICROSERVICES')")
+    public ResponseEntity<?> getAllConfigs() {
         return ResponseEntity.ok(systemConfigRepository.findAll());
     }
 
     @GetMapping("/{key}")
-    public ResponseEntity<?> getConfig(@PathVariable String key, @RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "MANAGE_MICROSERVICES")) {
-            return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        }
+    @PreAuthorize("hasAuthority('MANAGE_MICROSERVICES')")
+    public ResponseEntity<?> getConfig(@PathVariable String key) {
         return ResponseEntity.ok(systemConfigRepository.findById(key).orElse(new SystemConfig(key, "")));
     }
 
     @PutMapping
-    public ResponseEntity<?> saveConfig(@RequestBody SystemConfig config, @RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "MANAGE_MICROSERVICES")) {
-            return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        }
+    @PreAuthorize("hasAuthority('MANAGE_MICROSERVICES')")
+    public ResponseEntity<?> saveConfig(@jakarta.validation.Valid @RequestBody com.vulnprint.dto.SystemConfigDTO dto) {
+        SystemConfig config = new SystemConfig(dto.getConfigKey(), dto.getConfigValue());
         return ResponseEntity.ok(systemConfigRepository.save(config));
     }
 
     @GetMapping("/test-connection")
-    public ResponseEntity<?> testConnection(@RequestParam String url, @RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "MANAGE_MICROSERVICES")) {
-            return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        }
+    @PreAuthorize("hasAuthority('MANAGE_MICROSERVICES')")
+    public ResponseEntity<?> testConnection(@RequestParam String url) {
         try {
             org.springframework.web.client.RestClient.create()
                     .get()
@@ -64,10 +59,8 @@ public class ConfigRestController {
     }
 
     @GetMapping("/repgen-url")
-    public ResponseEntity<?> getRepGenUrl(@RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "GENERATE_REPORT")) {
-            return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        }
+    @PreAuthorize("hasAuthority('GENERATE_REPORT')")
+    public ResponseEntity<?> getRepGenUrl() {
         return ResponseEntity.ok(Map.of("url", systemConfigRepository.findById("repgen_url").map(SystemConfig::getConfigValue).orElse("")));
     }
 }

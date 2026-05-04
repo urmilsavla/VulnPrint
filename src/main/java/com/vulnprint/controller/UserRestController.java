@@ -19,6 +19,9 @@ import com.vulnprint.model.Permission;
 import com.vulnprint.repository.RoleRepository;
 import com.vulnprint.repository.PermissionRepository;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
+
 @RestController
 @RequestMapping("/api/users")
 public class UserRestController {
@@ -36,23 +39,20 @@ public class UserRestController {
     private SecurityUtils securityUtils;
 
     @GetMapping
-    public ResponseEntity<?> getAllUsers(@RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "VIEW_USERS")) {
-            return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        }
+    @PreAuthorize("hasAuthority('VIEW_USERS')")
+    public ResponseEntity<?> getAllUsers() {
         return ResponseEntity.ok(userRepository.findAll());
     }
 
     @GetMapping("/roles")
-    public ResponseEntity<?> getAllRoles(@RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "MANAGE_ACCESS")) return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
+    @PreAuthorize("hasAuthority('MANAGE_ACCESS')")
+    public ResponseEntity<?> getAllRoles() {
         return ResponseEntity.ok(roleRepository.findAll());
     }
 
     @PostMapping("/roles")
-    public ResponseEntity<?> createRole(@RequestBody Map<String, String> data, @RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "MANAGE_ACCESS")) return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        
+    @PreAuthorize("hasAuthority('MANAGE_ACCESS')")
+    public ResponseEntity<?> createRole(@RequestBody Map<String, String> data) {
         String name = data.get("name");
         if (roleRepository.findByName(name).isPresent()) {
             return ResponseEntity.status(409).body(Map.of("message", "A system role with this designation already exists"));
@@ -64,9 +64,8 @@ public class UserRestController {
 
     @PostMapping("/roles/{id}/permissions")
     @Transactional
-    public ResponseEntity<?> updateRolePermissions(@PathVariable Long id, @RequestBody List<Long> permissionIds, @RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "MANAGE_ACCESS")) return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        
+    @PreAuthorize("hasAuthority('MANAGE_ACCESS')")
+    public ResponseEntity<?> updateRolePermissions(@PathVariable Long id, @RequestBody List<Long> permissionIds) {
         return roleRepository.findById(id).map(role -> {
             Set<Permission> newPermissions = new HashSet<>(permissionRepository.findAllById(permissionIds));
             role.setPermissions(newPermissions);
@@ -84,24 +83,23 @@ public class UserRestController {
     }
 
     @GetMapping("/permissions")
-    public ResponseEntity<?> getAllPermissions(@RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "MANAGE_ACCESS")) return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
+    @PreAuthorize("hasAuthority('MANAGE_ACCESS')")
+    public ResponseEntity<?> getAllPermissions() {
         return ResponseEntity.ok(permissionRepository.findAll());
     }
 
     @GetMapping("/profile/{username}")
-    public ResponseEntity<?> getProfile(@PathVariable String username, @RequestAttribute("authenticatedUser") User user) {
-        if (!user.getUsername().equals(username) && !securityUtils.hasPermission(user, "VIEW_USERS")) {
-            return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        }
-        
+    @PreAuthorize("#username == principal.username or hasAuthority('VIEW_USERS')")
+    public ResponseEntity<?> getProfile(@PathVariable String username) {
         return userRepository.findByUsername(username)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.status(404).body(null));
     }
 
     @PostMapping("/profile")
-    public ResponseEntity<?> updateProfile(@RequestBody Map<String, Object> data, @RequestAttribute("authenticatedUser") User user) {
+    @PreAuthorize("( #data['username'] == principal.username or ( #data['id'] != null and @securityService.isSelf(#data['id']) ) ) ? hasAuthority('EDIT_MY_PROFILE') : hasAuthority('MANAGE_USERS')")
+    public ResponseEntity<?> updateProfile(@RequestBody Map<String, Object> data) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = (String) data.get("username");
         Long userId = data.containsKey("id") ? Long.valueOf(data.get("id").toString()) : null;
         
@@ -109,10 +107,6 @@ public class UserRestController {
 
         if (targetOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("message", "User not found"));
         User targetUser = targetOpt.get();
-
-        boolean isSelf = user.getUsername().equals(targetUser.getUsername());
-        if (isSelf && !securityUtils.hasPermission(user, "EDIT_MY_PROFILE")) return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        if (!isSelf && !securityUtils.hasPermission(user, "MANAGE_USERS")) return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
 
         targetUser.setFirstName(securityUtils.encodeForHTML((String) data.get("firstName")));
         targetUser.setLastName(securityUtils.encodeForHTML((String) data.get("lastName")));
@@ -173,9 +167,8 @@ public class UserRestController {
     }
 
     @PostMapping("/{id}/permissions/reset")
-    public ResponseEntity<?> resetPermissions(@PathVariable Long id, @RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "MANAGE_ACCESS")) return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        
+    @PreAuthorize("hasAuthority('MANAGE_ACCESS')")
+    public ResponseEntity<?> resetPermissions(@PathVariable Long id) {
         return userRepository.findById(id).map(u -> {
             u.getExtraPermissions().clear();
             u.setLastRoleChange(java.time.LocalDateTime.now());
@@ -185,8 +178,8 @@ public class UserRestController {
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<?> toggleStatus(@PathVariable Long id, @RequestBody Map<String, Boolean> data, @RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "MANAGE_USERS")) return ResponseEntity.status(403).build();
+    @PreAuthorize("hasAuthority('MANAGE_USERS')")
+    public ResponseEntity<?> toggleStatus(@PathVariable Long id, @RequestBody Map<String, Boolean> data) {
         return userRepository.findById(id).map(u -> {
             u.setEnabled(data.get("enabled"));
             userRepository.save(u);
@@ -195,19 +188,17 @@ public class UserRestController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable Long id, @RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "MANAGE_USERS")) return ResponseEntity.status(403).build();
+    @PreAuthorize("hasAuthority('MANAGE_USERS')")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (user.getId().equals(id)) return ResponseEntity.badRequest().body(Map.of("message", "Cannot delete self"));
         userRepository.deleteById(id);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody Map<String, Object> data, @RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "MANAGE_USERS")) {
-            return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        }
-
+    @PreAuthorize("hasAuthority('MANAGE_USERS')")
+    public ResponseEntity<?> register(@RequestBody Map<String, Object> data) {
         String username = (String) data.get("username");
         String password = (String) data.get("password");
         String confirmPassword = (String) data.get("confirmPassword");
@@ -243,13 +234,14 @@ public class UserRestController {
     }
 
     @PostMapping("/change-password")
-    public ResponseEntity<?> changePassword(@RequestBody Map<String, String> request, @RequestAttribute("authenticatedUser") User user) {
+    @PreAuthorize("#request['username'] == principal.username or hasAuthority('RESET_PASSWORD')")
+    public ResponseEntity<?> changePassword(@RequestBody Map<String, String> request) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = request.get("username");
         String currentPassword = request.get("currentPassword");
         String newPassword = request.get("newPassword");
 
         boolean isSelf = user.getUsername().equals(username);
-        if (!isSelf && !securityUtils.hasPermission(user, "RESET_PASSWORD")) return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
 
         return userRepository.findByUsername(username)
             .map(targetUser -> {

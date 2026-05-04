@@ -23,6 +23,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
+
 @RestController
 @RequestMapping("/api/dashboard")
 @Transactional(readOnly = true)
@@ -51,10 +54,9 @@ public class DashboardRestController {
     }
 
     @GetMapping("/metrics")
-    public ResponseEntity<?> getMetrics(@RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "VIEW_DASHBOARD")) {
-            return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        }
+    @PreAuthorize("hasAuthority('VIEW_DASHBOARD')")
+    public ResponseEntity<?> getMetrics() {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Map<String, Object> map = new HashMap<>();
         List<Pentest> authorized = getAuthorizedPentests(user);
         
@@ -87,10 +89,9 @@ public class DashboardRestController {
     }
 
     @GetMapping("/recent")
-    public ResponseEntity<?> getRecent(@RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "VIEW_DASHBOARD")) {
-            return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        }
+    @PreAuthorize("hasAuthority('VIEW_DASHBOARD')")
+    public ResponseEntity<?> getRecent() {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<Pentest> authorized = getAuthorizedPentests(user);
         return ResponseEntity.ok(authorized.stream()
                 .sorted((p1, p2) -> {
@@ -103,11 +104,9 @@ public class DashboardRestController {
     }
 
     @GetMapping("/vulnerabilities")
-    public ResponseEntity<?> getRecentVulnerabilities(@RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "VIEW_VULNERABILITIES")) {
-            return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        }
-        
+    @PreAuthorize("hasAuthority('VIEW_VULNERABILITIES')")
+    public ResponseEntity<?> getRecentVulnerabilities() {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<Pentest> authorized = getAuthorizedPentests(user);
         return ResponseEntity.ok(authorized.stream()
                 .filter(p -> p.getVulnerabilities() != null)
@@ -129,11 +128,8 @@ public class DashboardRestController {
     }
 
     @GetMapping("/vulnerabilities/pending")
-    public ResponseEntity<?> getPendingVulnerabilities(@RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "APPROVE_VULNERABILITIES")) {
-            return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        }
-        
+    @PreAuthorize("hasAuthority('APPROVE_VULNERABILITIES')")
+    public ResponseEntity<?> getPendingVulnerabilities() {
         List<Map<String, Object>> pending = vulnerabilityRepository.findByReportingStatusIgnoreCase("Sent for Approval").stream()
                 .map(v -> {
                     Map<String, Object> m = new HashMap<>();
@@ -163,10 +159,8 @@ public class DashboardRestController {
     }
 
     @GetMapping("/alerts")
-    public ResponseEntity<?> getAlerts(@RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "VIEW_ALERTS")) {
-            return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        }
+    @PreAuthorize("hasAuthority('VIEW_ALERTS')")
+    public ResponseEntity<?> getAlerts() {
         return ResponseEntity.ok(alertRepository.findAll().stream()
                 .filter(a -> !a.isRead())
                 .sorted((a1, a2) -> a2.getId().compareTo(a1.getId()))
@@ -176,10 +170,8 @@ public class DashboardRestController {
 
     @PostMapping("/alerts/{id}/read")
     @Transactional
-    public ResponseEntity<?> markAlertRead(@PathVariable Long id, @RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "MANAGE_ALERTS")) {
-            return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        }
+    @PreAuthorize("hasAuthority('MANAGE_ALERTS')")
+    public ResponseEntity<?> markAlertRead(@PathVariable Long id) {
         return alertRepository.findById(id).map(a -> {
             a.setRead(true);
             alertRepository.save(a);
@@ -188,21 +180,23 @@ public class DashboardRestController {
     }
 
     @GetMapping("/pentests")
-    public ResponseEntity<?> getPentests(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "3") int size, @RequestParam(required = false) String type, @RequestAttribute("authenticatedUser") User user) {
-        if (!securityUtils.hasPermission(user, "VIEW_DASHBOARD")) {
-            return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
-        }
+    @PreAuthorize("hasAuthority('VIEW_DASHBOARD')")
+    public ResponseEntity<?> getPentests(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "3") int size, @RequestParam(required = false) String type) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<Pentest> authorized = getAuthorizedPentests(user);
         
         // Apply category filter if needed
+        List<Pentest> filtered;
         if (type != null && !type.isEmpty() && !type.equalsIgnoreCase("undefined") && !type.equalsIgnoreCase("All") && !type.equalsIgnoreCase("Total")) {
-            authorized = authorized.stream().filter(p -> type.equalsIgnoreCase(p.getPentestType())).collect(Collectors.toList());
+            filtered = authorized.stream().filter(p -> type.equalsIgnoreCase(p.getPentestType())).collect(Collectors.toList());
+        } else {
+            filtered = authorized;
         }
 
-        // Apply manual pagination on the authorized list
-        int start = Math.min(page * size, authorized.size());
-        int end = Math.min(start + size, authorized.size());
-        List<Pentest> paged = authorized.subList(start, end);
+        // Apply manual pagination on the filtered list
+        int start = Math.min(page * size, filtered.size());
+        int end = Math.min(start + size, filtered.size());
+        List<Pentest> paged = filtered.subList(start, end);
 
         return ResponseEntity.ok(paged.stream().map(p -> {
             Map<String, Object> map = new HashMap<>();
