@@ -369,11 +369,11 @@
         }
 
         async function resetUserPermissions() {
-            if (!(await window.askPermission('Revert all personalized overrides and sync this operator with their base role?'))) return;
+            if (!(await window.askPermission('Revert all personalized overrides and match this user with their base role?'))) return;
             try {
                 const res = await fetch(`/api/users/${selectedId}/permissions/reset`, { method: 'POST' });
                 if (res.ok) {
-                    window.showNotification('Operator clearances synchronized', 'success');
+                    window.showNotification('User permissions updated', 'success');
                     await init();
                 }
             } catch (e) { console.error(e); }

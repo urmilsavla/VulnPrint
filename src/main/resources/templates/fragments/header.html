@@ -134,15 +134,15 @@
             <div class="hidden group-hover:block absolute right-[-50px] mt-0 w-80 pt-2 z-50">
                 <div class="bg-[#131313] border border-neutral-800 shadow-2xl overflow-hidden corner-accent">
                     <div class="px-4 py-3 border-b border-neutral-800 bg-black/40 flex justify-between items-center">
-                        <span class="text-[10px] font-black uppercase tracking-widest text-primary">System_Alerts</span>
-                        <span class="text-[8px] text-neutral-600 font-mono uppercase">Node_Status: Live</span>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-primary">System Alerts</span>
+                        <span class="text-[8px] text-neutral-600 font-mono uppercase">System Status: Live</span>
                     </div>
                     <div id="alerts-list" class="max-h-96 overflow-y-auto custom-scrollbar divide-y divide-neutral-900">
                         <!-- Alerts populated via JS -->
-                        <div class="p-4 text-center text-[10px] text-neutral-600 uppercase tracking-widest italic">Syncing data...</div>
+                        <div class="p-4 text-center text-[10px] text-neutral-600 uppercase tracking-widest italic">Loading data...</div>
                     </div>
                     <div class="px-4 py-2 border-t border-neutral-800 bg-black/20 text-center">
-                        <p class="text-[8px] text-neutral-600 uppercase tracking-tighter">Auto-sync active // v1.0.4</p>
+                        <p class="text-[8px] text-neutral-600 uppercase tracking-tighter">Auto-update active // v1.0.4</p>
                     </div>
                 </div>
             </div>
@@ -151,7 +151,7 @@
         <div class="relative group">
             <button id="header-profile-toggle" class="flex items-center gap-3">
                 <div class="text-right hidden md:block">
-                    <p id="header-user-fullname" class="text-[10px] font-bold uppercase text-white">Operator</p>
+                    <p id="header-user-fullname" class="text-[10px] font-bold uppercase text-white">User</p>
                     <p id="header-user-role" class="text-[8px] font-bold uppercase text-[#39FF14]">Admin</p>
                 </div>
                 <div class="relative">
@@ -207,7 +207,7 @@
                     if (response.status === 401 && !resource.toString().includes('/api/auth/login')) {
                         localStorage.clear();
                         window.location.href = '/login';
-                        return Promise.reject('UNAUTHORIZED_ACCESS: REDIRECTING_TO_AUTH_NODE');
+                        return Promise.reject('Unauthorized Access: Redirecting to Login');
                     }
                     if (response.status === 403) {
                         try {
@@ -340,7 +340,7 @@
                     list.innerHTML = '<div class="p-8 text-center text-[10px] text-neutral-600 uppercase tracking-widest italic">No active system alerts</div>';
                 }
             } catch (e) {
-                console.error('Alert sync failed', e);
+                console.error('Alert load failed', e);
             }
         }
 
@@ -352,7 +352,7 @@
             }
             
             const user = JSON.parse(userJson);
-            document.getElementById('header-user-fullname').innerText = (user.firstName || 'Operator') + ' ' + (user.lastName || '');
+            document.getElementById('header-user-fullname').innerText = (user.firstName || 'User') + ' ' + (user.lastName || '');
             document.getElementById('header-user-role').innerText = user.role || 'User';
             if(user.profileImage) document.getElementById('header-profile-img').src = user.profileImage;
 
@@ -397,3 +397,4 @@
         }
     </script>
 </div>
+

@@ -306,7 +306,7 @@
                 document.getElementById('current-page-btn').innerText = currentPage + 1;
                 document.getElementById('btn-prev').disabled = currentPage === 0;
                 document.getElementById('btn-next').disabled = !Array.isArray(pentests) || pentests.length < pageSize;
-            } catch(e) { console.error("Sync Failure", e); window.showNotification("Dashboard sync failure.", "error"); }
+            } catch(e) { console.error("Load Failure", e); window.showNotification("Dashboard load failure.", "error"); }
         }
 
         function changePage(dir) { currentPage += dir; if(currentPage < 0) currentPage = 0; loadDashboard(); }
