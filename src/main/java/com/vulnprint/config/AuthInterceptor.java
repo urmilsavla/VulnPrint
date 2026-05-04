@@ -33,7 +33,25 @@ public class AuthInterceptor implements HandlerInterceptor {
                 String username = jwtProvider.getUsernameFromToken(token);
                 var userOpt = userRepository.findByUsername(username);
                 if (userOpt.isPresent()) {
-                    request.setAttribute("authenticatedUser", userOpt.get());
+                    var user = userOpt.get();
+                    
+                    // JWT Revocation check
+                    java.util.Date issuedAt = jwtProvider.getIssuedAtFromToken(token);
+                    java.time.Instant lastChangeInstant = user.getLastRoleChange().atZone(java.time.ZoneId.systemDefault()).toInstant();
+                    if (issuedAt.toInstant().isBefore(lastChangeInstant)) {
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"error\": \"Security clearance updated: Please re-authenticate\"}");
+                        return false;
+                    }
+
+                    if (!user.isEnabled()) {
+                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"error\": \"Account disabled: Session terminated\"}");
+                        return false;
+                    }
+                    request.setAttribute("authenticatedUser", user);
                     return true;
                 }
             }

@@ -36,4 +36,8 @@ public class User {
     
     @Column(columnDefinition = "TEXT")
     private String profileImage;
+
+    private boolean enabled = true;
+
+    private java.time.LocalDateTime lastRoleChange = java.time.LocalDateTime.now();
 }

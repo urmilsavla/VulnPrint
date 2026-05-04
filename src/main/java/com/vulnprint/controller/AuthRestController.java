@@ -36,6 +36,9 @@ public class AuthRestController {
         if (userOpt.isPresent()) {
             User user = userOpt.get();
             if (securityUtils.verifyPassword(password, user.getPassword())) {
+                if (!user.isEnabled()) {
+                    return ResponseEntity.status(403).body(Map.of("status", "error", "message", "Account is disabled. Please contact administrator."));
+                }
                 String token = jwtProvider.generateToken(user);
                 
                 Map<String, Object> response = new HashMap<>();

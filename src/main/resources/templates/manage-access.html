@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>VulnPrint | Manage Access</title>
+    <title>VulnPrint | Access Management</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     <script id="tailwind-config">
         tailwind.config = {
@@ -18,123 +18,135 @@
                 "on-surface": "#ffffff",
                 "error": "#ff7351"
               },
-              fontFamily: { headline: ['Space Grotesk'], body: ['Inter'], label: ['Space Grotesk'] }
+              fontFamily: { body: ['Inter'] }
             }
           }
         }
     </script>
     <style>
         :root { color-scheme: dark; }
-        body { background: #000000; margin: 0; }
+        body { margin: 0; }
+        
+        /* Layout consistent with other management pages */
+        #main-content { padding-top: 100px; margin-left: 64px; transition: margin-left 0.3s ease; }
+        @media (max-width: 1024px) { #main-content { margin-left: 0 !important; } }
+        
+        .tile-card { background: rgba(19, 19, 19, 0.4); border: 1px solid #262626; transition: all 0.3s ease; }
+        
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #0a0a0a; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #262626; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #333; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #4FFE49; }
+        
+        .tab-btn.active { color: #4FFE49; background: rgba(79, 254, 73, 0.1); border: 1px solid rgba(79, 254, 73, 0.2); }
         
         .perm-card { 
-            background: #0a0a0a; 
-            border: 1px solid #1a1a1a; 
-            transition: all 0.2s ease;
+            background: rgba(10, 10, 10, 0.6); 
+            border: 1px solid #262626; 
+            transition: all 0.2s ease; 
+            cursor: pointer; 
         }
-        .perm-card:hover { border-color: #4FFE49/30; background: #0f0f0a; }
+        .perm-card:hover:not(.locked) { border-color: #444; background: rgba(20, 20, 20, 0.8); }
+        .perm-card.active { border-color: rgba(79, 254, 73, 0.4); background: rgba(79, 254, 73, 0.05); }
+        .perm-card.locked { opacity: 0.5; cursor: not-allowed; border-color: #1a1a1a; }
         
-        .perm-locked { opacity: 0.5; cursor: not-allowed; }
-        .perm-locked input { pointer-events: none; }
-        
-        /* Tooltip Style */
-        .info-icon { cursor: help; }
-        .info-icon:hover + .tooltip { opacity: 1; visibility: visible; }
         .tooltip {
-            position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
-            margin-bottom: 8px; padding: 6px 10px; background: #1a1a1a; border: 1px solid #333;
-            color: #ccc; font-size: 10px; white-space: nowrap; border-radius: 4px;
-            opacity: 0; visibility: hidden; transition: 0.2s; z-index: 50;
-            pointer-events: none;
+            position: absolute; bottom: 100%; left: 0; 
+            margin-bottom: 8px; padding: 10px 14px; background: #111; border: 1px solid #333;
+            color: #999; font-size: 11px; line-height: 1.5; border-radius: 8px;
+            opacity: 0; visibility: hidden; transition: 0.2s; z-index: 50; pointer-events: none; width: 240px;
         }
+        .group:hover .tooltip { opacity: 1; visibility: visible; }
+        
+        .status-pill { padding: 2px 8px; border-radius: 4px; font-size: 9px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
+        
+        /* Switch Styling - Same as Microservice Management */
+        .switch { position: relative; display: inline-block; width: 38px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #262626; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: #525252; transition: .4s; border-radius: 50%; }
+        .active .slider { background-color: rgba(79, 254, 73, 0.2); }
+        .active .slider:before { transform: translateX(18px); background-color: #4FFE49; }
+        .locked .slider:before { background-color: #222; }
     </style>
 </head>
 <body class="radar-bg min-h-screen text-on-surface font-body selection:bg-primary selection:text-black">
     <div th:replace="~{fragments/sidebar :: sidebar}"></div>
     <div th:replace="~{fragments/header :: header}"></div>
 
-    <main class="lg:ml-16 pt-20 min-h-screen">
-        <div id="loader-overlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[150] flex items-center justify-center hidden">
-            <div class="flex flex-col items-center gap-4">
-                <div class="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-                <p class="text-[10px] font-black uppercase tracking-[0.3em] text-primary animate-pulse">Synchronizing_Security_Node</p>
-            </div>
-        </div>
-        <div class="max-w-7xl mx-auto px-8 py-12">
+    <main id="main-content" class="px-8 pb-20">
+        <div class="max-w-7xl mx-auto">
             <!-- Header Section -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-neutral-800 pb-8">
                 <div>
-                    <h1 class="text-4xl font-headline font-black uppercase tracking-tighter text-white mb-2">Access_Management</h1>
-                    <p class="text-[10px] font-label font-bold text-primary uppercase tracking-[0.3em]">Configure Roles & Granular User Permissions</p>
+                    <h1 class="text-3xl font-bold text-white uppercase headline">Access Control</h1>
+                    <p class="text-neutral-400 mt-1">Manage security roles and individual personnel clearances</p>
                 </div>
-                <div class="flex gap-4">
-                    <button onclick="openRoleModal()" class="px-6 py-3 bg-neutral-900 border border-neutral-800 text-[10px] font-black uppercase tracking-widest text-white hover:bg-neutral-800 transition-all flex items-center gap-2">
-                        <span class="material-symbols-outlined text-sm">add</span> Create New Role
-                    </button>
-                </div>
+                <button onclick="openRoleModal()" class="px-6 py-2 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg rounded">
+                    Create New Role
+                </button>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                <!-- Left: Role & User List -->
-                <div class="lg:col-span-4 space-y-8">
-                    <!-- Roles Section -->
-                    <div class="shell-panel p-6 shadow-terminal relative overflow-hidden">
-                        <div class="corner-accent"></div>
-                        <h2 class="text-xs font-black uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
-                            <span class="material-symbols-outlined text-sm text-primary/60">shield_person</span> System_Roles
-                        </h2>
-                        <div id="roles-list" class="space-y-2">
-                            <!-- Roles populated via JS -->
+                <!-- Left Sidebar -->
+                <div class="lg:col-span-3 space-y-6">
+                    <div class="tile-card rounded-xl overflow-hidden">
+                        <div class="flex p-1 bg-black/40 border-b border-neutral-800">
+                            <button onclick="switchTab('roles')" id="tab-roles" class="tab-btn active flex-1 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-400 hover:text-white transition-all rounded">Roles</button>
+                            <button onclick="switchTab('users')" id="tab-users" class="tab-btn flex-1 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-400 hover:text-white transition-all rounded">Users</button>
                         </div>
-                    </div>
+                        
+                        <div class="p-4">
+                            <div class="mb-4 relative">
+                                <input type="text" id="target-search" oninput="handleSearch(this.value)" placeholder="Search..." class="w-full bg-black/60 border border-neutral-800 text-[10px] uppercase tracking-widest p-3 pl-10 focus:border-primary outline-none transition-all rounded-lg text-neutral-300">
+                                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-neutral-600 text-sm">search</span>
+                            </div>
 
-                    <!-- Users Section -->
-                    <div class="shell-panel p-6 shadow-terminal relative overflow-hidden">
-                        <div class="corner-accent"></div>
-                        <h2 class="text-xs font-black uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
-                            <span class="material-symbols-outlined text-sm text-primary/60">group</span> Global_Operators
-                        </h2>
-                        <div class="mb-4 relative">
-                            <input type="text" id="user-search" placeholder="Filter operators..." class="w-full bg-black/40 border border-neutral-800 text-[10px] uppercase tracking-widest p-3 pl-10 focus:border-primary outline-none transition-all">
-                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-neutral-600 text-sm">search</span>
-                        </div>
-                        <div id="users-list" class="space-y-2 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
-                            <!-- Users populated via JS -->
+                            <div id="target-list" class="space-y-1 max-h-[600px] overflow-y-auto custom-scrollbar pr-1">
+                                <!-- Populated via JS -->
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Right: Configuration Grid -->
-                <div class="lg:col-span-8">
-                    <div id="config-panel" class="shell-panel p-8 shadow-terminal relative overflow-hidden hidden">
-                        <div class="corner-accent"></div>
-                        <div class="flex justify-between items-start mb-8 border-b border-neutral-900 pb-6">
-                            <div>
-                                <h3 id="target-title" class="text-xl font-headline font-black uppercase text-white mb-1">Configuration_Entity</h3>
-                                <p id="target-subtitle" class="text-[9px] font-label text-neutral-500 uppercase tracking-widest">Adjusting capabilities for this object</p>
+                <!-- Right Content -->
+                <div class="lg:col-span-9">
+                    <div id="config-panel" class="tile-card p-10 rounded-xl hidden">
+                        <div class="flex flex-col md:flex-row justify-between items-start gap-6 mb-12 border-b border-neutral-800/50 pb-8">
+                            <div class="flex items-center gap-6">
+                                <div id="target-avatar-container" class="hidden">
+                                    <img id="target-avatar" src="" class="w-16 h-16 rounded-xl border border-neutral-800 object-cover">
+                                </div>
+                                <div id="target-icon-container" class="w-16 h-16 rounded-xl bg-black/60 flex items-center justify-center border border-neutral-800">
+                                    <span class="material-symbols-outlined text-primary text-3xl">shield</span>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-3 mb-1">
+                                        <h3 id="target-name" class="text-2xl font-bold uppercase text-white tracking-tight headline">Select Entity</h3>
+                                        <span id="target-badge" class="status-pill bg-neutral-900 text-primary border border-neutral-800">Global</span>
+                                    </div>
+                                    <p id="target-context" class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Adjusting system-wide access parameters</p>
+                                </div>
                             </div>
-                            <div class="flex gap-4">
-                                <button onclick="saveChanges()" class="px-8 py-3 bg-primary text-black text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-[0_0_20px_rgba(79,254,73,0.15)]">
+                            <div class="flex items-center gap-3">
+                                <button id="sync-btn" onclick="resetUserPermissions()" class="px-5 py-2 border border-neutral-800 text-neutral-500 text-[9px] font-bold uppercase tracking-widest hover:border-error hover:text-error transition-all hidden rounded">
+                                    Reset Overrides
+                                </button>
+                                <button onclick="saveChanges()" class="px-8 py-2 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg rounded">
                                     Save Changes
                                 </button>
                             </div>
                         </div>
 
-                        <div id="permissions-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Permissions populated via JS -->
+                        <div id="matrix-container" class="space-y-12">
+                            <!-- Populated via JS -->
                         </div>
                     </div>
                     
-                    <!-- Empty State -->
-                    <div id="empty-state" class="h-full flex items-center justify-center border border-dashed border-neutral-800 rounded-3xl p-20 text-center">
-                        <div>
-                            <span class="material-symbols-outlined text-6xl text-neutral-800 mb-6">lock_open</span>
-                            <h3 class="text-xs font-black uppercase tracking-widest text-neutral-500">No Selection</h3>
-                            <p class="text-[10px] text-neutral-600 uppercase mt-2">Select a Role or User from the left to manage keys</p>
+                    <div id="empty-state" class="h-full min-h-[600px] flex items-center justify-center border-2 border-dashed border-neutral-800 rounded-xl text-center">
+                        <div class="max-w-xs">
+                            <span class="material-symbols-outlined text-4xl text-neutral-700 mb-6">key</span>
+                            <h3 class="text-xs font-black uppercase tracking-[0.3em] text-neutral-400 mb-2">Awaiting Selection</h3>
+                            <p class="text-[10px] text-neutral-600 uppercase font-bold leading-relaxed">Choose a security role or team member to begin mapping permissions.</p>
                         </div>
                     </div>
                 </div>
@@ -143,24 +155,28 @@
     </main>
 
     <!-- Role Modal -->
-    <div id="role-modal" class="fixed inset-0 bg-black/95 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
-        <div class="bg-[#0a0a0a] border border-neutral-800 w-full max-w-md p-8 shadow-3xl relative overflow-hidden">
-            <div class="corner-accent"></div>
-            <div class="flex justify-between items-center mb-8">
-                <h3 class="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                    <span class="material-symbols-outlined">add_moderator</span> Create_System_Role
-                </h3>
-                <button onclick="closeRoleModal()" class="text-neutral-500 hover:text-white transition-colors">
-                    <span class="material-symbols-outlined">close</span>
-                </button>
-            </div>
-            <div class="space-y-6">
-                <div class="space-y-2">
-                    <label class="text-[8px] font-black uppercase tracking-widest text-neutral-500 ml-1">Role Name</label>
-                    <input type="text" id="new-role-name" placeholder="E.G. SECURITY_ARCHITECT" class="w-full bg-black/40 border border-neutral-800 p-4 text-xs font-bold uppercase tracking-widest text-white focus:border-primary outline-none transition-all">
+    <div id="role-modal" class="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] hidden items-center justify-center p-4">
+        <div class="tile-card border border-neutral-800 w-full max-w-md p-10 shadow-3xl relative rounded-3xl">
+            <button onclick="closeRoleModal()" class="absolute top-6 right-6 text-neutral-600 hover:text-white transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <div class="flex items-center gap-4 mb-10">
+                <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                    <span class="material-symbols-outlined text-primary">add_moderator</span>
                 </div>
-                <button onclick="createRole()" class="w-full py-4 bg-primary text-black text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-[0_0_20px_rgba(79,254,73,0.1)]">
-                    Save Role
+                <div>
+                    <h3 class="text-xl font-black text-white uppercase tracking-tight">New Security Role</h3>
+                    <p class="text-[9px] text-neutral-500 uppercase font-bold tracking-[0.2em]">Define a new organizational designation</p>
+                </div>
+            </div>
+            <div class="space-y-8">
+                <div class="space-y-3">
+                    <label class="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-500 ml-1">Designation Name</label>
+                    <input type="text" id="new-role-name" oninput="validateRoleName(this.value)" placeholder="e.g. LEAD ARCHITECT" class="w-full bg-neutral-900/50 border border-neutral-800 p-4 text-xs font-black uppercase tracking-widest text-white focus:border-primary focus:ring-0 outline-none transition-all rounded-xl">
+                    <p id="role-error" class="text-[9px] text-error mt-2 hidden font-bold italic">Designation already exists in the system.</p>
+                </div>
+                <button id="create-role-btn" onclick="createRole()" class="w-full py-4 bg-primary text-black text-[11px] font-black uppercase tracking-widest hover:opacity-90 transition-all rounded-xl shadow-lg">
+                    Confirm Registration
                 </button>
             </div>
         </div>
@@ -170,206 +186,271 @@
         let allPermissions = [];
         let allRoles = [];
         let allUsers = [];
-        let selectedType = null; // 'role' or 'user'
+        let activeTab = 'roles';
         let selectedId = null;
-        let selectedObject = null;
+        let selectedEntity = null;
+        let draftPermissionIds = new Set();
+
+        const CATEGORIES = {
+            'Monitoring & Metrics': ['VIEW_DASHBOARD', 'VIEW_ALERTS', 'MANAGE_ALERTS'],
+            'Project Management': ['VIEW_ASSIGNED_PROJECTS', 'VIEW_ALL_PROJECTS', 'ADD_PROJECT', 'EDIT_ASSIGNED_PROJECTS', 'EDIT_ALL_PROJECTS', 'DELETE_PROJECT', 'CHANGE_PENTEST_STATUS'],
+            'Vulnerability Analysis': ['VIEW_VULNERABILITIES', 'ADD_VULNERABILITY', 'EDIT_ASSIGNED_VULNS', 'EDIT_ALL_VULNS', 'DELETE_VULNERABILITY', 'APPROVE_VULNERABILITIES', 'CHANGE_VULN_REPORTING_STATUS', 'CHANGE_VULN_STATUS', 'MANAGE_MICROSERVICES'],
+            'Reporting & Identity': ['GENERATE_REPORT', 'MANAGE_REPORT_DESIGN', 'EDIT_MY_PROFILE', 'RESET_PASSWORD'],
+            'System Governance': ['VIEW_USERS', 'MANAGE_USERS', 'MANAGE_ACCESS']
+        };
 
         async function init() {
             try {
-                const [permsRes, rolesRes, usersRes] = await Promise.all([
+                const [pRes, rRes, uRes] = await Promise.all([
                     fetch('/api/users/permissions'),
                     fetch('/api/users/roles'),
                     fetch('/api/users')
                 ]);
-                
-                allPermissions = await permsRes.json();
-                allRoles = await rolesRes.json();
-                allUsers = await usersRes.json();
-                
-                renderRoles();
-                renderUsers();
-            } catch (e) {
-                console.error(e);
-                if (window.showNotification) window.showNotification('Failed to sync security data', 'error');
+                allPermissions = await pRes.json();
+                allRoles = await rRes.json();
+                allUsers = await uRes.json();
+                renderSelectionList();
+                if (selectedId) {
+                    const latest = activeTab === 'roles' ? allRoles.find(r => r.id === selectedId) : allUsers.find(u => u.id === selectedId);
+                    if (latest) {
+                        selectedEntity = latest;
+                        syncDraftPermissions();
+                        renderMatrix();
+                    }
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function switchTab(tab) {
+            activeTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            document.getElementById('target-search').placeholder = `Search ${tab === 'roles' ? 'roles' : 'users'}...`;
+            renderSelectionList();
+        }
+
+        function handleSearch(val) {
+            renderSelectionList(val);
+        }
+
+        function renderSelectionList(filter = '') {
+            const list = document.getElementById('target-list');
+            const query = filter.toLowerCase();
+
+            if (activeTab === 'roles') {
+                const filtered = allRoles.filter(r => r.name.toLowerCase().includes(query));
+                list.innerHTML = filtered.map(r => `
+                    <div onclick="selectEntity('role', ${r.id})" class="p-4 border ${selectedId === r.id && activeTab === 'roles' ? 'border-primary/50 bg-primary/5' : 'border-transparent hover:bg-neutral-900/50'} cursor-pointer transition-all flex justify-between items-center rounded-xl group">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-[16px] ${selectedId === r.id && activeTab === 'roles' ? 'text-primary' : 'text-neutral-600 group-hover:text-neutral-400'}">shield</span>
+                            <span class="text-[10px] font-black uppercase tracking-widest ${selectedId === r.id && activeTab === 'roles' ? 'text-primary' : 'text-neutral-400 group-hover:text-white'}">${r.name}</span>
+                        </div>
+                        <span class="text-[8px] font-black text-neutral-700 group-hover:text-neutral-500 transition-colors">${r.permissions ? r.permissions.length : 0} KEYS</span>
+                    </div>
+                `).join('') || '<p class="text-center py-8 text-[9px] text-neutral-600 uppercase font-bold tracking-widest">No matching roles</p>';
+            } else {
+                const filtered = allUsers.filter(u => 
+                    u.username.toLowerCase().includes(query) || 
+                    u.firstName.toLowerCase().includes(query) || 
+                    u.lastName.toLowerCase().includes(query)
+                );
+                list.innerHTML = filtered.map(u => `
+                    <div onclick="selectEntity('user', ${u.id})" class="p-3 border ${selectedId === u.id && activeTab === 'users' ? 'border-primary/50 bg-primary/5' : 'border-transparent hover:bg-neutral-900/50'} cursor-pointer transition-all flex items-center gap-3 rounded-xl group">
+                        <img src="${u.profileImage || '/images/user.png'}" class="w-7 h-7 rounded-lg border border-neutral-800 grayscale-[0.5] group-hover:grayscale-0 transition-all">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[9px] font-black uppercase text-white truncate">${u.firstName} ${u.lastName}</p>
+                            <p class="text-[7px] font-bold text-neutral-600 uppercase tracking-widest truncate">${u.role ? u.role.name : 'Unassigned'}</p>
+                        </div>
+                    </div>
+                `).join('') || '<p class="text-center py-8 text-[9px] text-neutral-600 uppercase font-bold tracking-widest">No matching users</p>';
             }
         }
 
-        function renderRoles() {
-            const list = document.getElementById('roles-list');
-            list.innerHTML = allRoles.map(r => `
-                <div onclick="selectRole(${r.id})" class="p-4 border ${selectedType === 'role' && selectedId === r.id ? 'border-primary bg-primary/5' : 'border-neutral-900 bg-neutral-900/40'} hover:border-neutral-700 cursor-pointer transition-all flex justify-between items-center group">
-                    <span class="text-[10px] font-black uppercase tracking-widest ${selectedType === 'role' && selectedId === r.id ? 'text-primary' : 'text-neutral-400 group-hover:text-white'}">${r.name}</span>
-                    <span class="text-[8px] font-mono text-neutral-600">${r.permissions ? r.permissions.length : 0} KEYS</span>
-                </div>
-            `).join('');
-        }
-
-        function renderUsers(filter = '') {
-            const list = document.getElementById('users-list');
-            const filtered = allUsers.filter(u => 
-                u.username.toLowerCase().includes(filter.toLowerCase()) || 
-                u.firstName.toLowerCase().includes(filter.toLowerCase()) || 
-                u.lastName.toLowerCase().includes(filter.toLowerCase())
-            );
-            
-            list.innerHTML = filtered.map(u => `
-                <div onclick="selectUser(${u.id})" class="p-3 border ${selectedType === 'user' && selectedId === u.id ? 'border-primary bg-primary/5' : 'border-neutral-900 bg-neutral-900/40'} hover:border-neutral-700 cursor-pointer transition-all flex items-center gap-3">
-                    <img src="${u.profileImage || '/images/user.png'}" class="w-6 h-6 rounded-full border border-neutral-800 grayscale">
-                    <div class="flex-1 min-w-0">
-                        <p class="text-[9px] font-black uppercase tracking-tighter text-white truncate">${u.firstName} ${u.lastName}</p>
-                        <p class="text-[8px] font-label text-neutral-600 uppercase tracking-widest">${u.role ? u.role.name : 'NO_ROLE'}</p>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function selectRole(id) {
-            selectedType = 'role';
+        function selectEntity(type, id) {
             selectedId = id;
-            selectedObject = allRoles.find(r => r.id === id);
+            selectedEntity = type === 'role' ? allRoles.find(r => r.id === id) : allUsers.find(u => u.id === id);
             
             document.getElementById('empty-state').classList.add('hidden');
             document.getElementById('config-panel').classList.remove('hidden');
             
-            document.getElementById('target-title').innerText = selectedObject.name;
-            document.getElementById('target-subtitle').innerText = 'MANAGING GLOBAL ROLE PERMISSIONS';
-            
-            renderPermissionsGrid();
-            renderRoles();
-            renderUsers();
+            const badge = document.getElementById('target-badge');
+            const nameEl = document.getElementById('target-name');
+            const contextEl = document.getElementById('target-context');
+            const syncBtn = document.getElementById('sync-btn');
+            const avatarContainer = document.getElementById('target-avatar-container');
+            const iconContainer = document.getElementById('target-icon-container');
+
+            if (type === 'role') {
+                nameEl.innerText = selectedEntity.name;
+                badge.innerText = 'Global Role';
+                badge.className = 'status-pill bg-neutral-900 text-primary border border-neutral-800';
+                contextEl.innerText = 'Defining standard permissions for all assigned operators';
+                syncBtn.classList.add('hidden');
+                avatarContainer.classList.add('hidden');
+                iconContainer.classList.remove('hidden');
+            } else {
+                nameEl.innerText = `${selectedEntity.firstName} ${selectedEntity.lastName}`;
+                badge.innerText = 'Individual';
+                badge.className = 'status-pill bg-neutral-900 text-white border border-neutral-800';
+                contextEl.innerText = `Managing manual clearance overrides for this user`;
+                syncBtn.classList.toggle('hidden', !selectedEntity.extraPermissions || selectedEntity.extraPermissions.length === 0);
+                avatarContainer.classList.remove('hidden');
+                iconContainer.classList.add('hidden');
+                document.getElementById('target-avatar').src = selectedEntity.profileImage || '/images/user.png';
+            }
+
+            syncDraftPermissions();
+            renderMatrix();
+            renderSelectionList(document.getElementById('target-search').value);
         }
 
-        function selectUser(id) {
-            selectedType = 'user';
-            selectedId = id;
-            selectedObject = allUsers.find(u => u.id === id);
-            
-            document.getElementById('empty-state').classList.add('hidden');
-            document.getElementById('config-panel').classList.remove('hidden');
-            
-            document.getElementById('target-title').innerText = `${selectedObject.firstName} ${selectedObject.lastName}`;
-            document.getElementById('target-subtitle').innerText = `USER PERMISSION OVERRIDES [ROLE: ${selectedObject.role ? selectedObject.role.name : 'NONE'}]`;
-            
-            renderPermissionsGrid();
-            renderRoles();
-            renderUsers();
+        function syncDraftPermissions() {
+            draftPermissionIds = new Set();
+            if (activeTab === 'roles') {
+                (selectedEntity.permissions || []).forEach(p => draftPermissionIds.add(p.id));
+            } else {
+                // For users, draft holds BOTH role and extra permissions for UI display, 
+                // but we only save extras
+                const rolePerms = selectedEntity.role ? (selectedEntity.role.permissions || []) : [];
+                const extraPerms = selectedEntity.extraPermissions || [];
+                rolePerms.forEach(p => draftPermissionIds.add(p.id));
+                extraPerms.forEach(p => draftPermissionIds.add(p.id));
+            }
         }
 
-        function renderPermissionsGrid() {
-            const grid = document.getElementById('permissions-grid');
-            
-            // For a Role, we just show all permissions as toggleable
-            // For a User, Role permissions are grayed out (locked) and extra permissions are toggleable
-            
-            const rolePerms = selectedType === 'role' ? selectedObject.permissions : (selectedObject.role ? selectedObject.role.permissions : []);
-            const userExtraPerms = selectedType === 'user' ? selectedObject.extraPermissions : [];
-            
-            const rolePermNames = rolePerms.map(p => p.name);
-            const userExtraPermNames = userExtraPerms.map(p => p.name);
+        function renderMatrix() {
+            const container = document.getElementById('matrix-container');
+            const rolePermIds = selectedEntity.role ? (selectedEntity.role.permissions || []).map(p => p.id) : [];
 
-            grid.innerHTML = allPermissions.map(p => {
-                const isInherited = selectedType === 'user' && rolePermNames.includes(p.name);
-                const isChecked = rolePermNames.includes(p.name) || userExtraPermNames.includes(p.name);
-                
+            container.innerHTML = Object.entries(CATEGORIES).map(([catName, permKeys]) => {
+                const perms = allPermissions.filter(p => permKeys.includes(p.name));
+                if (perms.length === 0) return '';
+
                 return `
-                    <div class="perm-card p-4 flex items-center gap-4 relative ${isInherited ? 'perm-locked' : ''}">
-                        <div class="flex items-center h-5">
-                            <input type="checkbox" id="perm-${p.id}" value="${p.id}" ${isChecked ? 'checked' : ''} ${isInherited ? 'disabled' : ''} class="w-4 h-4 text-primary bg-black border-neutral-800 rounded focus:ring-primary focus:ring-offset-0 transition-all">
+                    <div class="space-y-6">
+                        <div class="flex items-center gap-4">
+                            <h4 class="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-500 whitespace-nowrap">${catName}</h4>
+                            <div class="flex-1 h-px bg-neutral-800/50"></div>
                         </div>
-                        <div class="flex-1">
-                            <label for="perm-${p.id}" class="text-[10px] font-black uppercase tracking-widest ${isChecked ? 'text-white' : 'text-neutral-500'} cursor-pointer flex items-center gap-2">
-                                ${p.name}
-                                <div class="relative group">
-                                    <span class="material-symbols-outlined text-[14px] text-neutral-600 hover:text-primary info-icon">info</span>
-                                    <div class="tooltip">${p.description}</div>
-                                </div>
-                            </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            ${perms.map(p => {
+                                const inherited = activeTab === 'users' && rolePermIds.includes(p.id);
+                                const active = draftPermissionIds.has(p.id);
+                                
+                                return `
+                                    <div class="perm-card group p-5 rounded-xl flex items-center justify-between ${active ? 'active' : ''} ${inherited ? 'locked' : ''}">
+                                        <div class="flex-1 pr-4 relative">
+                                            <p class="text-[10px] font-bold uppercase tracking-widest ${active ? 'text-white' : 'text-neutral-500'} transition-colors">${p.name.replace(/_/g, ' ')}</p>
+                                            ${inherited ? '<p class="text-[7px] font-bold text-primary/50 uppercase mt-1 tracking-tighter">Inherited from Role</p>' : ''}
+                                            <div class="tooltip">${p.description}</div>
+                                        </div>
+                                        <label class="switch ${inherited ? 'pointer-events-none' : ''}">
+                                            <input type="checkbox" ${active ? 'checked' : ''} ${inherited ? 'disabled' : ''} onchange="togglePermission(${p.id}, ${inherited})">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                `;
+                            }).join('')}
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
+        function togglePermission(id, locked) {
+            if (locked) return;
+            if (draftPermissionIds.has(id)) {
+                draftPermissionIds.delete(id);
+            } else {
+                draftPermissionIds.add(id);
+            }
+            renderMatrix();
+        }
+
+        async function resetUserPermissions() {
+            if (!(await window.askPermission('Revert all personalized overrides and sync this operator with their base role?'))) return;
+            try {
+                const res = await fetch(`/api/users/${selectedId}/permissions/reset`, { method: 'POST' });
+                if (res.ok) {
+                    window.showNotification('Operator clearances synchronized', 'success');
+                    await init();
+                }
+            } catch (e) { console.error(e); }
+        }
+
         async function saveChanges() {
-            if (!selectedObject) return;
-            
-            const checkedIds = Array.from(document.querySelectorAll('#permissions-grid input[type="checkbox"]:checked:not(:disabled)'))
-                .map(i => parseInt(i.value));
+            const currentIds = Array.from(draftPermissionIds);
             
             try {
-                if (selectedType === 'role') {
+                if (activeTab === 'roles') {
                     const res = await fetch(`/api/users/roles/${selectedId}/permissions`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(checkedIds)
+                        body: JSON.stringify(currentIds)
                     });
-                    
-                    if (res.ok) {
-                        if (window.showNotification) window.showNotification('Role permissions synchronized', 'success');
-                        init(); // Refresh data
-                    } else {
-                        if (window.showNotification) window.showNotification('Failed to update role schema', 'error');
+                    if (res.ok) { 
+                        window.showNotification('System role permissions synchronized', 'success'); 
+                        await init(); 
                     }
                 } else {
+                    const rolePermIds = selectedEntity.role ? (selectedEntity.role.permissions || []).map(p => p.id) : [];
+                    const nonInheritedIds = currentIds.filter(id => !rolePermIds.includes(id));
+
                     const res = await fetch('/api/users/profile', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            username: selectedObject.username,
-                            firstName: selectedObject.firstName,
-                            lastName: selectedObject.lastName,
-                            address: selectedObject.address,
-                            qualification: selectedObject.qualification,
-                            extraPermissionIds: checkedIds
+                            id: selectedEntity.id,
+                            username: selectedEntity.username,
+                            firstName: selectedEntity.firstName,
+                            lastName: selectedEntity.lastName,
+                            extraPermissionIds: nonInheritedIds
                         })
                     });
-                    
-                    if (res.ok) {
-                        if (window.showNotification) window.showNotification('Operator clearances updated successfully', 'success');
-                        init(); // Refresh data
-                    } else {
-                        if (window.showNotification) window.showNotification('Failed to update clearance level', 'error');
+                    if (res.ok) { 
+                        window.showNotification('Individual manual overrides committed', 'success'); 
+                        await init(); 
                     }
                 }
-            } catch (e) {
-                if (window.showNotification) window.showNotification('Connection refused by security system', 'error');
-            }
+            } catch (e) { console.error(e); }
+        }
+
+        function validateRoleName(name) {
+            const exists = allRoles.some(r => r.name.toLowerCase() === name.toLowerCase());
+            document.getElementById('role-error').classList.toggle('hidden', !exists || !name);
+            document.getElementById('create-role-btn').disabled = exists;
+            document.getElementById('create-role-btn').style.opacity = exists ? '0.5' : '1';
         }
 
         async function createRole() {
             const name = document.getElementById('new-role-name').value;
-            if (!name) {
-                if (window.showNotification) window.showNotification('Role designation required', 'error');
-                return;
-            }
-            
+            if (!name) return;
+
             try {
                 const res = await fetch('/api/users/roles', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name })
                 });
-                
                 if (res.ok) {
-                    if (window.showNotification) window.showNotification('New role registered successfully', 'success');
+                    window.showNotification('New security role registered', 'success');
                     closeRoleModal();
-                    document.getElementById('new-role-name').value = '';
-                    init();
+                    await init();
                 } else {
-                    const data = await res.json();
-                    if (window.showNotification) window.showNotification(data.message || 'Failed to register role', 'error');
+                    const err = await res.json();
+                    window.showNotification(err.message || 'Failed to create role', 'error');
                 }
-            } catch (e) {
-                if (window.showNotification) window.showNotification('System error', 'error');
-            }
+            } catch (e) { console.error(e); }
         }
 
-        // Modal Helpers
-        function openRoleModal() { document.getElementById('role-modal').classList.replace('hidden', 'flex'); }
-        function closeRoleModal() { document.getElementById('role-modal').classList.replace('flex', 'hidden'); }
+        function openRoleModal() { 
+            document.getElementById('role-modal').classList.replace('hidden', 'flex'); 
+        }
+        function closeRoleModal() { 
+            document.getElementById('role-modal').classList.replace('flex', 'hidden'); 
+            document.getElementById('new-role-name').value = '';
+        }
 
-        document.getElementById('user-search').addEventListener('input', (e) => renderUsers(e.target.value));
-        
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>

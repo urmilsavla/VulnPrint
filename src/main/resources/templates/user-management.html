@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>VulnPrint | Manage Users</title>
+    <title>VulnPrint | User Management</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
@@ -18,14 +18,14 @@
                 "on-surface": "#ffffff",
                 "error": "#ff7351"
               },
-              fontFamily: { headline: ['Space Grotesk'], body: ['Inter'], label: ['Space Grotesk'] }
+              fontFamily: { headline: ['Space Grotesk'], body: ['Inter'] }
             }
           }
         }
     </script>
     <style>
         :root { color-scheme: dark; }
-        body { margin: 0; }
+        body { margin: 0; font-family: 'Inter', sans-serif; }
         #main-content { padding-top: 100px; margin-left: 64px; transition: margin-left 0.3s ease; }
         body.sidebar-expanded #main-content { margin-left: 256px; }
         body.sidebar-expanded #header { left: 256px; }
@@ -33,14 +33,26 @@
 
         .tile-card { background: rgba(19, 19, 19, 0.4); border: 1px solid #262626; transition: all 0.3s ease; }
         .tile-header { cursor: pointer; }
-        .tile-content { max-height: 5000px; overflow: visible; transition: all 0.5s cubic-bezier(0, 1, 0, 1); }
+        .tile-content { max-height: 2000px; overflow: visible; transition: all 0.5s cubic-bezier(0, 1, 0, 1); }
         .collapse-icon { transition: transform 0.3s ease; color: #525252; }
         .tile-card.collapsed .tile-content { max-height: 0; opacity: 0; padding: 0 !important; margin: 0 !important; overflow: hidden; pointer-events: none; }
         .tile-card.collapsed .collapse-icon { transform: rotate(-90deg); }
         
+        /* Status Toggle */
+        .status-toggle {
+            width: 32px; height: 18px; background: #333; border-radius: 20px; position: relative; cursor: pointer; transition: all 0.3s;
+        }
+        .status-toggle::after {
+            content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: #666; border-radius: 50%; transition: all 0.3s;
+        }
+        .status-toggle.active { background: rgba(79, 254, 73, 0.2); }
+        .status-toggle.active::after { left: 16px; background: #4FFE49; }
+
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #4FFE49; }
+
+        .validation-msg { font-size: 9px; margin-top: 4px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; }
     </style>
 </head>
 <body class="radar-bg min-h-screen text-on-surface font-body selection:bg-primary selection:text-black">
@@ -52,29 +64,97 @@
         <div class="max-w-6xl mx-auto">
             <div class="flex justify-between items-center mb-12 border-b border-neutral-800 pb-8">
                 <div>
-                    <h1 class="text-3xl font-bold text-white uppercase" id="page-title">Manage Users</h1>
-                    <p class="text-neutral-400 mt-1" id="page-subtitle">Configure system users and access roles</p>
+                    <h1 class="text-3xl font-bold text-white uppercase tracking-tight headline">System Users</h1>
+                    <p class="text-neutral-400 mt-1">Manage users and their roles</p>
                 </div>
-                <button id="add-user-btn" onclick="openModal()" class="px-8 py-2 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg hidden">Add New User</button>
             </div>
 
-            <!-- User Registry Tile -->
-            <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-registry">
-                <div class="tile-header flex justify-between items-center mb-8 text-white" onclick="toggleTile('tile-registry')">
-                    <div class="flex items-center gap-4">
-                        <span class="material-symbols-outlined text-primary text-3xl">group</span>
-                        <h2 class="text-xl font-bold">User Directory</h2>                    </div>
-                    <span class="material-symbols-outlined collapse-icon">expand_more</span>
+            <div class="space-y-10">
+                <!-- Add/Edit User Tile -->
+                <div class="tile-card p-8 rounded-xl shadow-2xl collapsed" id="form-tile">
+                    <div class="tile-header flex justify-between items-center mb-0 text-white" onclick="toggleAddForm()">
+                        <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined text-primary text-3xl" id="form-icon">person_add</span>
+                            <h2 class="text-xl font-bold uppercase headline" id="form-title">Add New User</h2>
+                        </div>
+                        <span class="material-symbols-outlined collapse-icon">expand_more</span>
+                    </div>
+                    
+                    <div class="tile-content mt-8">
+                        <form id="user-form" class="space-y-6">
+                            <input type="hidden" id="form-user-id">
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div class="space-y-2">
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest ml-1">Username</label>
+                                    <input type="text" id="form-username" required oninput="checkUsername(this.value)" class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg font-mono">
+                                    <p id="username-validation" class="validation-msg hidden"></p>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest ml-1">Email</label>
+                                    <input type="email" id="form-email" required oninput="checkEmail(this.value)" class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg font-mono">
+                                    <p id="email-validation" class="validation-msg hidden"></p>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest ml-1">Role</label>
+                                    <select id="form-role" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg uppercase tracking-wider">
+                                        <!-- Roles populated via JS -->
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest ml-1">First Name</label>
+                                    <input type="text" id="form-first-name" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest ml-1">Last Name</label>
+                                    <input type="text" id="form-last-name" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-neutral-800/50">
+                                <div class="space-y-2">
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest ml-1" id="pass-label">Password</label>
+                                    <input type="password" id="form-password" oninput="validatePasswords()" class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg font-mono">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest ml-1">Confirm Password</label>
+                                    <input type="password" id="form-confirm-password" oninput="validatePasswords()" class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg font-mono">
+                                    <p id="password-validation" class="validation-msg hidden"></p>
+                                </div>
+                            </div>
+                            
+                            <div class="pt-4 flex justify-end gap-4">
+                                <button type="button" onclick="resetForm()" class="px-8 py-3 border border-neutral-800 text-neutral-500 font-bold uppercase text-[10px] tracking-widest hover:text-white transition-colors rounded">Cancel</button>
+                                <button type="submit" class="px-12 py-3 bg-primary text-black font-bold uppercase text-[10px] tracking-widest hover:opacity-90 transition-colors shadow-lg rounded disabled:opacity-50" id="submit-btn">Save User</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                <div class="tile-content">
+
+                <!-- User List Tile -->
+                <div class="tile-card p-8 rounded-xl shadow-2xl">
+                    <div class="flex justify-between items-center mb-8 text-white">
+                        <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined text-primary text-3xl">group</span>
+                            <h2 class="text-xl font-bold uppercase headline">User List</h2>
+                        </div>
+                        <div class="relative">
+                            <input type="text" id="user-search" oninput="renderUsers(this.value)" placeholder="Search..." class="bg-black/40 border border-neutral-800 text-[10px] uppercase tracking-widest text-neutral-400 py-3 pl-10 pr-4 w-64 focus:border-primary outline-none transition-all rounded-lg">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-neutral-600 text-sm">search</span>
+                        </div>
+                    </div>
+
                     <div class="overflow-x-auto custom-scrollbar">
                         <table class="w-full text-left border-collapse">
                             <thead>
-                                <tr class="border-b border-neutral-800">
-                                    <th class="px-6 py-4 text-[10px] uppercase tracking-[0.2em] font-black text-neutral-500">User</th>
-                                    <th class="px-6 py-4 text-[10px] uppercase tracking-[0.2em] font-black text-neutral-500">Email</th>
-                                    <th class="px-6 py-4 text-[10px] uppercase tracking-[0.2em] font-black text-neutral-500">Role</th>
-                                    <th class="px-6 py-4 text-[10px] uppercase tracking-[0.2em] font-black text-neutral-500">Address</th>
+                                <tr class="border-b border-neutral-800 text-[10px] uppercase tracking-widest font-bold text-neutral-500">
+                                    <th class="px-6 py-4">User</th>
+                                    <th class="px-6 py-4">Role</th>
+                                    <th class="px-6 py-4 text-center">Status</th>
+                                    <th class="px-6 py-4 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-neutral-900" id="user-table-body">
@@ -87,128 +167,275 @@
         </div>
     </main>
 
-    <!-- Add User Modal -->
-    <div id="user-modal" class="fixed inset-0 bg-black/90 backdrop-blur-xl z-[100] hidden flex items-center justify-center p-4">
-        <div class="tile-card border border-neutral-800 w-full max-w-md p-8 relative rounded-2xl shadow-3xl">
-            <button onclick="closeModal()" class="absolute top-4 right-4 text-neutral-500 hover:text-white transition-colors"><span class="material-symbols-outlined">close</span></button>
-            <div class="flex items-center gap-3 mb-8">
-                <span class="material-symbols-outlined text-primary">person_add</span>
-                <h2 class="text-xl font-bold text-white uppercase tracking-tight">Register New User</h2>
-            </div>
-            
-            <form id="register-form" class="space-y-6">
-                <div>
-                    <label class="block text-[10px] uppercase tracking-widest font-black text-primary/60 mb-2">Username</label>
-                    <input type="text" name="username" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm outline-none focus:border-primary transition-colors rounded-lg">
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[10px] uppercase tracking-widest font-black text-primary/60 mb-2">First Name</label>
-                        <input type="text" name="firstName" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm outline-none focus:border-primary transition-colors rounded-lg">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] uppercase tracking-widest font-black text-primary/60 mb-2">Last Name</label>
-                        <input type="text" name="lastName" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm outline-none focus:border-primary transition-colors rounded-lg">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-[10px] uppercase tracking-widest font-black text-primary/60 mb-2">Email</label>
-                    <input type="email" name="email" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm outline-none focus:border-primary transition-colors rounded-lg">
-                </div>
-                <div>
-                    <label class="block text-[10px] uppercase tracking-widest font-black text-primary/60 mb-2">Password</label>
-                    <input type="password" name="password" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm outline-none focus:border-primary transition-colors rounded-lg">
-                </div>
-                <div>
-                    <label class="block text-[10px] uppercase tracking-widest font-black text-primary/60 mb-2">Role</label>
-                    <select name="roleId" id="role-select" class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm outline-none focus:border-primary transition-colors rounded-lg">
-                        <!-- Roles populated via JS -->
-                    </select>
-                </div>
-                <div class="pt-6">
-                    <button type="submit" class="w-full bg-primary text-black font-bold py-4 uppercase text-[11px] tracking-widest hover:opacity-90 transition-colors shadow-lg rounded-lg">Create User Account</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <script>
-        function toggleTile(tileId) {
-            const tile = document.getElementById(tileId);
+        let allUsers = [];
+        let allRoles = [];
+        let isEditMode = false;
+        let originalUsername = '';
+
+        async function init() {
+            await Promise.all([loadRoles(), loadUsers()]);
+        }
+
+        function toggleAddForm() {
+            const tile = document.getElementById('form-tile');
             tile.classList.toggle('collapsed');
         }
 
-        function openModal() { document.getElementById('user-modal').classList.remove('hidden'); }
-        function closeModal() { document.getElementById('user-modal').classList.add('hidden'); }
-
-        async function init() {
-            // UI Gating
-            const canManage = window.hasPermission('MANAGE_USERS');
-            if (canManage) {
-                document.getElementById('add-user-btn').classList.remove('hidden');
-            } else {
-                document.getElementById('page-title').innerText = "User Directory";
-                document.getElementById('page-subtitle').innerText = "View system operators and their roles";
-            }
-
-            await Promise.all([loadUsers(), loadRoles()]);
-        }
-
         async function loadRoles() {
-            if (!window.hasPermission('MANAGE_ACCESS')) return;
-            const res = await fetch('/api/users/roles');
-            const roles = await res.json();
-            const select = document.getElementById('role-select');
-            select.innerHTML = roles.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+            try {
+                const res = await fetch('/api/users/roles');
+                allRoles = await res.json();
+                const select = document.getElementById('form-role');
+                select.innerHTML = '<option value="">SELECT ROLE...</option>' + 
+                    allRoles.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+            } catch (err) { console.error('Role sync failed:', err); }
         }
 
         async function loadUsers() {
-            const res = await fetch('/api/users');
-            const users = await res.json();
+            try {
+                const res = await fetch('/api/users');
+                allUsers = await res.json();
+                renderUsers();
+            } catch (err) { console.error('User sync failed:', err); }
+        }
+
+        function renderUsers(filter = '') {
             const tbody = document.getElementById('user-table-body');
-            tbody.innerHTML = users.map(u => `
+            const canManage = window.hasPermission('MANAGE_USERS');
+            
+            const filtered = allUsers.filter(u => 
+                u.username.toLowerCase().includes(filter.toLowerCase()) || 
+                u.firstName.toLowerCase().includes(filter.toLowerCase()) || 
+                u.lastName.toLowerCase().includes(filter.toLowerCase()) ||
+                u.email.toLowerCase().includes(filter.toLowerCase())
+            );
+
+            tbody.innerHTML = filtered.map(u => {
+                const isSelf = localStorage.getItem('username') === u.username;
+                const isAdmin = u.username === 'admin';
+                return `
                 <tr class="hover:bg-white/[0.02] transition-colors group">
-                    <td class="px-6 py-4">
-                        <div class="flex items-center gap-3">
-                            <img src="${u.profileImage || '/images/user.png'}" class="w-10 h-10 rounded-full border border-neutral-800 object-cover group-hover:border-primary/50 transition-colors">
+                    <td class="px-6 py-5">
+                        <div class="flex items-center gap-4">
+                            <img src="${u.profileImage || '/images/user.png'}" class="w-10 h-10 rounded-lg border border-neutral-800 object-cover grayscale group-hover:grayscale-0 transition-all">
                             <div>
-                                <p class="text-xs font-bold text-white">${u.firstName} ${u.lastName}</p>
-                                <p class="text-[9px] text-neutral-500 font-mono tracking-wider">@${u.username}</p>
+                                <p class="text-sm font-bold text-white">${u.firstName} ${u.lastName}</p>
+                                <p class="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mt-0.5">@${u.username}</p>
                             </div>
                         </div>
                     </td>
-                    <td class="px-6 py-4 text-xs text-neutral-400 font-mono">${u.email}</td>
-                    <td class="px-6 py-4">
-                        <span class="px-3 py-1 text-[10px] uppercase font-black tracking-widest border border-neutral-800 bg-neutral-900/50 text-neutral-400 rounded">${u.role ? u.role.name : 'NO_ROLE'}</span>
+                    <td class="px-6 py-5">
+                        <span class="px-3 py-1 text-[9px] uppercase font-black tracking-widest border border-neutral-800 bg-neutral-900/50 text-primary rounded">${u.role ? u.role.name : 'NONE'}</span>
                     </td>
-                    <td class="px-6 py-4 text-xs text-neutral-500">${u.address || 'N/A'}</td>
+                    <td class="px-6 py-5">
+                        <div class="flex items-center justify-center gap-3">
+                            <span class="text-[8px] font-black uppercase tracking-tighter ${u.enabled ? 'text-primary' : 'text-neutral-600'}">${u.enabled ? 'Active' : 'Inactive'}</span>
+                            <div class="status-toggle ${u.enabled ? 'active' : ''} ${canManage && !isSelf && !isAdmin ? '' : 'pointer-events-none opacity-20'}" 
+                                 onclick="toggleUserStatus(${u.id}, ${!u.enabled})">
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-5 text-right">
+                        ${canManage ? `
+                        <div class="flex items-center justify-end gap-2 text-neutral-600">
+                            <button onclick='editUser(${JSON.stringify(u).replace(/'/g, "&apos;")})' 
+                                    class="p-2 hover:text-primary transition-colors ${isAdmin ? 'pointer-events-none opacity-20' : ''}" 
+                                    ${isAdmin ? 'disabled' : ''}>
+                                <span class="material-symbols-outlined text-lg">edit</span>
+                            </button>
+                            <button onclick="deleteUser(${u.id})" 
+                                    class="p-2 hover:text-error transition-colors ${isSelf || isAdmin ? 'pointer-events-none opacity-20' : ''}" 
+                                    ${isSelf || isAdmin ? 'disabled' : ''}>
+                                <span class="material-symbols-outlined text-lg">delete</span>
+                            </button>
+                        </div>
+                        ` : '<span class="text-[10px] text-neutral-700 uppercase font-bold tracking-widest">Locked</span>'}
+                    </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
-        document.getElementById('register-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData);
+        function editUser(user) {
+            isEditMode = true;
+            originalUsername = user.username;
+            const tile = document.getElementById('form-tile');
+            tile.classList.remove('collapsed');
             
-            // Convert roleId to number if present
-            if (data.roleId) data.roleId = parseInt(data.roleId);
+            document.getElementById('form-title').innerText = "Edit User";
+            document.getElementById('form-icon').innerText = "manage_accounts";
+            document.getElementById('submit-btn').innerText = "Update User";
+            document.getElementById('pass-label').innerText = "New Password (Optional)";
+            
+            document.getElementById('form-user-id').value = user.id;
+            document.getElementById('form-username').value = user.username;
+            document.getElementById('form-first-name').value = user.firstName;
+            document.getElementById('form-last-name').value = user.lastName;
+            document.getElementById('form-email').value = user.email;
+            document.getElementById('form-role').value = user.role ? user.role.id : '';
+            
+            document.getElementById('form-password').required = false;
+            document.getElementById('form-confirm-password').required = false;
+            
+            document.getElementById('username-validation').classList.add('hidden');
+            document.getElementById('password-validation').classList.add('hidden');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
 
-            const res = await fetch('/api/users/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            if (res.ok) {
-                if (window.showNotification) window.showNotification('User account initialized successfully.', 'success');
-                else alert('User account initialized successfully.');
-                closeModal();
-                loadUsers();
-            } else {
-                const err = await res.json();
-                if (window.showNotification) window.showNotification(err.message || 'Node synchronization failed.', 'error');
-                else alert(err.message || 'Node synchronization failed.');
+        function resetForm() {
+            isEditMode = false;
+            originalUsername = '';
+            document.getElementById('user-form').reset();
+            document.getElementById('form-title').innerText = "Add New User";
+            document.getElementById('form-icon').innerText = "person_add";
+            document.getElementById('submit-btn').innerText = "Save User";
+            document.getElementById('pass-label').innerText = "Password";
+            document.getElementById('form-user-id').value = '';
+            document.getElementById('form-password').required = true;
+            document.getElementById('form-confirm-password').required = true;
+            
+            document.getElementById('username-validation').classList.add('hidden');
+            document.getElementById('password-validation').classList.add('hidden');
+            document.getElementById('submit-btn').disabled = false;
+            
+            document.getElementById('form-tile').classList.add('collapsed');
+        }
+
+        function checkUsername(val) {
+            const el = document.getElementById('username-validation');
+            const submitBtn = document.getElementById('submit-btn');
+            
+            if (!val || (isEditMode && val === originalUsername)) {
+                el.classList.add('hidden');
+                submitBtn.disabled = false;
+                return;
             }
+
+            const exists = allUsers.some(u => u.username.toLowerCase() === val.toLowerCase());
+            el.classList.remove('hidden');
+            if (exists) {
+                el.innerText = "Taken";
+                el.className = "validation-msg text-error";
+                submitBtn.disabled = true;
+            } else {
+                el.innerText = "Available";
+                el.className = "validation-msg text-primary";
+                submitBtn.disabled = false;
+            }
+        }
+
+        function checkEmail(val) {
+            const el = document.getElementById('email-validation');
+            const submitBtn = document.getElementById('submit-btn');
+            const originalEmail = isEditMode ? allUsers.find(u => u.id == document.getElementById('form-user-id').value)?.email : '';
+            
+            if (!val || (isEditMode && val === originalEmail)) {
+                el.classList.add('hidden');
+                submitBtn.disabled = false;
+                return;
+            }
+
+            const exists = allUsers.some(u => u.email && u.email.toLowerCase() === val.toLowerCase());
+            el.classList.remove('hidden');
+            if (exists) {
+                el.innerText = "Email Taken";
+                el.className = "validation-msg text-error";
+                submitBtn.disabled = true;
+            } else {
+                el.innerText = "Email Available";
+                el.className = "validation-msg text-primary";
+                submitBtn.disabled = false;
+            }
+        }
+
+        function validatePasswords() {
+            const pass = document.getElementById('form-password').value;
+            const confirm = document.getElementById('form-confirm-password').value;
+            const el = document.getElementById('password-validation');
+
+            if (!confirm) {
+                el.classList.add('hidden');
+                return;
+            }
+
+            el.classList.remove('hidden');
+            if (pass !== confirm) {
+                el.innerText = "Mismatch";
+                el.className = "validation-msg text-error";
+            } else {
+                el.innerText = "Match";
+                el.className = "validation-msg text-primary";
+            }
+        }
+
+        async function toggleUserStatus(id, enabled) {
+            try {
+                const res = await fetch(`/api/users/${id}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled })
+                });
+                if (res.ok) {
+                    window.showNotification(`Account ${enabled ? 'active' : 'inactive'}`, 'success');
+                    loadUsers();
+                }
+            } catch (err) { console.error('Status sync failed:', err); }
+        }
+
+        async function deleteUser(id) {
+            if (!(await window.askPermission('Delete this user?'))) return;
+            try {
+                const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    window.showNotification('User deleted.', 'success');
+                    loadUsers();
+                } else {
+                    const data = await res.json();
+                    window.showNotification(data.message || 'Error deleting user', 'error');
+                }
+            } catch (err) { console.error('Delete failed:', err); }
+        }
+
+        document.getElementById('user-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const pass = document.getElementById('form-password').value;
+            const confirm = document.getElementById('form-confirm-password').value;
+
+            if ((!isEditMode || pass) && pass !== confirm) {
+                window.showNotification('Passwords mismatch', 'error');
+                return;
+            }
+
+            const data = {
+                id: document.getElementById('form-user-id').value,
+                username: document.getElementById('form-username').value,
+                firstName: document.getElementById('form-first-name').value,
+                lastName: document.getElementById('form-last-name').value,
+                email: document.getElementById('form-email').value,
+                roleId: document.getElementById('form-role').value,
+                password: pass,
+                confirmPassword: confirm,
+                newUsername: document.getElementById('form-username').value,
+                newPassword: pass
+            };
+
+            const endpoint = isEditMode ? '/api/users/profile' : '/api/users/register';
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    window.showNotification(isEditMode ? 'User updated.' : 'User added.', 'success');
+                    resetForm();
+                    loadUsers();
+                } else {
+                    const err = await res.json();
+                    window.showNotification(err.message || 'Error saving user', 'error');
+                }
+            } catch (err) { console.error('Save failed:', err); }
         };
 
         document.addEventListener('DOMContentLoaded', init);

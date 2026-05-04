@@ -142,12 +142,22 @@ public class DataInitializer implements CommandLineRunner {
             Role adminRole = roleRepository.findByName("Administrator").orElse(null);
             createUser("admin", "p455w0rd", "admin@vulnprint.local", "System", "Administrator", adminRole, "Global HQ", "Root Authority");
         } else {
-            // Fix for existing users with plaintext passwords from older versions
+            // Fix for existing users: Ensure everyone is enabled and passwords are hashed
             for (User u : users) {
+                boolean modified = false;
+                if (!u.isEnabled()) {
+                    u.setEnabled(true);
+                    modified = true;
+                }
+                if (u.getLastRoleChange() == null) {
+                    u.setLastRoleChange(java.time.LocalDateTime.now());
+                    modified = true;
+                }
                 if (u.getPassword() != null && !u.getPassword().startsWith("$2a$") && !u.getPassword().startsWith("$2b$") && !u.getPassword().startsWith("$2y$")) {
                     u.setPassword(securityUtils.hashPassword(u.getPassword()));
-                    userRepository.save(u);
+                    modified = true;
                 }
+                if (modified) userRepository.save(u);
             }
         }
     }
