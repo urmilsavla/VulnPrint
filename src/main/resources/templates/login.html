@@ -127,13 +127,7 @@
 
                 if (response.ok) {
                     localStorage.setItem('token', data.token);
-                    localStorage.setItem('email', data.email);
-                    localStorage.setItem('firstName', data.firstName);
-                    localStorage.setItem('lastName', data.lastName);
-                    localStorage.setItem('role', data.role);
-                    if (data.profileImage) {
-                        localStorage.setItem('profileImage', data.profileImage);
-                    }
+                    localStorage.setItem('user', JSON.stringify(data));
                     window.location.href = '/dashboard';
                 } else {
                     showNotification(data.message || 'Access Denied: Invalid Identity', 'error');

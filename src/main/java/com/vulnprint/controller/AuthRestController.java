@@ -11,6 +11,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import com.vulnprint.service.JwtProvider;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthRestController {
@@ -21,35 +23,33 @@ public class AuthRestController {
     @Autowired
     private SecurityUtils securityUtils;
 
+    @Autowired
+    private JwtProvider jwtProvider;
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
         String username = credentials.get("username");
         String password = credentials.get("password");
 
-        System.out.println("Login attempt for user: " + username);
-
-        // Fixed SQLi by using JpaRepository's parameterized query
         Optional<User> userOpt = userRepository.findByUsername(username);
 
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-            boolean matches = securityUtils.verifyPassword(password, user.getPassword());
-            System.out.println("User found. Password match: " + matches);
-            
-            if (matches) {
+            if (securityUtils.verifyPassword(password, user.getPassword())) {
+                String token = jwtProvider.generateToken(user);
+                
                 Map<String, Object> response = new HashMap<>();
                 response.put("status", "success");
-                response.put("token", user.getUsername()); // Simplified token for this project
+                response.put("token", token);
+                response.put("username", user.getUsername());
                 response.put("email", user.getEmail());
                 response.put("firstName", user.getFirstName());
                 response.put("lastName", user.getLastName());
-                response.put("role", user.getRole());
+                response.put("role", user.getRole() != null ? user.getRole().getName() : "None");
                 response.put("profileImage", user.getProfileImage());
                 response.put("message", "Login successful");
                 return ResponseEntity.ok(response);
             }
-        } else {
-            System.out.println("User not found: " + username);
         }
 
         return ResponseEntity.status(401).body(Map.of("status", "error", "message", "Invalid credentials"));

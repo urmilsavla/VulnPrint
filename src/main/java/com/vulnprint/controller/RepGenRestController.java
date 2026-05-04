@@ -9,6 +9,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+import com.vulnprint.model.User;
+import com.vulnprint.service.SecurityUtils;
+
 @RestController
 @RequestMapping("/api")
 public class RepGenRestController {
@@ -19,6 +22,9 @@ public class RepGenRestController {
     @Autowired
     private SystemConfigRepository systemConfigRepository;
 
+    @Autowired
+    private SecurityUtils securityUtils;
+
     private boolean isEnabled() {
         return systemConfigRepository.findById("repgen_enabled")
                 .map(c -> "true".equalsIgnoreCase(c.getConfigValue()))
@@ -26,7 +32,11 @@ public class RepGenRestController {
     }
 
     @GetMapping("/repGenApi/{pentestId}")
-    public ResponseEntity<?> getReportGenerationData(@PathVariable Long pentestId) {
+    public ResponseEntity<?> getReportGenerationData(@PathVariable Long pentestId, @RequestAttribute("authenticatedUser") User user) {
+        if (!securityUtils.hasPermission(user, "GENERATE_REPORT")) {
+            return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
+        }
+        
         if (!isEnabled()) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                     .body(Map.of("error", "Microservice disabled by Admin."));

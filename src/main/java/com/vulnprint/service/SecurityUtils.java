@@ -9,10 +9,34 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import com.vulnprint.model.User;
+import com.vulnprint.model.Permission;
+
 @Service
 public class SecurityUtils {
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    /**
+     * Checks if the user has a specific permission key.
+     */
+    public boolean hasPermission(User user, String key) {
+        if (user == null || key == null) return false;
+        
+        // Check role permissions
+        if (user.getRole() != null && user.getRole().getPermissions() != null) {
+            if (user.getRole().getPermissions().stream().anyMatch(p -> p.getName().equals(key))) {
+                return true;
+            }
+        }
+        
+        // Check extra permissions
+        if (user.getExtraPermissions() != null) {
+            return user.getExtraPermissions().stream().anyMatch(p -> p.getName().equals(key));
+        }
+        
+        return false;
+    }
 
     /**
      * Prevents Path Traversal by validating that a file path is within the base directory.

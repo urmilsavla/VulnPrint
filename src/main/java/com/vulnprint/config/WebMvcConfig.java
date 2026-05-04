@@ -16,10 +16,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // Secure all API endpoints except login and report generation engine
+        // Secure all API endpoints except login
         registry.addInterceptor(authInterceptor)
                 .addPathPatterns("/api/**")
-                .excludePathPatterns("/api/auth/login", "/api/users/register", "/api/repGenApi/**");
+                .excludePathPatterns("/api/auth/login");
 
         // Apply rate limiting specifically to the login endpoint
         registry.addInterceptor(rateLimitInterceptor)

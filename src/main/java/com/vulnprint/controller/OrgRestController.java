@@ -22,24 +22,26 @@ public class OrgRestController {
     private SecurityUtils securityUtils;
 
     @GetMapping
-    public Organization getSettings() {
+    public ResponseEntity<?> getSettings(@RequestAttribute("authenticatedUser") User user) {
+        if (!securityUtils.hasPermission(user, "MANAGE_REPORT_DESIGN")) {
+            return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
+        }
         List<Organization> all = organizationRepository.findAll();
         if (all.isEmpty()) {
             Organization org = new Organization();
             org.setName("VulnPrint Security");
-            return org;
+            return ResponseEntity.ok(org);
         }
-        return all.get(0);
+        return ResponseEntity.ok(all.get(0));
     }
 
     @PutMapping
     public ResponseEntity<?> updateSettings(@RequestBody Organization org, @RequestAttribute("authenticatedUser") User user) {
-        // BAC Fix: Only Administrators can update global organization settings
-        if (!"Administrator".equalsIgnoreCase(user.getRole())) {
-            return ResponseEntity.status(403).body(Map.of("error", "ACCESS_DENIED: ADMINISTRATOR_CLEARANCE_REQUIRED"));
+        if (!securityUtils.hasPermission(user, "MANAGE_REPORT_DESIGN")) {
+            return ResponseEntity.status(403).body(Map.of("error", "Insufficient Permissions"));
         }
 
-        // Encode inputs to prevent XSS,
+        // Encode inputs to prevent XSS
         org.setName(securityUtils.encodeForHTML(org.getName()));
         org.setEmail(securityUtils.encodeForHTML(org.getEmail()));
         org.setPhone(securityUtils.encodeForHTML(org.getPhone()));

@@ -101,6 +101,11 @@
     </main>
 
     <script th:inline="javascript">
+        // Security check
+        if (!window.hasPermission('GENERATE_REPORT')) {
+            window.location.href = '/dashboard';
+        }
+
         async function loadCompletedProjects() {
             try {
                 const res = await fetch('/api/dashboard/pentests?page=0&size=100');
@@ -163,9 +168,9 @@
                 if (!dataRes.ok) throw new Error('Data assembly failed');
                 const reportData = await dataRes.json();
                 
-                const configRes = await fetch('/api/config');
-                const configs = await configRes.json();
-                const repgenUrl = configs.find(c => c.configKey === 'repgen_url')?.configValue;
+                const configRes = await fetch('/api/config/repgen-url');
+                const configData = await configRes.json();
+                const repgenUrl = configData.url;
                 
                 if (!repgenUrl) {
                     throw new Error('RepGen Base URL not configured. Please set it in Microservice Management.');

@@ -49,8 +49,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
-        '401':
-          description: Access Denied
+        '403':
+          description: Insufficient Permissions
 
   /api/dashboard/metrics:
     get:

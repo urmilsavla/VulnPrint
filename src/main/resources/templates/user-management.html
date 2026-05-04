@@ -52,10 +52,10 @@
         <div class="max-w-6xl mx-auto">
             <div class="flex justify-between items-center mb-12 border-b border-neutral-800 pb-8">
                 <div>
-                    <h1 class="text-3xl font-bold text-white uppercase">Manage Users</h1>
-                    <p class="text-neutral-400 mt-1">Configure system users and access roles</p>
+                    <h1 class="text-3xl font-bold text-white uppercase" id="page-title">Manage Users</h1>
+                    <p class="text-neutral-400 mt-1" id="page-subtitle">Configure system users and access roles</p>
                 </div>
-                <button onclick="openModal()" class="px-8 py-2 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg">Add New User</button>
+                <button id="add-user-btn" onclick="openModal()" class="px-8 py-2 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg hidden">Add New User</button>
             </div>
 
             <!-- User Registry Tile -->
@@ -121,9 +121,8 @@
                 </div>
                 <div>
                     <label class="block text-[10px] uppercase tracking-widest font-black text-primary/60 mb-2">Role</label>
-                    <select name="role" class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm outline-none focus:border-primary transition-colors rounded-lg">
-                        <option value="Pentester">Pentester</option>
-                        <option value="Administrator">Administrator</option>
+                    <select name="roleId" id="role-select" class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm outline-none focus:border-primary transition-colors rounded-lg">
+                        <!-- Roles populated via JS -->
                     </select>
                 </div>
                 <div class="pt-6">
@@ -142,6 +141,27 @@
         function openModal() { document.getElementById('user-modal').classList.remove('hidden'); }
         function closeModal() { document.getElementById('user-modal').classList.add('hidden'); }
 
+        async function init() {
+            // UI Gating
+            const canManage = window.hasPermission('MANAGE_USERS');
+            if (canManage) {
+                document.getElementById('add-user-btn').classList.remove('hidden');
+            } else {
+                document.getElementById('page-title').innerText = "User Directory";
+                document.getElementById('page-subtitle').innerText = "View system operators and their roles";
+            }
+
+            await Promise.all([loadUsers(), loadRoles()]);
+        }
+
+        async function loadRoles() {
+            if (!window.hasPermission('MANAGE_ACCESS')) return;
+            const res = await fetch('/api/users/roles');
+            const roles = await res.json();
+            const select = document.getElementById('role-select');
+            select.innerHTML = roles.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+        }
+
         async function loadUsers() {
             const res = await fetch('/api/users');
             const users = await res.json();
@@ -159,7 +179,7 @@
                     </td>
                     <td class="px-6 py-4 text-xs text-neutral-400 font-mono">${u.email}</td>
                     <td class="px-6 py-4">
-                        <span class="px-3 py-1 text-[10px] uppercase font-black tracking-widest border border-neutral-800 bg-neutral-900/50 text-neutral-400 rounded">${u.role}</span>
+                        <span class="px-3 py-1 text-[10px] uppercase font-black tracking-widest border border-neutral-800 bg-neutral-900/50 text-neutral-400 rounded">${u.role ? u.role.name : 'NO_ROLE'}</span>
                     </td>
                     <td class="px-6 py-4 text-xs text-neutral-500">${u.address || 'N/A'}</td>
                 </tr>
@@ -168,24 +188,30 @@
 
         document.getElementById('register-form').onsubmit = async (e) => {
             e.preventDefault();
-            const data = Object.fromEntries(new FormData(e.target));
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            // Convert roleId to number if present
+            if (data.roleId) data.roleId = parseInt(data.roleId);
+
             const res = await fetch('/api/users/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
             if (res.ok) {
-                window.showNotification('User account initialized successfully.', 'success');
+                if (window.showNotification) window.showNotification('User account initialized successfully.', 'success');
+                else alert('User account initialized successfully.');
                 closeModal();
                 loadUsers();
             } else {
                 const err = await res.json();
-                window.showNotification(err.message || 'Node synchronization failed.', 'error');
+                if (window.showNotification) window.showNotification(err.message || 'Node synchronization failed.', 'error');
+                else alert(err.message || 'Node synchronization failed.');
             }
         };
 
-        document.addEventListener('DOMContentLoaded', loadUsers);
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
-l>

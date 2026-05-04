@@ -7,11 +7,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import com.vulnprint.service.JwtProvider;
+
 @Component
 public class AuthInterceptor implements HandlerInterceptor {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private JwtProvider jwtProvider;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -20,20 +25,23 @@ public class AuthInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        String token = request.getHeader("X-Auth-Token");
+        String authHeader = request.getHeader("Authorization");
 
-        if (token != null && !token.isEmpty()) {
-            var userOpt = userRepository.findByUsername(token);
-            if (userOpt.isPresent()) {
-                // Store the authenticated user in the request for IDOR checks in controllers
-                request.setAttribute("authenticatedUser", userOpt.get());
-                return true;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            if (jwtProvider.validateToken(token)) {
+                String username = jwtProvider.getUsernameFromToken(token);
+                var userOpt = userRepository.findByUsername(username);
+                if (userOpt.isPresent()) {
+                    request.setAttribute("authenticatedUser", userOpt.get());
+                    return true;
+                }
             }
         }
 
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.getWriter().write("{\"error\": \"Unauthorized: Please log in to access this resource\"}");
         response.setContentType("application/json");
+        response.getWriter().write("{\"error\": \"Unauthorized: Please log in with a valid session\"}");
         return false;
     }
 }

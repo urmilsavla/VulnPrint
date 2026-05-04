@@ -123,9 +123,13 @@
 
         document.getElementById('profile-form').onsubmit = async (e) => {
             e.preventDefault();
+            const userJson = localStorage.getItem('user');
+            if (!userJson) return;
+            const user = JSON.parse(userJson);
+            
             const fd = new FormData(e.target);
             const data = Object.fromEntries(fd.entries());
-            data.username = localStorage.getItem('token');
+            data.username = user.username;
             data.profileImage = localStorage.getItem('profileImage');
 
             const res = await fetch('/api/users/profile', {
@@ -134,10 +138,12 @@
                 body: JSON.stringify(data)
             });
             if(res.ok) {
-                localStorage.setItem('firstName', data.firstName);
-                localStorage.setItem('lastName', data.lastName);
-                localStorage.setItem('address', data.address);
-                localStorage.setItem('qualification', data.qualification);
+                // Update local cache
+                user.firstName = data.firstName;
+                user.lastName = data.lastName;
+                user.profileImage = data.profileImage;
+                localStorage.setItem('user', JSON.stringify(user));
+                
                 window.showNotification('Profile attributes synchronized.', 'success');
                 setTimeout(() => location.reload(), 1500);
             } else {
@@ -146,11 +152,13 @@
         };
 
         document.addEventListener('DOMContentLoaded', async () => {
-            const username = localStorage.getItem('token');
-            if (!username) {
+            const userJson = localStorage.getItem('user');
+            if (!userJson) {
                 location.href = '/login';
                 return;
             }
+            const sessionUser = JSON.parse(userJson);
+            const username = sessionUser.username;
 
             try {
                 const res = await fetch(`/api/users/profile/${username}`);
@@ -160,7 +168,7 @@
                     form.email.value = user.email || '';
                     form.firstName.value = user.firstName || '';
                     form.lastName.value = user.lastName || '';
-                    form.role.value = user.role || '';
+                    form.role.value = (user.role && user.role.name) ? user.role.name : 'OPERATOR';
                     form.address.value = user.address || '';
                     form.qualification.value = user.qualification || '';
                     if (user.profileImage) {
@@ -169,14 +177,7 @@
                     }
                 }
             } catch (e) {
-                const form = document.getElementById('profile-form');
-                form.email.value = localStorage.getItem('email') || '';
-                form.firstName.value = localStorage.getItem('firstName') || '';
-                form.lastName.value = localStorage.getItem('lastName') || '';
-                form.role.value = localStorage.getItem('role') || '';
-                form.address.value = localStorage.getItem('address') || '';
-                const img = localStorage.getItem('profileImage');
-                if(img) document.getElementById('profile-preview').src = img;
+                console.error('Profile fetch failed', e);
             }
         });
     </script>

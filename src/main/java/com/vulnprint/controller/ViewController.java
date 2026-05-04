@@ -119,6 +119,11 @@ public class ViewController {
         return "microservice-management";
     }
 
+    @GetMapping("/manage-access")
+    public String manageAccess() {
+        return "manage-access";
+    }
+
     @GetMapping("/generate-report")
     public String generateReport() {
         return "generate-report";
