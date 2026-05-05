@@ -144,10 +144,10 @@
                 user.profileImage = data.profileImage;
                 localStorage.setItem('user', JSON.stringify(user));
                 
-                window.showNotification('Profile attributes synchronized.', 'success');
+                window.showNotification('Profile updated.', 'success');
                 setTimeout(() => location.reload(), 1500);
             } else {
-                window.showNotification('Could not synchronize profile data.', 'error');
+                window.showNotification('Could not save profile data.', 'error');
             }
         };
 

@@ -7,22 +7,6 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-    <script id="tailwind-config">
-        tailwind.config = {
-          darkMode: 'class',
-          theme: {
-            extend: {
-              colors: {
-                "primary": "#4FFE49",
-                "surface": "#0e0e0e",
-                "on-surface": "#ffffff",
-                "error": "#ff7351"
-              },
-              fontFamily: { body: ['Inter'] }
-            }
-          }
-        }
-    </script>
     <style>
         :root { color-scheme: dark; }
         body { margin: 0; }
@@ -49,18 +33,7 @@
         .perm-card.active { border-color: rgba(79, 254, 73, 0.4); background: rgba(79, 254, 73, 0.05); }
         .perm-card.locked { opacity: 0.5; cursor: not-allowed; border-color: #1a1a1a; }
         
-        .tooltip {
-            position: absolute; bottom: 100%; left: 0; 
-            margin-bottom: 8px; padding: 10px 14px; background: #111; border: 1px solid #333;
-            color: #999; font-size: 11px; line-height: 1.5; border-radius: 8px;
-            opacity: 0; visibility: hidden; transition: 0.2s; z-index: 50; pointer-events: none; width: 240px;
-        }
-        .group:hover .tooltip { opacity: 1; visibility: visible; }
-        
-        .status-pill { padding: 2px 8px; border-radius: 4px; font-size: 9px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
-        
-        /* Switch Styling - Same as Microservice Management */
-        .switch { position: relative; display: inline-block; width: 38px; height: 20px; }
+        <style>        .switch { position: relative; display: inline-block; width: 38px; height: 20px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #262626; transition: .4s; border-radius: 20px; }
         .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: #525252; transition: .4s; border-radius: 50%; }
@@ -78,7 +51,7 @@
             <!-- Header Section -->
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-neutral-800 pb-8">
                 <div>
-                    <h1 class="text-3xl font-bold text-white uppercase headline">Access Control</h1>
+                    <h1 class="heading-main">Access Control</h1>
                     <p class="text-neutral-400 mt-1">Manage security roles and individual personnel clearances</p>
                 </div>
                 <button onclick="openRoleModal()" class="px-6 py-2 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg rounded">
@@ -128,7 +101,7 @@
                                 </div>
                             </div>
                             <div class="flex items-center gap-3">
-                                <button id="sync-btn" onclick="resetUserPermissions()" class="px-5 py-2 border border-neutral-800 text-neutral-500 text-[9px] font-bold uppercase tracking-widest hover:border-error hover:text-error transition-all hidden rounded">
+                                <button id="refresh-btn" onclick="resetUserPermissions()" class="px-5 py-2 border border-neutral-800 text-neutral-500 text-[9px] font-bold uppercase tracking-widest hover:border-error hover:text-error transition-all hidden rounded">
                                     Reset Overrides
                                 </button>
                                 <button onclick="saveChanges()" class="px-8 py-2 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg rounded">
@@ -172,10 +145,10 @@
             <div class="space-y-8">
                 <div class="space-y-3">
                     <label class="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-500 ml-1">Designation Name</label>
-                    <input type="text" id="new-role-name" oninput="validateRoleName(this.value)" placeholder="e.g. LEAD ARCHITECT" class="w-full bg-neutral-900/50 border border-neutral-800 p-4 text-xs font-black uppercase tracking-widest text-white focus:border-primary focus:ring-0 outline-none transition-all rounded-xl">
+                    <input type="text" id="new-role-name" oninput="validateRoleName(this.value)" placeholder="e.g. LEAD ARCHITECT" class="input-terminal !bg-neutral-900/50 font-black uppercase tracking-widest !rounded-xl">
                     <p id="role-error" class="text-[9px] text-error mt-2 hidden font-bold italic">Designation already exists in the system.</p>
                 </div>
-                <button id="create-role-btn" onclick="createRole()" class="w-full py-4 bg-primary text-black text-[11px] font-black uppercase tracking-widest hover:opacity-90 transition-all rounded-xl shadow-lg">
+                <button id="create-role-btn" onclick="createRole()" class="w-full btn-primary !py-4 !rounded-xl">
                     Confirm Registration
                 </button>
             </div>
@@ -277,7 +250,7 @@
             const badge = document.getElementById('target-badge');
             const nameEl = document.getElementById('target-name');
             const contextEl = document.getElementById('target-context');
-            const syncBtn = document.getElementById('sync-btn');
+            const syncBtn = document.getElementById('refresh-btn');
             const avatarContainer = document.getElementById('target-avatar-container');
             const iconContainer = document.getElementById('target-icon-container');
 
@@ -285,7 +258,7 @@
                 nameEl.innerText = selectedEntity.name;
                 badge.innerText = 'Global Role';
                 badge.className = 'status-pill bg-neutral-900 text-primary border border-neutral-800';
-                contextEl.innerText = 'Defining standard permissions for all assigned operators';
+                contextEl.innerText = 'Defining standard permissions for all assigned users';
                 syncBtn.classList.add('hidden');
                 avatarContainer.classList.add('hidden');
                 iconContainer.classList.remove('hidden');
@@ -390,7 +363,7 @@
                         body: JSON.stringify(currentIds)
                     });
                     if (res.ok) { 
-                        window.showNotification('System role permissions synchronized', 'success'); 
+                        window.showNotification('Role permissions updated', 'success'); 
                         await init(); 
                     }
                 } else {
@@ -455,4 +428,5 @@
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
-</html>
+</html>>body>
+</html>>

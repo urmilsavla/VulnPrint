@@ -5,10 +5,10 @@ VulnPrint is a modern, high-performance pentest reporting and management platfor
 ## Key Features
 - **Sleek Tiled UI:** A consistent, high-tech interface with interactive, collapsible tiles and neon-green accents.
 - **Project Lifecycle Management:** Track assessments from initialization to completion across various categories (Web, Mobile, API, Network, Source Code).
-- **Vulnerability Registry:** Detailed documentation of findings with support for reproduction steps, request/response captures, and source code context.
+- **Vulnerability System:** Detailed documentation of findings with support for reproduction steps, request/response captures, and source code context.
 - **Automated CVSS v3.1:** Integrated calculator for real-time risk scoring and vector generation.
 - **Report Designer:** Modular, drag-and-drop report customization including legal disclaimers, methodology selection, and analytics visualization.
-- **API Mapping Registry:** Comprehensive documentation for template tags and dynamic data mapping.
+- **API Mapping System:** Comprehensive documentation for template tags and dynamic data mapping.
 - **Administrative Suite:** Manage users, roles, and global organizational branding.
 
 ## Architecture

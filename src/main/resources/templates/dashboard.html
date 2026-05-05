@@ -7,27 +7,6 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-    <script id="tailwind-config">
-        tailwind.config = {
-          darkMode: 'class',
-          theme: {
-            extend: {
-              colors: {
-                "primary": "#4FFE49",
-                "surface-container-low": "#131313",
-                "surface-container-high": "#1f1f1f",
-                "surface": "#0e0e0e",
-                "on-surface": "#ffffff",
-                "error": "#ff7351",
-                "tertiary": "#88f6ff",
-                "outline-variant": "#484848",
-              },
-              fontFamily: { headline: ['Space Grotesk'], body: ['Inter'], label: ['Space Grotesk'] },
-              boxShadow: { terminal: "0 0 0 1px rgba(38,38,38,0.85), 0 30px 80px rgba(0,0,0,0.55)" }
-            }
-          }
-        }
-    </script>
     <style>
         :root { color-scheme: dark; }
         body { margin: 0; }
@@ -148,7 +127,7 @@
                     </div>
 
                     <div class="flex items-center justify-between border-t border-neutral-900 bg-neutral-950 px-8 py-4">
-                        <span class="text-[10px] font-label uppercase tracking-[0.22em] text-neutral-600" id="pentest-count-text">Syncing data...</span>
+                        <span class="text-[10px] font-label uppercase tracking-[0.22em] text-neutral-600" id="pentest-count-text">Loading data...</span>
                         <div class="flex gap-2">
                             <button onclick="changePage(-1)" class="p-1 text-neutral-500 transition-colors hover:text-primary disabled:opacity-30" id="btn-prev"><span class="material-symbols-outlined text-sm">chevron_left</span></button>
                             <button class="bg-neutral-900 px-3 py-1 text-[10px] font-label text-primary" id="current-page-btn">1</button>
@@ -258,7 +237,7 @@
 
                         return `
                             <tr class="hover:bg-neutral-900/30 transition-colors group cursor-pointer" onclick="location.href='/pentest/details/${p.id}'">
-                                <td class="px-8 py-6"><div class="font-bold text-white text-sm uppercase tracking-tight group-hover:text-primary transition-colors">${p.pentestName || 'Unnamed Node'}</div><div class="text-[9px] font-label text-neutral-500 uppercase mt-0.5">${p.clientName || 'Private Client'}</div></td>
+                                <td class="px-8 py-6"><div class="font-bold text-white text-sm uppercase tracking-tight group-hover:text-primary transition-colors">${p.pentestName || 'Unnamed Project'}</div><div class="text-[9px] font-label text-neutral-500 uppercase mt-0.5">${p.clientName || 'Private Client'}</div></td>
                                 <td class="px-6 py-6">${testersHtml}</td>
                                 <td class="px-6 py-6 text-center"><span class="bg-neutral-900 border border-neutral-800 text-[8px] font-label px-2 py-1 tracking-tighter uppercase text-neutral-400">${p.pentestType}</span></td>
                                 <td class="px-6 py-6 w-48">
@@ -297,12 +276,12 @@
                                     </div>
                                 </td>
                             </tr>`;
-                    }).join('') || '<tr><td colspan="7" class="p-12 text-center text-neutral-600 uppercase text-[10px]">No project nodes active.</td></tr>';
+                    }).join('') || '<tr><td colspan="7" class="p-12 text-center text-neutral-600 uppercase text-[10px]">No project projects active.</td></tr>';
                 } else {
-                    document.getElementById('project-list').innerHTML = '<tr><td colspan="7" class="p-12 text-center text-error uppercase text-[10px]">Insufficient Permissions to view registry.</td></tr>';
+                    document.getElementById('project-list').innerHTML = '<tr><td colspan="7" class="p-12 text-center text-error uppercase text-[10px]">Insufficient Permissions to view system.</td></tr>';
                 }
                 
-                document.getElementById('pentest-count-text').innerText = `Showing page ${currentPage+1} of Registry`;
+                document.getElementById('pentest-count-text').innerText = `Showing page ${currentPage+1} of System`;
                 document.getElementById('current-page-btn').innerText = currentPage + 1;
                 document.getElementById('btn-prev').disabled = currentPage === 0;
                 document.getElementById('btn-next').disabled = !Array.isArray(pentests) || pentests.length < pageSize;

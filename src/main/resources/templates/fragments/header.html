@@ -3,6 +3,51 @@
     <!-- Notification Container -->
     <div id="notification-container" class="fixed top-24 right-8 z-[100] flex flex-col gap-4 pointer-events-none"></div>
 
+    <script id="global-tailwind-config">
+        window.tailwind = window.tailwind || {};
+        tailwind.config = {
+          darkMode: 'class',
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#4FFE49",
+                "surface-container-low": "#131313",
+                "surface-container-high": "#1f1f1f",
+                "surface": "#0e0e0e",
+                "on-surface": "#ffffff",
+                "error": "#ff7351",
+                "tertiary": "#88f6ff",
+                "outline-variant": "#484848",
+              },
+              fontFamily: { headline: ['Space Grotesk', 'sans-serif'], body: ['Inter', 'sans-serif'], label: ['Space Grotesk', 'sans-serif'] },
+              boxShadow: { terminal: "0 0 0 1px rgba(38,38,38,0.85), 0 30px 80px rgba(0,0,0,0.55)" }
+            }
+          }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer components {
+            .btn-primary {
+                @apply bg-primary text-black px-8 py-3 text-[12px] font-headline font-black uppercase tracking-widest hover:shadow-[0_0_20px_rgba(79,254,73,0.3)] transition-all inline-block text-center cursor-pointer;
+            }
+            .btn-secondary {
+                @apply px-6 py-3 border border-neutral-700 text-neutral-400 font-headline font-bold text-[11px] uppercase tracking-widest hover:text-white hover:border-neutral-500 transition-all inline-block text-center cursor-pointer rounded-none;
+            }
+            .input-terminal {
+                @apply bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-all rounded-lg w-full;
+            }
+            .panel-terminal {
+                @apply bg-[#131313]/90 backdrop-blur-2xl border border-white/5 rounded-2xl shadow-terminal;
+            }
+            .heading-main {
+                @apply text-3xl font-headline font-bold text-white tracking-tighter uppercase leading-none;
+            }
+            .label-sub {
+                @apply text-[10px] font-label uppercase tracking-[0.2em] text-neutral-500;
+            }
+        }
+    </style>
+
     <style>
         .material-symbols-outlined {
             font-family: 'Material Symbols Outlined' !important;
@@ -390,11 +435,12 @@
         async function logoutWithPermission() {
             const confirmed = await window.askPermission("Are you sure you want to log out?");
             if (confirmed) {
+                try {
+                    await fetch('/api/auth/logout', { method: 'POST' });
+                } catch (e) { console.error('Logout sync failed'); }
                 localStorage.clear();
-                document.cookie = "JWT=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
                 window.location.href = '/login';
             }
-        }
-    </script>
+        }    </script>
 </div>
 

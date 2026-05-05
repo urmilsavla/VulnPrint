@@ -46,12 +46,11 @@ public class AuthRestController {
                 }
                 String token = jwtProvider.generateToken(user);
                 
-                // Set cookie for UI route protection
-                Cookie jwtCookie = new Cookie("JWT", token);
-                jwtCookie.setPath("/");
-                jwtCookie.setMaxAge(24 * 60 * 60); // 1 day
-                jwtCookie.setHttpOnly(false); // Allow JS to clear it on logout
-                responseObj.addCookie(jwtCookie);
+                // Set hardened HttpOnly cookie for session protection
+                String cookieHeader = String.format("JWT=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=Strict", 
+                    token, 24 * 60 * 60);
+                // In production, also add '; Secure' if using HTTPS
+                responseObj.addHeader("Set-Cookie", cookieHeader);
                 
                 Map<String, Object> response = new HashMap<>();
                 response.put("status", "success");
@@ -68,5 +67,12 @@ public class AuthRestController {
         }
 
         return ResponseEntity.status(401).body(Map.of("status", "error", "message", "Invalid credentials"));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletResponse response) {
+        String cookieHeader = "JWT=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict";
+        response.addHeader("Set-Cookie", cookieHeader);
+        return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
 }

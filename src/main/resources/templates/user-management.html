@@ -142,7 +142,7 @@
                             <h2 class="text-xl font-bold uppercase headline">User List</h2>
                         </div>
                         <div class="relative">
-                            <input type="text" id="user-search" oninput="renderUsers(this.value)" placeholder="Search..." class="bg-black/40 border border-neutral-800 text-[10px] uppercase tracking-widest text-neutral-400 py-3 pl-10 pr-4 w-64 focus:border-primary outline-none transition-all rounded-lg">
+                            <input type="text" id="user-search" oninput="renderUsers(this.value)" placeholder="Search..." class="input-terminal !text-[10px] uppercase tracking-widest !py-3 !pl-10 !w-64 text-neutral-300">
                             <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-neutral-600 text-sm">search</span>
                         </div>
                     </div>
@@ -189,7 +189,7 @@
                 const select = document.getElementById('form-role');
                 select.innerHTML = '<option value="">SELECT ROLE...</option>' + 
                     allRoles.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
-            } catch (err) { console.error('Role sync failed:', err); }
+            } catch (err) { console.error('Role refresh failed:', err); }
         }
 
         async function loadUsers() {
@@ -197,7 +197,7 @@
                 const res = await fetch('/api/users');
                 allUsers = await res.json();
                 renderUsers();
-            } catch (err) { console.error('User sync failed:', err); }
+            } catch (err) { console.error('User refresh failed:', err); }
         }
 
         function renderUsers(filter = '') {
@@ -380,7 +380,7 @@
                     window.showNotification(`Account ${enabled ? 'active' : 'inactive'}`, 'success');
                     loadUsers();
                 }
-            } catch (err) { console.error('Status sync failed:', err); }
+            } catch (err) { console.error('Status refresh failed:', err); }
         }
 
         async function deleteUser(id) {

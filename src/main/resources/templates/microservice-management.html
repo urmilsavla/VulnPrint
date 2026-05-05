@@ -184,9 +184,9 @@
                     saveConfig('vulndb_enabled', vulndbEnabled),
                     saveConfig('repgen_enabled', repgenEnabled)
                 ]);
-                window.showNotification('Microservice configurations synchronized.', 'success');
+                window.showNotification('Settings saved.', 'success');
             } catch (err) {
-                window.showNotification('Synchronization failure.', 'error');
+                window.showNotification('Failed to save settings.', 'error');
             }
         }
 
@@ -206,7 +206,7 @@
             statusDiv.classList.remove('hidden', `border-${color}`, `bg-${color}/5`, `text-${color}`, 'border-error', 'bg-error/5', 'text-error');
             statusDiv.classList.add('flex');
             statusText.innerText = "PROBING...";
-            statusIcon.innerText = "sync";
+            statusIcon.innerText = "refresh";
             statusIcon.classList.add('animate-spin');
 
             try {

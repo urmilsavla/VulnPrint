@@ -2,15 +2,15 @@ openapi: 3.0.3
 info:
   title: VulnPrint API Documentation
   description: |
-    ### Master Node API Documentation
-    Professional endpoint registry for the VulnPrint Pentest Management Platform.
+    ### Master Project API Documentation
+    Professional endpoint system for the VulnPrint Pentest Management Platform.
     
     **Security Notice:** All data handled by these endpoints is sensitive. 
     Ensure access is restricted to authorized security personnel.
   version: 1.1.0
 servers:
   - url: http://localhost:8080
-    description: Local Development Node
+    description: Local Development Project
 
 tags:
   - name: Authentication
@@ -20,11 +20,11 @@ tags:
   - name: Pentest
     description: Security audit project management
   - name: Vulnerability
-    description: Technical finding registry and evidence management
+    description: Technical finding system and evidence management
   - name: Organization
     description: Global branding and identity configuration
   - name: User
-    description: Operator registry and access control
+    description: User system and access control
   - name: Report
     description: Data consolidation for automated generation
 
@@ -67,7 +67,7 @@ paths:
   /api/dashboard/pentests:
     get:
       tags: [Dashboard]
-      summary: List Project Nodes
+      summary: List Project Projects
       parameters:
         - name: page
           in: query
@@ -85,7 +85,7 @@ paths:
   /api/pentests:
     post:
       tags: [Pentest]
-      summary: Register/Update Project Node
+      summary: Register/Update Project Project
       requestBody:
         required: true
         content:
@@ -94,12 +94,12 @@ paths:
               $ref: '#/components/schemas/Pentest'
       responses:
         '200':
-          description: Node Synced
+          description: Project Synced
 
   /api/pentests/{id}:
     get:
       tags: [Pentest]
-      summary: Retrieve Node Attributes
+      summary: Retrieve Project Attributes
       parameters:
         - name: id
           in: path
@@ -110,7 +110,7 @@ paths:
           description: Metadata retrieved
     delete:
       tags: [Pentest]
-      summary: Terminate Project Node
+      summary: Terminate Project Project
       parameters:
         - name: id
           in: path
@@ -118,7 +118,7 @@ paths:
           schema: { type: integer }
       responses:
         '200':
-          description: Node purged
+          description: Project purged
 
   /api/pentests/{id}/report-details:
     put:
@@ -166,12 +166,12 @@ paths:
       summary: List All Operators
       responses:
         '200':
-          description: Operator list retrieved
+          description: User list retrieved
 
   /api/users/profile/{username}:
     get:
       tags: [User]
-      summary: Retrieve Operator Profile
+      summary: Retrieve User Profile
       parameters:
         - name: username
           in: path
@@ -184,7 +184,7 @@ paths:
   /api/users/profile:
     post:
       tags: [User]
-      summary: Update Operator Profile
+      summary: Update User Profile
       requestBody:
         required: true
         content:
@@ -199,7 +199,7 @@ paths:
   /api/users/register:
     post:
       tags: [User]
-      summary: Initialize New Operator
+      summary: Initialize New User
       requestBody:
         required: true
         content:
@@ -208,12 +208,12 @@ paths:
               $ref: '#/components/schemas/User'
       responses:
         '200':
-          description: Operator created
+          description: User created
 
   /api/users/change-password:
     post:
       tags: [User]
-      summary: Update Operator Passcode
+      summary: Update User Passcode
       requestBody:
         required: true
         content:
@@ -273,7 +273,7 @@ paths:
           description: Metadata updated
     delete:
       tags: [Vulnerability]
-      summary: Purge Finding Registry
+      summary: Delete Finding System
       parameters:
         - name: id
           in: path

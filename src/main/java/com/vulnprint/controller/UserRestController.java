@@ -78,7 +78,7 @@ public class UserRestController {
                 userRepository.save(u);
             }
             
-            return ResponseEntity.ok(Map.of("message", "Role permissions updated and all active sessions revoked for security synchronization"));
+            return ResponseEntity.ok(Map.of("message", "Role permissions updated and all active sessions revoked for security update"));
         }).orElse(ResponseEntity.notFound().build());
     }
 
