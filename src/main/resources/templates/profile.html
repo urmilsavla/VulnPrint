@@ -82,11 +82,11 @@
                             <input type="text" name="role" readonly class="w-full bg-black/40 border border-neutral-800 text-neutral-500 p-4 text-sm outline-none cursor-not-allowed rounded-lg">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-label text-primary/60 uppercase tracking-widest mb-3 font-bold">First Name</label>
+                            <label class="block text-[10px] font-label text-primary/60 uppercase tracking-widest mb-3 font-bold">First Name *</label>
                             <input type="text" name="firstName" required class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-colors rounded-lg">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-label text-primary/60 uppercase tracking-widest mb-3 font-bold">Last Name</label>
+                            <label class="block text-[10px] font-label text-primary/60 uppercase tracking-widest mb-3 font-bold">Last Name *</label>
                             <input type="text" name="lastName" required class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-colors rounded-lg">
                         </div>
                     </div>
@@ -123,6 +123,8 @@
 
         document.getElementById('profile-form').onsubmit = async (e) => {
             e.preventDefault();
+            if (!(await window.askPermission("Are you sure you want to save the changes to your profile?"))) return;
+
             const userJson = localStorage.getItem('user');
             if (!userJson) return;
             const user = JSON.parse(userJson);
@@ -144,10 +146,10 @@
                 user.profileImage = data.profileImage;
                 localStorage.setItem('user', JSON.stringify(user));
                 
-                window.showNotification('Profile updated.', 'success');
+                window.showNotification('Your profile changes have been saved.', 'success');
                 setTimeout(() => location.reload(), 1500);
             } else {
-                window.showNotification('Could not save profile data.', 'error');
+                window.showNotification('Failed to save the profile changes.', 'error');
             }
         };
 

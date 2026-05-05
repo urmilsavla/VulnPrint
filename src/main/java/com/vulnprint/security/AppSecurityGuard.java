@@ -116,6 +116,20 @@ public class AppSecurityGuard {
         return HtmlUtils.htmlEscape(input.trim());
     }
 
+    public String sanitizeProfileImage(String input) {
+        if (input == null || input.isBlank()) return "/images/user.png";
+        // Allow safe base64 images
+        if (input.startsWith("data:image/") && input.contains(";base64,")) {
+            // Further validate that it's just base64 data
+            if (input.matches("^data:image/[a-zA-Z]+;base64,[a-zA-Z0-9+/=]+$")) return input;
+        }
+        // Allow local image paths
+        if (input.startsWith("/images/") && !input.contains("..") && !input.contains("%")) {
+            return input;
+        }
+        return "/images/user.png";
+    }
+
     // --- 3. SSRF SHIELD PILLAR ---
     public boolean isSafeUrl(String urlString) {
         if (urlString == null || urlString.isBlank()) return false;

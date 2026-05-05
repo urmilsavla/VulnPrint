@@ -60,11 +60,11 @@
 
                 <form id="loginForm" class="space-y-8">
                     <div class="space-y-3">
-                        <label class="font-label text-[10px] tracking-[0.2em] text-primary/60 font-black uppercase block ml-1">Username</label>
+                        <label class="font-label text-[10px] tracking-[0.2em] text-primary/60 font-black uppercase block ml-1">Username *</label>
                         <input name="username" autocomplete="off" class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-all rounded-lg" placeholder="Enter username here" type="text" id="username" required>
                     </div>
                     <div class="space-y-3">
-                        <label class="font-label text-[10px] tracking-[0.2em] text-primary/60 font-black uppercase block ml-1">Password</label>
+                        <label class="font-label text-[10px] tracking-[0.2em] text-primary/60 font-black uppercase block ml-1">Password *</label>
                         <div class="relative">
                             <input name="password" autocomplete="off" class="w-full bg-black/60 border border-neutral-800 text-white p-4 pr-12 text-sm focus:border-primary outline-none transition-all rounded-lg" placeholder="Enter password here" type="password" id="password" required>
                             <button type="button" onclick="togglePassword()" class="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-primary transition-colors focus:outline-none">
@@ -145,7 +145,7 @@
                         window.location.href = '/dashboard';
                     }
                 } else {
-                    showNotification(data.message || 'Access Denied: Invalid Identity', 'error');
+                    showNotification(data.message || 'Invalid username or password. Please try again.', 'error');
                 }
             } catch (error) { 
                 console.error('Error:', error); 

@@ -204,7 +204,7 @@
                     link.click();
                     document.body.removeChild(link);
                     
-                    window.showNotification('Report generated and downloaded successfully.', 'success');
+                    window.showNotification('The report has been generated and downloaded successfully.', 'success');
                 } else {
                     const errorText = await response.text();
                     throw new Error(`Report Engine Error (${response.status}): ${errorText || 'Unknown Error'}`);

@@ -93,11 +93,11 @@
                         <div class="space-y-8">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div class="space-y-2">
-                                    <label class="text-[10px] uppercase font-bold text-primary/60 tracking-widest">Organization Name</label>
+                                    <label class="text-[10px] uppercase font-bold text-primary/60 tracking-widest">Organization Name *</label>
                                     <input type="text" id="org-name" class="w-full bg-black/60 border border-neutral-800 rounded-lg p-4 text-sm focus:border-primary outline-none transition-all">
                                 </div>
                                 <div class="space-y-2">
-                                    <label class="text-[10px] uppercase font-bold text-primary/60 tracking-widest">Official Email</label>
+                                    <label class="text-[10px] uppercase font-bold text-primary/60 tracking-widest">Official Email *</label>
                                     <input type="email" id="org-email" class="w-full bg-black/60 border border-neutral-800 rounded-lg p-4 text-sm focus:border-primary outline-none transition-all">
                                 </div>
                                 <div class="space-y-2">
@@ -106,7 +106,7 @@
                                 </div>
                             </div>
                             <div class="space-y-2">
-                                <label class="text-[10px] uppercase font-bold text-primary/60 tracking-widest">Headquarters Address</label>
+                                <label class="text-[10px] uppercase font-bold text-primary/60 tracking-widest">Headquarters Address *</label>
                                 <textarea id="org-address" rows="5" class="w-full bg-black/60 border border-neutral-800 rounded-lg p-4 text-sm focus:border-primary outline-none transition-all resize-none"></textarea>
                             </div>
                         </div>
@@ -153,6 +153,8 @@
         }
 
         async function saveSettings() {
+            if (!(await window.askPermission("Are you sure you want to update the organization details?"))) return;
+
             const data = {
                 name: document.getElementById('org-name').value,
                 address: document.getElementById('org-address').value,
@@ -166,7 +168,9 @@
                 body: JSON.stringify(data)
             });
             if (res.ok) {
-                window.showNotification('Organization profile updated.', 'success');
+                window.showNotification("Successfully updated the organization's branding and details.", 'success');
+            } else {
+                window.showNotification("Failed to update the organization details.", 'error');
             }
         }
 

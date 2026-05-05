@@ -86,17 +86,17 @@
                             
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div class="space-y-2">
-                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest ml-1">Username</label>
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest ml-1">Username *</label>
                                     <input type="text" id="form-username" required oninput="checkUsername(this.value)" class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg font-mono" placeholder="e.g. j.doe">
                                     <p id="username-validation" class="validation-msg hidden"></p>
                                 </div>
                                 <div class="space-y-2">
-                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest ml-1">Email</label>
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest ml-1">Email *</label>
                                     <input type="email" id="form-email" required oninput="checkEmail(this.value)" class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg font-mono" placeholder="e.g. j.doe@vulnprint.local">
                                     <p id="email-validation" class="validation-msg hidden"></p>
                                 </div>
                                 <div class="space-y-2">
-                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest ml-1">Role</label>
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest ml-1">Role *</label>
                                     <select id="form-role" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg uppercase tracking-wider">
                                         <!-- Roles populated via JS -->
                                     </select>
@@ -105,11 +105,11 @@
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div class="space-y-2">
-                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest ml-1">First Name</label>
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest ml-1">First Name *</label>
                                     <input type="text" id="form-first-name" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none transition-colors rounded-lg" placeholder="e.g. John">
                                 </div>
                                 <div class="space-y-2">
-                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest ml-1">Last Name</label>
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500 tracking-widest ml-1">Last Name *</label>
                                     <input type="text" id="form-last-name" required class="input-terminal !bg-black/40" placeholder="e.g. Doe">
                                 </div>
                             </div>
@@ -302,7 +302,7 @@
             document.getElementById('form-tile').classList.add('collapsed');
         }
 
-        function checkUsername(val) {
+        async function checkUsername(val) {
             const el = document.getElementById('username-validation');
             const submitBtn = document.getElementById('submit-btn');
             
@@ -312,20 +312,23 @@
                 return;
             }
 
-            const exists = allUsers.some(u => u.username.toLowerCase() === val.toLowerCase());
-            el.classList.remove('hidden');
-            if (exists) {
-                el.innerText = "Taken";
-                el.className = "validation-msg text-error";
-                submitBtn.disabled = true;
-            } else {
-                el.innerText = "Available";
-                el.className = "validation-msg text-primary";
-                submitBtn.disabled = false;
-            }
+            try {
+                const res = await fetch(`/api/users/check-username?username=${encodeURIComponent(val)}`);
+                const data = await res.json();
+                el.classList.remove('hidden');
+                if (data.exists) {
+                    el.innerText = "Taken";
+                    el.className = "validation-msg text-error";
+                    submitBtn.disabled = true;
+                } else {
+                    el.innerText = "Available";
+                    el.className = "validation-msg text-primary";
+                    submitBtn.disabled = false;
+                }
+            } catch (err) { console.error('Username check failed', err); }
         }
 
-        function checkEmail(val) {
+        async function checkEmail(val) {
             const el = document.getElementById('email-validation');
             const submitBtn = document.getElementById('submit-btn');
             const originalEmail = isEditMode ? allUsers.find(u => u.id == document.getElementById('form-user-id').value)?.email : '';
@@ -336,17 +339,20 @@
                 return;
             }
 
-            const exists = allUsers.some(u => u.email && u.email.toLowerCase() === val.toLowerCase());
-            el.classList.remove('hidden');
-            if (exists) {
-                el.innerText = "Email Taken";
-                el.className = "validation-msg text-error";
-                submitBtn.disabled = true;
-            } else {
-                el.innerText = "Email Available";
-                el.className = "validation-msg text-primary";
-                submitBtn.disabled = false;
-            }
+            try {
+                const res = await fetch(`/api/users/check-email?email=${encodeURIComponent(val)}`);
+                const data = await res.json();
+                el.classList.remove('hidden');
+                if (data.exists) {
+                    el.innerText = "Email Taken";
+                    el.className = "validation-msg text-error";
+                    submitBtn.disabled = true;
+                } else {
+                    el.innerText = "Email Available";
+                    el.className = "validation-msg text-primary";
+                    submitBtn.disabled = false;
+                }
+            } catch (err) { console.error('Email check failed', err); }
         }
 
         function validatePasswords() {
@@ -384,15 +390,15 @@
         }
 
         async function deleteUser(id) {
-            if (!(await window.askPermission('Delete this user?'))) return;
+            if (!(await window.askPermission('Are you sure you want to remove this user?'))) return;
             try {
                 const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
                 if (res.ok) {
-                    window.showNotification('User deleted.', 'success');
+                    window.showNotification('The user has been removed successfully.', 'success');
                     loadUsers();
                 } else {
                     const data = await res.json();
-                    window.showNotification(data.message || 'Error deleting user', 'error');
+                    window.showNotification(data.message || 'Failed to remove the user.', 'error');
                 }
             } catch (err) { console.error('Delete failed:', err); }
         }
@@ -403,7 +409,7 @@
             const confirm = document.getElementById('form-confirm-password').value;
 
             if ((!isEditMode || pass) && pass !== confirm) {
-                window.showNotification('Passwords mismatch', 'error');
+                window.showNotification('The passwords do not match.', 'error');
                 return;
             }
 
@@ -428,12 +434,12 @@
                     body: JSON.stringify(data)
                 });
                 if (res.ok) {
-                    window.showNotification(isEditMode ? 'User updated.' : 'User added.', 'success');
+                    window.showNotification(isEditMode ? 'The user details have been updated.' : 'The new user has been created successfully.', 'success');
                     resetForm();
                     loadUsers();
                 } else {
                     const err = await res.json();
-                    window.showNotification(err.message || 'Error saving user', 'error');
+                    window.showNotification(err.message || 'Failed to save the user details.', 'error');
                 }
             } catch (err) { console.error('Save failed:', err); }
         };

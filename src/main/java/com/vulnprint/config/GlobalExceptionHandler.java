@@ -26,8 +26,9 @@ public class GlobalExceptionHandler {
         String correlationId = UUID.randomUUID().toString();
         logger.warn("Access Denied [ID: {}]: {}", correlationId, ex.getMessage());
         
-        String action = request.getRequestURI();
-        String message = "Access Denied: You do not have permissions to do this " + action;
+        // The frontend interceptor in header.html will provide specific action names.
+        // This backend message serves as a professional fallback.
+        String message = "You do not have permission to perform this action.";
 
         if (request.getRequestURI().startsWith("/api/")) {
             Map<String, Object> body = new HashMap<>();
@@ -49,11 +50,7 @@ public class GlobalExceptionHandler {
         Map<String, Object> body = new HashMap<>();
         body.put("status", HttpStatus.BAD_REQUEST.value());
         
-        String errors = ex.getBindingResult().getFieldErrors().stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                .collect(Collectors.joining(", "));
-        
-        body.put("error", "Validation Failed: " + errors);
+        body.put("error", "Please fill in all required fields marked with an asterisk (*).");
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 

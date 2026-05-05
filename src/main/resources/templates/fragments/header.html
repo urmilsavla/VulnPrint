@@ -213,15 +213,17 @@
 
     <!-- Global Confirmation Modal -->
     <div id="global-confirm-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-[200] hidden items-center justify-center p-4">
-        <div class="bg-[#0e0e0e] border border-neutral-800 w-full max-w-sm p-8 shadow-2xl">
-            <div class="flex items-center gap-3 mb-6">
-                <span class="material-symbols-outlined text-[#39FF14]">help</span>
-                <h3 class="text-xs font-headline font-black uppercase tracking-widest text-white">Permission Required</h3>
-            </div>
-            <p id="confirm-message" class="text-xs text-zinc-400 mb-8 leading-relaxed uppercase tracking-tight">Are you sure you want to perform this action?</p>
-            <div class="grid grid-cols-2 gap-4">
-                <button id="confirm-cancel" class="py-3 bg-neutral-900 border border-neutral-800 text-[9px] font-black uppercase tracking-widest text-white hover:bg-neutral-800 transition-colors">Cancel</button>
-                <button id="confirm-proceed" class="py-3 bg-[#39FF14] text-black text-[9px] font-black uppercase tracking-widest hover:opacity-90 transition-all">Execute</button>
+        <div class="bg-[#0e0e0e] border border-neutral-800 w-full max-w-sm p-8 shadow-2xl rounded-2xl">
+            <div class="flex flex-col items-center text-center">
+                <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+                    <span class="material-symbols-outlined text-primary text-4xl">help</span>
+                </div>
+                <h3 class="text-sm font-headline font-black uppercase tracking-widest text-white mb-2">Confirmation Required</h3>
+                <p id="confirm-message" class="text-xs text-zinc-400 mb-8 leading-relaxed tracking-tight">Are you sure you want to perform this action?</p>
+                <div class="grid grid-cols-2 gap-4 w-full">
+                    <button id="confirm-cancel" class="py-3 bg-neutral-900 border border-neutral-800 text-[9px] font-black uppercase tracking-widest text-white hover:bg-neutral-800 transition-colors rounded-lg">Cancel</button>
+                    <button id="confirm-proceed" class="py-3 bg-[#39FF14] text-black text-[9px] font-black uppercase tracking-widest hover:opacity-90 transition-all rounded-lg">Confirm</button>
+                </div>
             </div>
         </div>
     </div>
@@ -249,13 +251,42 @@
                         window.location.href = '/login';
                         return Promise.reject('Unauthorized Access: Redirecting to Login');
                     }
+                    
                     if (response.status === 403) {
-                        try {
-                            const data = await response.clone().json();
-                            window.showNotification(data.error || "Access Denied: You do not have permissions to perform this action", "error");
-                        } catch (e) {
-                            window.showNotification("Access Denied: You do not have permissions to perform this action", "error");
+                        let action = "perform this action";
+                        const method = (newConfig.method || 'GET').toUpperCase();
+                        const url = resource.toString();
+                        
+                        if (url.includes('/api/pentests')) {
+                            if (method === 'DELETE') action = "delete this project";
+                            else if (method === 'PATCH' && url.includes('/status')) action = "update project status";
+                            else if (method === 'POST' || method === 'PUT') action = "save project details";
+                            else action = "view project details";
+                        } else if (url.includes('/api/vulnerabilities')) {
+                            if (url.includes('/approve')) action = (method === 'POST' ? "approve/reject this finding" : "review findings");
+                            else if (method === 'DELETE') action = "delete this finding";
+                            else if (method === 'POST' || method === 'PUT' || method === 'PATCH') action = "save finding details";
+                            else action = "view finding details";
+                        } else if (url.includes('/api/users')) {
+                            if (url.includes('/roles') || url.includes('/permissions')) action = "manage access and roles";
+                            else if (url.includes('/register')) action = "create new users";
+                            else if (method === 'DELETE') action = "delete this user";
+                            else if (url.includes('/profile')) action = "update user profile";
+                            else action = "manage user accounts";
+                        } else if (url.includes('/api/organization')) {
+                            action = "update organization details";
+                        } else if (url.includes('/api/config')) {
+                            action = "manage system configurations";
+                        } else if (url.includes('/api/repGenApi')) {
+                            action = "generate technical reports";
+                        } else if (url.includes('/api/dashboard/alerts')) {
+                            action = "manage system alerts";
                         }
+
+                        if (window.showNotification) {
+                            window.showNotification(`You do not have permission to ${action}.`, "error");
+                        }
+                        return Promise.reject(`Access Denied: ${action}`);
                     }
 
                     // Global Microservice Visibility Logic
@@ -311,13 +342,18 @@
                 const token = localStorage.getItem('token');
                 if (!token) return false;
                 try {
-                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
                     _permCache = payload.perms || [];
                 } catch (e) {
+                    console.error("JWT Decode failed", e);
                     return false;
                 }
             }
             return _permCache.includes(key);
+        };
+
+        window.invalidatePermissionCache = function() {
+            _permCache = null;
         };
 
         window.askPermission = function(message) {
@@ -438,7 +474,7 @@
 
             // Granular Permission-based UI Logic
             const adminSettings = document.getElementById('admin-settings-container');
-            const canApprove = hasPermission('APPROVE_VULNERABILITIES');
+            const canApprove = hasPermission('APPROVE_ASSIGNED_VULNS') || hasPermission('APPROVE_ALL_VULNS');
             const canManageUsers = hasPermission('MANAGE_USERS');
             const canViewUsers = hasPermission('VIEW_USERS');
             const canManageAccess = hasPermission('MANAGE_ACCESS');

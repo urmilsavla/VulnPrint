@@ -145,25 +145,25 @@
 
         async function updateStatus(event, id, newStatus) {
             event.stopPropagation();
-            if (!(await window.askPermission(`Are you sure you want to change the status to "${newStatus}"?`))) { loadDashboard(); return; }
+            if (!(await window.askPermission(`Are you sure you want to update the project status to "${newStatus}"?`))) { loadDashboard(); return; }
             const res = await fetch(`/api/pentests/${id}/status`, {
                 method: 'PATCH',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({status: newStatus})
             });
-            if(res.ok) { window.showNotification(`Project status updated to ${newStatus}`, 'success'); loadDashboard(); }
+            if(res.ok) { window.showNotification(`The project status has been updated to ${newStatus}.`, 'success'); loadDashboard(); }
         }
 
         async function confirmEdit(url) {
-            if (await window.askPermission('Are you sure you want to edit this pentest?')) {
+            if (await window.askPermission('Are you sure you want to modify this project?')) {
                 window.location.href = url;
             }
         }
 
         async function deletePentest(id) {
-            if(!(await window.askPermission("Are you sure you want to delete this pentest?"))) return;
+            if(!(await window.askPermission("Are you sure you want to delete this project? This will remove all data related to it."))) return;
             const res = await fetch(`/api/pentests/${id}`, { method: 'DELETE' });
-            if(res.ok) { window.showNotification("Pentest deleted.", "success"); loadDashboard(); }
+            if(res.ok) { window.showNotification("The project has been deleted successfully.", "success"); loadDashboard(); }
         }
 
         async function loadDashboard() {

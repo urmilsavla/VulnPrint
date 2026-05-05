@@ -177,12 +177,25 @@
         let draftPermissionIds = new Set();
 
         const CATEGORIES = {
-            'Observability': ['VIEW_DASHBOARD', 'VIEW_ALERTS', 'MANAGE_ALERTS'],
-            'Engagement & Projects': ['VIEW_ASSIGNED_PROJECTS', 'VIEW_ALL_PROJECTS', 'ADD_PROJECT', 'EDIT_ASSIGNED_PROJECTS', 'EDIT_ALL_PROJECTS', 'DELETE_PROJECT', 'CHANGE_PENTEST_STATUS'],
-            'Vulnerability Life Cycle (VMLC)': ['VIEW_VULNERABILITIES', 'ADD_VULNERABILITY', 'EDIT_ASSIGNED_VULNS', 'EDIT_ALL_VULNS', 'DELETE_VULNERABILITY', 'CHANGE_VULN_STATUS', 'CHANGE_VULN_REPORTING_STATUS', 'APPROVE_VULNERABILITIES'],
-            'Reporting & Brand Identity': ['GENERATE_REPORT', 'MANAGE_REPORT_DESIGN'],
+            'Global Observability': ['VIEW_DASHBOARD', 'VIEW_ALERTS', 'MANAGE_ALERTS'],
+            'Project Management': [
+                'VIEW_ASSIGNED_PROJECTS', 'VIEW_ALL_PROJECTS', 
+                'ADD_PROJECT', 
+                'EDIT_ASSIGNED_PROJECTS', 'EDIT_ALL_PROJECTS', 
+                'DELETE_ASSIGNED_PROJECTS', 'DELETE_ALL_PROJECTS', 
+                'CHANGE_PENTEST_STATUS'
+            ],
+            'Finding Documentation': [
+                'VIEW_ASSIGNED_VULNS', 'VIEW_ALL_VULNS', 
+                'ADD_VULNERABILITY', 
+                'EDIT_ASSIGNED_VULNS', 'EDIT_ALL_VULNS', 
+                'DELETE_ASSIGNED_VULNS', 'DELETE_ALL_VULNS', 
+                'CHANGE_VULN_STATUS', 'CHANGE_VULN_REPORTING_STATUS', 
+                'APPROVE_ASSIGNED_VULNS', 'APPROVE_ALL_VULNS'
+            ],
+            'Reporting & Identity': ['GENERATE_REPORT', 'MANAGE_REPORT_DESIGN'],
             'Governance & IAM': ['VIEW_USERS', 'MANAGE_USERS', 'MANAGE_ACCESS', 'RESET_PASSWORD'],
-            'System & Profile': ['MANAGE_MICROSERVICES', 'EDIT_MY_PROFILE']
+            'System Operations': ['MANAGE_MICROSERVICES', 'EDIT_MY_PROFILE']
         };
 
         async function init() {
@@ -355,11 +368,11 @@
         }
 
         async function resetUserPermissions() {
-            if (!(await window.askPermission('Revert all personalized overrides and match this user with their base role?'))) return;
+            if (!(await window.askPermission("Are you sure you want to reset this user's permissions to their base role?"))) return;
             try {
                 const res = await fetch(`/api/users/${selectedId}/permissions/reset`, { method: 'POST' });
                 if (res.ok) {
-                    window.showNotification('User permissions updated', 'success');
+                    window.showNotification('The user permissions have been reset successfully.', 'success');
                     await init();
                 }
             } catch (e) { console.error(e); }
@@ -376,7 +389,7 @@
                         body: JSON.stringify(currentIds)
                     });
                     if (res.ok) { 
-                        window.showNotification('Role permissions updated', 'success'); 
+                        window.showNotification('The role permissions have been updated successfully.', 'success'); 
                         await init(); 
                     }
                 } else {
@@ -395,7 +408,7 @@
                         })
                     });
                     if (res.ok) { 
-                        window.showNotification('Individual manual overrides committed', 'success'); 
+                        window.showNotification('The individual manual overrides have been committed successfully.', 'success'); 
                         await init(); 
                     }
                 }
@@ -407,7 +420,7 @@
             try {
                 const res = await fetch(`/api/users/roles/${selectedId}`, { method: 'DELETE' });
                 if (res.ok) {
-                    window.showNotification('Role deleted successfully', 'success');
+                    window.showNotification('The security role has been deleted successfully.', 'success');
                     selectedId = null;
                     selectedEntity = null;
                     document.getElementById('config-panel').classList.add('hidden');
@@ -416,7 +429,7 @@
                     await init();
                 } else {
                     const err = await res.json();
-                    window.showNotification(err.message || 'Failed to delete role', 'error');
+                    window.showNotification(err.message || 'Failed to delete the security role.', 'error');
                 }
             } catch (e) { console.error(e); }
         }
@@ -439,12 +452,12 @@
                     body: JSON.stringify({ name })
                 });
                 if (res.ok) {
-                    window.showNotification('New security role registered', 'success');
+                    window.showNotification('The new security role has been registered successfully.', 'success');
                     closeRoleModal();
                     await init();
                 } else {
                     const err = await res.json();
-                    window.showNotification(err.message || 'Failed to create role', 'error');
+                    window.showNotification(err.message || 'Failed to create the new security role.', 'error');
                 }
             } catch (e) { console.error(e); }
         }

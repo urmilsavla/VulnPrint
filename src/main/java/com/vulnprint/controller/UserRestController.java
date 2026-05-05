@@ -45,6 +45,18 @@ public class UserRestController {
         return ResponseEntity.ok(userRepository.findAll());
     }
 
+    @GetMapping("/check-username")
+    @PreAuthorize("hasAuthority('VIEW_USERS') or hasAuthority('MANAGE_USERS')")
+    public ResponseEntity<?> checkUsername(@RequestParam String username) {
+        return ResponseEntity.ok(Map.of("exists", userRepository.findByUsername(username).isPresent()));
+    }
+
+    @GetMapping("/check-email")
+    @PreAuthorize("hasAuthority('VIEW_USERS') or hasAuthority('MANAGE_USERS')")
+    public ResponseEntity<?> checkEmail(@RequestParam String email) {
+        return ResponseEntity.ok(Map.of("exists", userRepository.findByEmail(email).isPresent()));
+    }
+
     @GetMapping("/roles")
     @PreAuthorize("hasAuthority('MANAGE_ACCESS')")
     public ResponseEntity<?> getAllRoles() {
@@ -136,7 +148,7 @@ public class UserRestController {
                 targetUser.setEmail(guard.sanitize(newEmail));
             }
         }
-        if (data.containsKey("profileImage")) targetUser.setProfileImage((String) data.get("profileImage"));
+        if (data.containsKey("profileImage")) targetUser.setProfileImage(guard.sanitizeProfileImage((String) data.get("profileImage")));
         
         boolean securityModified = false;
 
