@@ -7,10 +7,14 @@ info:
     
     **Security Notice:** All data handled by these endpoints is sensitive. 
     Ensure access is restricted to authorized security personnel.
-  version: 1.1.0
+  version: 1.0.0
 servers:
   - url: http://localhost:8080
     description: Local Development Project
+
+security:
+  - bearerAuth: []
+  - cookieAuth: []
 
 tags:
   - name: Authentication
@@ -25,6 +29,10 @@ tags:
     description: Global branding and identity configuration
   - name: User
     description: User system and access control
+  - name: Config
+    description: System feature toggles and microservice settings
+  - name: VulnDB
+    description: External vulnerability database integration
   - name: Report
     description: Data consolidation for automated generation
 
@@ -33,6 +41,7 @@ paths:
     post:
       tags: [Authentication]
       summary: Initialize Authorization
+      security: []
       requestBody:
         required: true
         content:
@@ -49,8 +58,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
-        '403':
-          description: Insufficient Permissions
+        '401':
+          description: Invalid Credentials
+        '429':
+          description: Too many login attempts
+
+  /api/auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Terminate Session
+      responses:
+        '200':
+          description: Logged out successfully
 
   /api/dashboard/metrics:
     get:
@@ -120,10 +139,10 @@ paths:
         '200':
           description: Project purged
 
-  /api/pentests/{id}/report-details:
-    put:
+  /api/pentests/{id}/status:
+    patch:
       tags: [Pentest]
-      summary: Synchronize Report Design
+      summary: Update Project Status
       parameters:
         - name: id
           in: path
@@ -135,10 +154,11 @@ paths:
           application/json:
             schema:
               type: object
-              additionalProperties: true
+              properties:
+                status: { type: string }
       responses:
         '200':
-          description: Configuration updated
+          description: Status updated
 
   /api/organization:
     get:
@@ -210,23 +230,51 @@ paths:
         '200':
           description: User created
 
-  /api/users/change-password:
-    post:
-      tags: [User]
-      summary: Update User Passcode
+  /api/config:
+    get:
+      tags: [Config]
+      summary: Retrieve All System Configurations
+      responses:
+        '200':
+          description: Success
+    put:
+      tags: [Config]
+      summary: Update System Configuration
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                username: { type: string }
-                currentPassword: { type: string }
-                newPassword: { type: string }
+              $ref: '#/components/schemas/SystemConfig'
+      responses:
+        '200':
+          description: Configuration updated
+
+  /api/config/status:
+    get:
+      tags: [Config]
+      summary: Get Feature Enablement Status
       responses:
         '200':
           description: Success
+
+  /api/vulndb/search:
+    get:
+      tags: [VulnDB]
+      summary: Search External Vulnerability Database
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string }
+        - name: category
+          in: query
+          schema: { type: string }
+        - name: severity
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Search results
 
   /api/vulnerabilities:
     post:
@@ -310,6 +358,16 @@ paths:
           description: Consolidated report data (V3/repGenApi format)
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: JWT
+
   schemas:
     AuthResponse:
       type: object
@@ -356,6 +414,12 @@ components:
         phone: { type: string }
         address: { type: string }
         logo: { type: string }
+
+    SystemConfig:
+      type: object
+      properties:
+        configKey: { type: string }
+        configValue: { type: string }
 
     Pentest:
       type: object

@@ -1,9 +1,5 @@
 package com.vulnprint;
 
-import com.vulnprint.model.Pentest;
-import com.vulnprint.model.Vulnerability;
-import com.vulnprint.model.VulnerabilityStep;
-import com.vulnprint.model.Alert;
 import com.vulnprint.model.User;
 import com.vulnprint.repository.PentestRepository;
 import com.vulnprint.repository.VulnerabilityRepository;
@@ -14,13 +10,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 
