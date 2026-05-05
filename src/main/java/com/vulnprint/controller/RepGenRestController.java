@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 import com.vulnprint.model.User;
-import com.vulnprint.service.SecurityUtils;
+import com.vulnprint.security.AppSecurityGuard;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 
@@ -25,7 +25,7 @@ public class RepGenRestController {
     private SystemConfigRepository systemConfigRepository;
 
     @Autowired
-    private SecurityUtils securityUtils;
+    private AppSecurityGuard guard;
 
     private boolean isEnabled() {
         return systemConfigRepository.findById("repgen_enabled")

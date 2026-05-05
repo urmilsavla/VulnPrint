@@ -14,7 +14,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.ResponseEntity;
-import com.vulnprint.service.SecurityUtils;
+import com.vulnprint.service.SecurityService;
+import com.vulnprint.security.AppSecurityGuard;
 import com.vulnprint.security.Permissions;
 
 import java.time.LocalDateTime;
@@ -42,15 +43,13 @@ public class DashboardRestController {
     private AlertRepository alertRepository;
 
     @Autowired
-    private SecurityUtils securityUtils;
-
-
+    private AppSecurityGuard guard;
 
     private List<Pentest> getAuthorizedPentests(User user) {
-        if (securityUtils.hasPermission(user, Permissions.VIEW_ALL_PROJECTS)) {
+        if (guard.hasPermission(user, Permissions.VIEW_ALL_PROJECTS)) {
             return pentestRepository.findAll();
         }
-        if (securityUtils.hasPermission(user, Permissions.VIEW_ASSIGNED_PROJECTS)) {
+        if (guard.hasPermission(user, Permissions.VIEW_ASSIGNED_PROJECTS)) {
             return pentestRepository.findByAssignedPentestersId(user.getId());
         }
         return new ArrayList<>();
@@ -136,7 +135,7 @@ public class DashboardRestController {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<Vulnerability> pending;
         
-        if (securityUtils.hasPermission(user, "APPROVE_ALL_VULNS")) {
+        if (guard.hasPermission(user, "APPROVE_ALL_VULNS")) {
             pending = vulnerabilityRepository.findByReportingStatusIgnoreCase("Sent for Approval");
         } else {
             // Only show pending findings for projects they are assigned to

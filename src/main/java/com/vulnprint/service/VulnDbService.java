@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vulnprint.model.SystemConfig;
 import com.vulnprint.repository.SystemConfigRepository;
+import com.vulnprint.security.AppSecurityGuard;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -17,13 +18,20 @@ public class VulnDbService {
     @Autowired
     private SystemConfigRepository systemConfigRepository;
 
+    @Autowired
+    private AppSecurityGuard guard;
+
     private RestClient getClient() {
         String baseUrl = systemConfigRepository.findById("vulndb_url")
                 .map(SystemConfig::getConfigValue)
                 .filter(url -> !url.isBlank())
-                .orElse("http://127.0.0.1:8000");
+                .orElse("http://vulndb.internal:8000"); // Use internal hostname instead of IP if possible
         
-        // Remove trailing slash to avoid double slashes in path
+        // SSRF Check: Ensure the configured VulnDB URL is not targeting forbidden zones
+        if (!guard.isSafeUrl(baseUrl)) {
+            throw new SecurityException("SSRF Blocked: Configured VulnDB URL targets a restricted internal address.");
+        }
+
         if (baseUrl.endsWith("/")) {
             baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
         }
@@ -36,21 +44,24 @@ public class VulnDbService {
             return getClient().get()
                     .uri(uriBuilder -> uriBuilder
                             .path("/api/search")
-                            .queryParam("q", query)
-                            .queryParam("category", category)
-                            .queryParam("severity", severity)
+                            .queryParam("q", guard.sanitize(query))
+                            .queryParam("category", guard.sanitize(category))
+                            .queryParam("severity", guard.sanitize(severity))
                             .build())
                     .retrieve()
                     .body(Map.class);
         } catch (Exception e) {
-            // Log or handle error - returning an empty map with error info
-            return Map.of("results", List.of(), "total", 0, "error", e.getMessage());
+            return Map.of("results", List.of(), "total", 0, "error", "VulnDB Integration Error: " + e.getMessage());
         }
     }
 
     public VulnDbVulnerability getVulnerability(String slug) {
+        // Sanitize slug to prevent path traversal on the target microservice
+        String safeSlug = guard.sanitize(slug);
+        if (safeSlug != null && safeSlug.contains("..")) throw new SecurityException("Traversal attempt in slug");
+
         return getClient().get()
-                .uri("/api/vulns/{slug}", slug)
+                .uri("/api/vulns/{slug}", safeSlug)
                 .retrieve()
                 .body(VulnDbVulnerability.class);
     }

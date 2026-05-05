@@ -2,6 +2,7 @@ package com.vulnprint.controller;
 
 import com.vulnprint.model.SystemConfig;
 import com.vulnprint.repository.SystemConfigRepository;
+import com.vulnprint.security.AppSecurityGuard;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.vulnprint.model.User;
-import com.vulnprint.service.SecurityUtils;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 
@@ -22,7 +22,7 @@ public class ConfigRestController {
     private SystemConfigRepository systemConfigRepository;
 
     @Autowired
-    private SecurityUtils securityUtils;
+    private AppSecurityGuard guard;
 
     @GetMapping
     @PreAuthorize("hasAuthority('MANAGE_MICROSERVICES')")
@@ -49,13 +49,19 @@ public class ConfigRestController {
     @PutMapping
     @PreAuthorize("hasAuthority('MANAGE_MICROSERVICES')")
     public ResponseEntity<?> saveConfig(@jakarta.validation.Valid @RequestBody com.vulnprint.dto.SystemConfigDTO dto) {
-        SystemConfig config = new SystemConfig(dto.getConfigKey(), dto.getConfigValue());
+        // Sanitize configuration values to prevent stored XSS
+        SystemConfig config = new SystemConfig(guard.sanitize(dto.getConfigKey()), guard.sanitize(dto.getConfigValue()));
         return ResponseEntity.ok(systemConfigRepository.save(config));
     }
 
     @GetMapping("/test-connection")
     @PreAuthorize("hasAuthority('MANAGE_MICROSERVICES')")
     public ResponseEntity<?> testConnection(@RequestParam String url) {
+        // 1. SSRF Protection
+        if (!guard.isSafeUrl(url)) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Unauthorized URL: Internal or unsafe destination blocked."));
+        }
+
         try {
             org.springframework.web.client.RestClient.create()
                     .get()

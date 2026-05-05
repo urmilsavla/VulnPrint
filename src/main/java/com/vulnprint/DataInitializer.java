@@ -9,7 +9,6 @@ import com.vulnprint.repository.PentestRepository;
 import com.vulnprint.repository.VulnerabilityRepository;
 import com.vulnprint.repository.AlertRepository;
 import com.vulnprint.repository.UserRepository;
-import com.vulnprint.service.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -29,6 +28,7 @@ import com.vulnprint.model.Permission;
 import com.vulnprint.model.Role;
 import com.vulnprint.repository.PermissionRepository;
 import com.vulnprint.repository.RoleRepository;
+import com.vulnprint.security.AppSecurityGuard;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -55,7 +55,7 @@ public class DataInitializer implements CommandLineRunner {
     private com.vulnprint.repository.SystemConfigRepository systemConfigRepository;
     
     @Autowired
-    private SecurityUtils securityUtils;
+    private AppSecurityGuard guard;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -167,7 +167,7 @@ public class DataInitializer implements CommandLineRunner {
                     modified = true;
                 }
                 if (u.getPassword() != null && !u.getPassword().startsWith("$2a$") && !u.getPassword().startsWith("$2b$") && !u.getPassword().startsWith("$2y$")) {
-                    u.setPassword(securityUtils.hashPassword(u.getPassword()));
+                    u.setPassword(guard.hashPassword(u.getPassword()));
                     modified = true;
                 }
                 if (modified) userRepository.save(u);
@@ -178,7 +178,7 @@ public class DataInitializer implements CommandLineRunner {
     private User createUser(String user, String pass, String email, String first, String last, Role role, String address, String qualification) {
         User u = new User();
         u.setUsername(user); 
-        u.setPassword(securityUtils.hashPassword(pass)); 
+        u.setPassword(guard.hashPassword(pass)); 
         u.setEmail(email); u.setFirstName(first); u.setLastName(last); u.setRole(role); u.setAddress(address); u.setQualification(qualification);
         return userRepository.save(u);
     }

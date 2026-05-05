@@ -2,7 +2,7 @@ package com.vulnprint.controller;
 
 import com.vulnprint.model.User;
 import com.vulnprint.repository.UserRepository;
-import com.vulnprint.service.SecurityUtils;
+import com.vulnprint.security.AppSecurityGuard;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,8 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import com.vulnprint.service.JwtProvider;
-
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Cookie;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,14 +24,16 @@ public class AuthRestController {
     private UserRepository userRepository;
     
     @Autowired
-    private SecurityUtils securityUtils;
-
-    @Autowired
-    private JwtProvider jwtProvider;
+    private AppSecurityGuard guard;
 
     @PostMapping("/login")
     @PreAuthorize("permitAll()")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials, HttpServletResponse responseObj) {
+    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials, HttpServletRequest request, HttpServletResponse responseObj) {
+        String ip = request.getRemoteAddr();
+        if (!guard.checkRateLimit(ip, "LOGIN", 5, 60000)) {
+            return ResponseEntity.status(429).body(Map.of("status", "error", "message", "Too many login attempts. Please try again in a minute."));
+        }
+
         String username = credentials.get("username");
         String password = credentials.get("password");
 
@@ -40,16 +41,15 @@ public class AuthRestController {
 
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-            if (securityUtils.verifyPassword(password, user.getPassword())) {
+            if (guard.verifyPassword(password, user.getPassword())) {
                 if (!user.isEnabled()) {
                     return ResponseEntity.status(403).body(Map.of("status", "error", "message", "Account is disabled. Please contact administrator."));
                 }
-                String token = jwtProvider.generateToken(user);
+                String token = guard.generateToken(user);
                 
                 // Set hardened HttpOnly cookie for session protection
                 String cookieHeader = String.format("JWT=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=Strict", 
                     token, 24 * 60 * 60);
-                // In production, also add '; Secure' if using HTTPS
                 responseObj.addHeader("Set-Cookie", cookieHeader);
                 
                 Map<String, Object> response = new HashMap<>();

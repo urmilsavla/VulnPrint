@@ -3,7 +3,7 @@ package com.vulnprint.controller;
 import com.vulnprint.model.Organization;
 import com.vulnprint.model.User;
 import com.vulnprint.repository.OrganizationRepository;
-import com.vulnprint.service.SecurityUtils;
+import com.vulnprint.security.AppSecurityGuard;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,7 +21,7 @@ public class OrgRestController {
     private OrganizationRepository organizationRepository;
     
     @Autowired
-    private SecurityUtils securityUtils;
+    private AppSecurityGuard guard;
 
     @GetMapping
     @PreAuthorize("hasAuthority('MANAGE_REPORT_DESIGN')")
@@ -39,13 +39,13 @@ public class OrgRestController {
     @PreAuthorize("hasAuthority('MANAGE_REPORT_DESIGN')")
     public ResponseEntity<?> updateSettings(@jakarta.validation.Valid @RequestBody com.vulnprint.dto.OrganizationDTO dto) {
         Organization org = new Organization();
-        // Encode inputs to prevent XSS
-        org.setName(securityUtils.encodeForHTML(dto.getName()));
-        org.setEmail(securityUtils.encodeForHTML(dto.getEmail()));
-        org.setPhone(securityUtils.encodeForHTML(dto.getPhone()));
-        org.setAddress(securityUtils.encodeForHTML(dto.getAddress()));
-        org.setLegalName(securityUtils.encodeForHTML(dto.getLegalName()));
-        org.setLogo(dto.getLogo());
+        // Force centralized sanitization on all fields
+        org.setName(guard.sanitize(dto.getName()));
+        org.setEmail(guard.sanitize(dto.getEmail()));
+        org.setPhone(guard.sanitize(dto.getPhone()));
+        org.setAddress(guard.sanitize(dto.getAddress()));
+        org.setLegalName(guard.sanitize(dto.getLegalName()));
+        org.setLogo(guard.sanitize(dto.getLogo()));
 
         List<Organization> all = organizationRepository.findAll();
         if (!all.isEmpty()) {

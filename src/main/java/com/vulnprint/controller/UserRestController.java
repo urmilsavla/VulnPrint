@@ -2,7 +2,6 @@ package com.vulnprint.controller;
 
 import com.vulnprint.model.User;
 import com.vulnprint.repository.UserRepository;
-import com.vulnprint.service.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +21,7 @@ import com.vulnprint.repository.PermissionRepository;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import com.vulnprint.security.Permissions;
+import com.vulnprint.security.AppSecurityGuard;
 
 @RestController
 @RequestMapping("/api/users")
@@ -37,7 +37,7 @@ public class UserRestController {
     private PermissionRepository permissionRepository;
     
     @Autowired
-    private SecurityUtils securityUtils;
+    private AppSecurityGuard guard;
 
     @GetMapping
     @PreAuthorize("hasAuthority('VIEW_USERS')")
@@ -54,7 +54,7 @@ public class UserRestController {
     @PostMapping("/roles")
     @PreAuthorize("hasAuthority('MANAGE_ACCESS')")
     public ResponseEntity<?> createRole(@RequestBody Map<String, String> data) {
-        String name = data.get("name");
+        String name = guard.sanitize(data.get("name"));
         if (roleRepository.findByName(name).isPresent()) {
             return ResponseEntity.status(409).body(Map.of("message", "A system role with this designation already exists"));
         }
@@ -122,18 +122,18 @@ public class UserRestController {
         if (targetOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("message", "User not found"));
         User targetUser = targetOpt.get();
 
-        targetUser.setFirstName(securityUtils.encodeForHTML((String) data.get("firstName")));
-        targetUser.setLastName(securityUtils.encodeForHTML((String) data.get("lastName")));
+        targetUser.setFirstName(guard.sanitize((String) data.get("firstName")));
+        targetUser.setLastName(guard.sanitize((String) data.get("lastName")));
         
-        if (data.containsKey("address")) targetUser.setAddress(securityUtils.encodeForHTML((String) data.get("address")));
-        if (data.containsKey("qualification")) targetUser.setQualification(securityUtils.encodeForHTML((String) data.get("qualification")));
+        if (data.containsKey("address")) targetUser.setAddress(guard.sanitize((String) data.get("address")));
+        if (data.containsKey("qualification")) targetUser.setQualification(guard.sanitize((String) data.get("qualification")));
         if (data.containsKey("email")) {
             String newEmail = (String) data.get("email");
             if (newEmail != null && !newEmail.equals(targetUser.getEmail())) {
                 if (userRepository.findByEmail(newEmail).isPresent()) {
                     return ResponseEntity.badRequest().body(Map.of("message", "Email already in use"));
                 }
-                targetUser.setEmail(securityUtils.encodeForHTML(newEmail));
+                targetUser.setEmail(guard.sanitize(newEmail));
             }
         }
         if (data.containsKey("profileImage")) targetUser.setProfileImage((String) data.get("profileImage"));
@@ -143,7 +143,7 @@ public class UserRestController {
 
 
         // Admin only overrides
-        if (securityUtils.hasPermission(user, Permissions.MANAGE_USERS)) {
+        if (guard.hasPermission(user, Permissions.MANAGE_USERS)) {
             if (data.containsKey("newUsername")) {
                 String newUsername = (String) data.get("newUsername");
                 if (!newUsername.equals(targetUser.getUsername()) && userRepository.findByUsername(newUsername).isPresent()) {
@@ -152,13 +152,14 @@ public class UserRestController {
                 targetUser.setUsername(newUsername);
             }
             if (data.containsKey("newPassword") && !((String) data.get("newPassword")).isEmpty()) {
-                targetUser.setPassword(securityUtils.hashPassword((String) data.get("newPassword")));
+                targetUser.setPassword(guard.hashPassword((String) data.get("newPassword")));
                 securityModified = true;
             }
         }
 
         // Manage Role and Extra Permissions
-        if (securityUtils.hasPermission(user, Permissions.MANAGE_ACCESS)) {
+        if (guard.hasPermission(user, Permissions.MANAGE_ACCESS)) {
+
             if (data.containsKey("roleId")) {
                 Long newRoleId = Long.valueOf(data.get("roleId").toString());
                 if (targetUser.getRole() == null || !targetUser.getRole().getId().equals(newRoleId)) {
@@ -234,7 +235,7 @@ public class UserRestController {
 
         User newUser = new User();
         newUser.setUsername(username);
-        newUser.setPassword(securityUtils.hashPassword(password));
+        newUser.setPassword(guard.hashPassword(password));
         newUser.setEmail(email);
         newUser.setFirstName((String) data.get("firstName"));
         newUser.setLastName((String) data.get("lastName"));
@@ -262,10 +263,10 @@ public class UserRestController {
         return userRepository.findByUsername(username)
             .map(targetUser -> {
                 // If changing self password, must verify current password
-                if (isSelf && !securityUtils.verifyPassword(currentPassword, targetUser.getPassword())) {
+                if (isSelf && !guard.verifyPassword(currentPassword, targetUser.getPassword())) {
                     return ResponseEntity.badRequest().body(Map.of("message", "Invalid current password"));
                 }
-                targetUser.setPassword(securityUtils.hashPassword(newPassword));
+                targetUser.setPassword(guard.hashPassword(newPassword));
                 userRepository.save(targetUser);
                 return ResponseEntity.ok().body(Map.of("message", "Password updated successfully"));
             }).orElse(ResponseEntity.status(404).body(Map.of("message", "User not found")));
