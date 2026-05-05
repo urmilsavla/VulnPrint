@@ -26,9 +26,12 @@ public class GlobalExceptionHandler {
         String correlationId = UUID.randomUUID().toString();
         logger.warn("Access Denied [ID: {}]: {}", correlationId, ex.getMessage());
         
+        String action = request.getRequestURI();
+        String message = "Access Denied: You do not have permissions to do this " + action;
+
         if (request.getRequestURI().startsWith("/api/")) {
             Map<String, Object> body = new HashMap<>();
-            body.put("error", "Access Denied: You do not have permission to perform this action.");
+            body.put("error", message);
             body.put("correlationId", correlationId);
             body.put("status", HttpStatus.FORBIDDEN.value());
             
@@ -36,7 +39,7 @@ public class GlobalExceptionHandler {
         } else {
             ModelAndView mav = new ModelAndView("error");
             mav.addObject("code", 403);
-            mav.addObject("message", "Access Denied: You do not have permission to view this page.");
+            mav.addObject("message", message);
             return mav;
         }
     }

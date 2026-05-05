@@ -128,7 +128,22 @@
                 if (response.ok) {
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('user', JSON.stringify(data));
-                    window.location.href = '/dashboard';
+                    
+                    // Decode JWT to check permissions for intelligent redirection
+                    try {
+                        const payload = JSON.parse(atob(data.token.split('.')[1]));
+                        const perms = payload.perms || [];
+                        
+                        if (perms.includes('VIEW_DASHBOARD')) {
+                            window.location.href = '/dashboard';
+                        } else if (perms.includes('VIEW_ASSIGNED_PROJECTS') || perms.includes('VIEW_ALL_PROJECTS')) {
+                            window.location.href = '/web-pentest';
+                        } else {
+                            window.location.href = '/profile';
+                        }
+                    } catch (e) {
+                        window.location.href = '/dashboard';
+                    }
                 } else {
                     showNotification(data.message || 'Access Denied: Invalid Identity', 'error');
                 }

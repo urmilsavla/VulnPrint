@@ -149,11 +149,6 @@
     </div>
 
     <div class="flex items-center gap-6">
-        <!-- Template Guide Button (Moved/Hidden logic) -->
-        <a id="header-guide-link" href="/template-guide" class="text-neutral-400 hover:text-[#39FF14] transition-colors p-1 mt-1 flex items-center gap-2 group/doc hidden">
-            <span class="material-symbols-outlined">auto_stories</span>
-        </a>
-
         <div id="admin-settings-container" class="relative group hidden">
             <button class="text-neutral-400 hover:text-[#39FF14] transition-colors p-1 mt-1">
                 <span class="material-symbols-outlined">settings</span>
@@ -257,9 +252,9 @@
                     if (response.status === 403) {
                         try {
                             const data = await response.clone().json();
-                            window.showNotification(data.error || "Insufficient Permissions", "error");
+                            window.showNotification(data.error || "Access Denied: You do not have permissions to perform this action", "error");
                         } catch (e) {
-                            window.showNotification("Insufficient Permissions", "error");
+                            window.showNotification("Access Denied: You do not have permissions to perform this action", "error");
                         }
                     }
 
@@ -286,10 +281,8 @@
         window.updateMicroserviceVisibility = async function(configs) {
             if (!configs) {
                 try {
-                    const res = await fetch('/api/config');
-                    const data = await res.json();
-                    configs = {};
-                    data.forEach(c => configs[c.configKey] = c.configValue);
+                    const res = await fetch('/api/config/status');
+                    configs = await res.json();
                 } catch (e) { return; }
             }
 

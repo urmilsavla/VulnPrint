@@ -36,6 +36,16 @@ public class ConfigRestController {
         return ResponseEntity.ok(systemConfigRepository.findById(key).orElse(new SystemConfig(key, "")));
     }
 
+    @GetMapping("/status")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getFeatureStatus() {
+        Map<String, String> status = Map.of(
+            "vulndb_enabled", systemConfigRepository.findById("vulndb_enabled").map(SystemConfig::getConfigValue).orElse("false"),
+            "repgen_enabled", systemConfigRepository.findById("repgen_enabled").map(SystemConfig::getConfigValue).orElse("false")
+        );
+        return ResponseEntity.ok(status);
+    }
+
     @PutMapping
     @PreAuthorize("hasAuthority('MANAGE_MICROSERVICES')")
     public ResponseEntity<?> saveConfig(@jakarta.validation.Valid @RequestBody com.vulnprint.dto.SystemConfigDTO dto) {
