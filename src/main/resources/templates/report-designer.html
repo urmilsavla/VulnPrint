@@ -850,7 +850,9 @@
                     window.showNotification('Report configuration saved successfully.', 'success');
                     setTimeout(() => window.location.href = `/pentest/details/${pentestId}`, 800);
                 } else {
-                    window.showNotification('Failed to save configuration: ' + res.status, 'error');
+                    const errData = await res.json().catch(() => ({}));
+                    const errMsg = errData.error || `Failed to save configuration: ${res.status}`;
+                    window.showNotification(errMsg, 'error');
                 }
             } catch (err) {
                 console.error('Save error:', err);

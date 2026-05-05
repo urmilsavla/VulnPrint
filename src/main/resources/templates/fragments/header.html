@@ -262,12 +262,54 @@
                             window.showNotification("Insufficient Permissions", "error");
                         }
                     }
+
+                    // Global Microservice Visibility Logic
+                    if (resource === '/api/config' || (typeof resource === 'string' && resource.includes('/api/config'))) {
+                        try {
+                            const data = await response.clone().json();
+                            if (Array.isArray(data)) {
+                                const configs = {};
+                                data.forEach(c => configs[c.configKey] = c.configValue);
+                                window.updateMicroserviceVisibility(configs);
+                            }
+                        } catch (e) {}
+                    }
+
                     return response;
                 } catch (error) {
                     return Promise.reject(error);
                 }
             };
         })();
+
+        // Global Microservice Visibility Logic
+        window.updateMicroserviceVisibility = async function(configs) {
+            if (!configs) {
+                try {
+                    const res = await fetch('/api/config');
+                    const data = await res.json();
+                    configs = {};
+                    data.forEach(c => configs[c.configKey] = c.configValue);
+                } catch (e) { return; }
+            }
+
+            const vulndbOn = configs['vulndb_enabled'] === 'true';
+            const repgenOn = configs['repgen_enabled'] === 'true';
+
+            // VulnDB Elements
+            const vulndbSearch = document.getElementById('vulndb-search-container');
+            if (vulndbSearch) vulndbSearch.classList.toggle('hidden', !vulndbOn);
+
+            // RepGen Elements
+            const genReportLink = document.getElementById('header-gen-report-link');
+            if (genReportLink) genReportLink.classList.toggle('hidden', !repgenOn);
+
+            const reportDesignerBtn = document.getElementById('report-designer-btn');
+            if (reportDesignerBtn) reportDesignerBtn.classList.toggle('hidden', !repgenOn);
+            
+            const templateGuideLink = document.getElementById('header-guide-link');
+            if (templateGuideLink) templateGuideLink.classList.toggle('hidden', !repgenOn);
+        };
 
         // Utility to check permissions client-side
         let _permCache = null;
@@ -431,6 +473,9 @@
 
             loadAlerts();
             setInterval(loadAlerts, 30000);
+            
+            // Initial microservice visibility check
+            if (window.updateMicroserviceVisibility) window.updateMicroserviceVisibility();
         });
         async function logoutWithPermission() {
             const confirmed = await window.askPermission("Are you sure you want to log out?");

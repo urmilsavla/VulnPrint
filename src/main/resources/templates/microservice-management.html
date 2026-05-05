@@ -16,7 +16,8 @@
                 "primary": "#4FFE49",
                 "surface": "#0e0e0e",
                 "on-surface": "#ffffff",
-                "error": "#ff7351"
+                "error": "#ff7351",
+                "tertiary": "#88f6ff"
               },
               fontFamily: { headline: ['Space Grotesk'], body: ['Inter'], label: ['Space Grotesk'] }
             }
@@ -25,13 +26,13 @@
     </script>
     <style>
         :root { color-scheme: dark; }
-        body { margin: 0; }
+        body { margin: 0; font-family: 'Inter', sans-serif; }
         #main-content { padding-top: 100px; margin-left: 64px; transition: margin-left 0.3s ease; }
         body.sidebar-expanded #main-content { margin-left: 256px; }
         body.sidebar-expanded #header { left: 256px; }
         @media (max-width: 1024px) { #main-content { margin-left: 0 !important; } }
 
-        .tile-card { background: rgba(19, 19, 19, 0.4); border: 1px solid #262626; transition: all 0.3s ease; }
+        .tile-card { background: rgba(19, 19, 19, 0.4) !important; border: 1px solid #262626 !important; transition: all 0.3s ease; backdrop-filter: blur(12px); }
         .tile-header { cursor: pointer; }
         .tile-content { max-height: 5000px; overflow: visible; transition: all 0.5s cubic-bezier(0, 1, 0, 1); }
         .collapse-icon { transition: transform 0.3s ease; color: #525252; }
@@ -45,6 +46,9 @@
         .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: #525252; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: rgba(79, 254, 73, 0.2); }
         input:checked + .slider:before { transform: translateX(20px); background-color: #4FFE49; }
+        
+        /* Disabled Switch */
+        input:disabled + .slider { opacity: 0.3; cursor: not-allowed; }
         
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -60,76 +64,119 @@
         <div class="max-w-6xl mx-auto">
             <div class="flex justify-between items-center mb-12 border-b border-neutral-800 pb-8">
                 <div>
-                    <h1 class="text-3xl font-bold text-white uppercase">Microservice Management</h1>
-                    <p class="text-neutral-400 mt-1">Configure and toggle external intelligence & generation engines</p>
+                    <h1 class="text-3xl font-bold text-white uppercase headline">Microservice Management</h1>
+                    <p class="text-neutral-400 mt-1 uppercase text-[10px] font-bold tracking-widest">Configure and toggle external intelligence & generation engines</p>
                 </div>
-                <button onclick="saveAllConfigs()" class="px-8 py-2 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg">Save Changes</button>
             </div>
 
             <div class="grid grid-cols-1 gap-10">
                 <!-- VulnDB Integration -->
-                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-vulndb">
+                <div class="tile-card p-10 rounded-xl shadow-2xl" id="tile-vulndb">
                     <div class="tile-header flex justify-between items-center mb-8 text-white">
-                        <div class="flex items-center gap-4" onclick="toggleTile('tile-vulndb')">
-                            <span class="material-symbols-outlined text-primary text-3xl">database</span>
-                            <h2 class="text-xl font-bold uppercase tracking-tight">VulnDB Intelligence</h2>
+                        <div class="flex items-center gap-6" onclick="toggleTile('tile-vulndb')">
+                            <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                                <span class="material-symbols-outlined text-primary text-3xl">database</span>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-black uppercase tracking-tight headline">VulnDB Intelligence</h2>
+                                <p class="text-[9px] text-neutral-500 uppercase font-bold tracking-widest">Global Vulnerability Repository</p>
+                            </div>
                         </div>
-                        <div class="flex items-center gap-6">
-                            <label class="switch">
-                                <input type="checkbox" id="vulndb_enabled" onchange="toggleService('vulndb')">
-                                <span class="slider"></span>
-                            </label>
-                            <span class="material-symbols-outlined collapse-icon" onclick="toggleTile('tile-vulndb')">expand_more</span>
+                        <div class="flex items-center gap-8">
+                            <div class="text-right">
+                                <p class="text-[9px] font-black uppercase tracking-widest mb-1 text-neutral-500">Service Status</p>
+                                <label class="switch">
+                                    <input type="checkbox" id="vulndb_enabled" onchange="toggleService('vulndb')">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
                         </div>
                     </div>
-                    <div class="tile-content">
-                        <div class="space-y-8">
-                            <div class="space-y-4">
-                                <label class="text-[10px] uppercase font-bold text-primary/60 tracking-widest">Base API Endpoint</label>
-                                <div class="flex gap-4">
-                                    <input type="text" id="vulndb_url" placeholder="http://127.0.0.1:8000" class="flex-1 bg-black/60 border border-neutral-800 rounded-lg p-4 text-sm focus:border-primary outline-none transition-all font-mono">
-                                    <button onclick="testConnection('vulndb')" class="px-6 py-4 border border-neutral-800 bg-neutral-900/50 text-[10px] font-bold uppercase hover:text-primary transition-colors rounded-lg">Test Link</button>
+                    <div class="tile-content border-t border-neutral-800/50 pt-10">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="text-[10px] uppercase font-black text-primary/60 tracking-[0.2em] mb-3 block">Base API Endpoint</label>
+                                    <input type="text" id="vulndb_url" oninput="autoSave('vulndb_url', this.value)" placeholder="e.g. http://127.0.0.1:8000" class="w-full bg-black/60 border border-neutral-800 rounded-xl p-5 text-sm focus:border-primary outline-none transition-all font-mono text-white">
                                 </div>
-                                <p class="text-[10px] text-neutral-500 italic">Universal vulnerability database used for auto-populating finding details.</p>
+                                <div class="p-6 bg-black/40 border border-neutral-800 rounded-xl">
+                                    <p class="text-[10px] text-neutral-500 uppercase font-bold leading-relaxed tracking-wide">
+                                        Connecting to a VulnDB instance allows the system to auto-populate vulnerability descriptions, remediation steps, and references directly from the global database during finding creation.
+                                    </p>
+                                </div>
                             </div>
 
-                            <div id="vulndb-status" class="hidden p-4 rounded-lg border flex items-center gap-4">
-                                <span id="vulndb-status-icon" class="material-symbols-outlined"></span>
-                                <span id="vulndb-status-text" class="text-xs font-bold uppercase tracking-wider"></span>
+                            <div class="flex flex-col justify-center">
+                                <button onclick="testConnection('vulndb')" class="w-full py-5 bg-neutral-900 border border-neutral-800 text-[11px] font-black uppercase tracking-[0.2em] hover:bg-neutral-800 hover:text-primary transition-all rounded-xl flex items-center justify-center gap-3 group">
+                                    <span class="material-symbols-outlined group-hover:rotate-180 transition-transform">sync_alt</span>
+                                    Verify Connection
+                                </button>
+                                
+                                <div id="vulndb-status" class="mt-6 p-6 rounded-xl border border-dashed border-neutral-800 flex items-center gap-4 transition-all">
+                                    <div id="vulndb-status-icon-container" class="w-10 h-10 rounded-lg bg-neutral-900 flex items-center justify-center border border-neutral-800">
+                                        <span id="vulndb-status-icon" class="material-symbols-outlined text-neutral-600">hourglass_empty</span>
+                                    </div>
+                                    <div>
+                                        <p id="vulndb-status-text" class="text-[10px] font-black uppercase tracking-widest text-neutral-500">Awaiting Verification</p>
+                                        <p id="vulndb-status-detail" class="text-[8px] text-neutral-700 uppercase font-bold mt-0.5">Test connection to enable service toggle</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- RepGen Integration -->
-                <div class="tile-card p-8 rounded-xl shadow-2xl" id="tile-repgen">
+                <div class="tile-card p-10 rounded-xl shadow-2xl" id="tile-repgen">
                     <div class="tile-header flex justify-between items-center mb-8 text-white">
-                        <div class="flex items-center gap-4" onclick="toggleTile('tile-repgen')">
-                            <span class="material-symbols-outlined text-tertiary text-3xl">description</span>
-                            <h2 class="text-xl font-bold uppercase tracking-tight">RepGen Engine</h2>
+                        <div class="flex items-center gap-6" onclick="toggleTile('tile-repgen')">
+                            <div class="w-14 h-14 rounded-2xl bg-tertiary/10 flex items-center justify-center border border-tertiary/20">
+                                <span class="material-symbols-outlined text-tertiary text-3xl">description</span>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-black uppercase tracking-tight headline">RepGen Engine</h2>
+                                <p class="text-[9px] text-neutral-500 uppercase font-bold tracking-widest">Document Generation API</p>
+                            </div>
                         </div>
-                        <div class="flex items-center gap-6">
-                            <label class="switch">
-                                <input type="checkbox" id="repgen_enabled" onchange="toggleService('repgen')">
-                                <span class="slider"></span>
-                            </label>
-                            <span class="material-symbols-outlined collapse-icon" onclick="toggleTile('tile-repgen')">expand_more</span>
+                        <div class="flex items-center gap-8">
+                            <div class="text-right">
+                                <p class="text-[9px] font-black uppercase tracking-widest mb-1 text-neutral-500">Service Status</p>
+                                <label class="switch">
+                                    <input type="checkbox" id="repgen_enabled" onchange="toggleService('repgen')">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
                         </div>
                     </div>
-                    <div class="tile-content">
-                        <div class="space-y-8">
-                            <div class="space-y-4">
-                                <label class="text-[10px] uppercase font-bold text-tertiary/60 tracking-widest">Base API Endpoint</label>
-                                <div class="flex gap-4">
-                                    <input type="text" id="repgen_url" placeholder="http://127.0.0.1:3000" class="flex-1 bg-black/60 border border-neutral-800 rounded-lg p-4 text-sm focus:border-tertiary outline-none transition-all font-mono">
-                                    <button onclick="testConnection('repgen')" class="px-6 py-4 border border-neutral-800 bg-neutral-900/50 text-[10px] font-bold uppercase hover:text-tertiary transition-colors rounded-lg">Test Link</button>
+                    <div class="tile-content border-t border-neutral-800/50 pt-10">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="text-[10px] uppercase font-black text-tertiary/60 tracking-[0.2em] mb-3 block">Base API Endpoint</label>
+                                    <input type="text" id="repgen_url" oninput="autoSave('repgen_url', this.value)" placeholder="e.g. http://127.0.0.1:3000" class="w-full bg-black/60 border border-neutral-800 rounded-xl p-5 text-sm focus:border-tertiary outline-none transition-all font-mono text-white">
                                 </div>
-                                <p class="text-[10px] text-neutral-500 italic">Stateless document generation engine for high-fidelity technical reports.</p>
+                                <div class="p-6 bg-black/40 border border-neutral-800 rounded-xl">
+                                    <p class="text-[10px] text-neutral-500 uppercase font-bold leading-relaxed tracking-wide">
+                                        The RepGen engine is a stateless microservice responsible for converting system data into high-fidelity PDF and DOCX reports. This service must be active to access the Report Designer.
+                                    </p>
+                                </div>
                             </div>
 
-                            <div id="repgen-status" class="hidden p-4 rounded-lg border flex items-center gap-4">
-                                <span id="repgen-status-icon" class="material-symbols-outlined"></span>
-                                <span id="repgen-status-text" class="text-xs font-bold uppercase tracking-wider"></span>
+                            <div class="flex flex-col justify-center">
+                                <button onclick="testConnection('repgen')" class="w-full py-5 bg-neutral-900 border border-neutral-800 text-[11px] font-black uppercase tracking-[0.2em] hover:bg-neutral-800 hover:text-tertiary transition-all rounded-xl flex items-center justify-center gap-3 group">
+                                    <span class="material-symbols-outlined group-hover:rotate-180 transition-transform">sync_alt</span>
+                                    Verify Connection
+                                </button>
+                                
+                                <div id="repgen-status" class="mt-6 p-6 rounded-xl border border-dashed border-neutral-800 flex items-center gap-4 transition-all">
+                                    <div id="repgen-status-icon-container" class="w-10 h-10 rounded-lg bg-neutral-900 flex items-center justify-center border border-neutral-800">
+                                        <span id="repgen-status-icon" class="material-symbols-outlined text-neutral-600">hourglass_empty</span>
+                                    </div>
+                                    <div>
+                                        <p id="repgen-status-text" class="text-[10px] font-black uppercase tracking-widest text-neutral-500">Awaiting Verification</p>
+                                        <p id="repgen-status-detail" class="text-[8px] text-neutral-700 uppercase font-bold mt-0.5">Test connection to enable service toggle</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -139,6 +186,8 @@
     </main>
 
     <script>
+        let autoSaveTimers = {};
+
         function toggleTile(tileId) {
             const tile = document.getElementById(tileId);
             tile.classList.toggle('collapsed');
@@ -152,14 +201,32 @@
                     configs.forEach(c => {
                         const el = document.getElementById(c.configKey);
                         if (el) {
-                            if (el.type === 'checkbox') el.checked = c.configValue === 'true';
-                            else el.value = c.configValue;
+                            if (el.type === 'checkbox') {
+                                el.checked = c.configValue === 'true';
+                                // Enable/disable switch based on connection status (we'll re-verify)
+                            } else {
+                                el.value = c.configValue;
+                            }
                         }
                     });
+                    
+                    // Initial verification for enabled services to set visual status
+                    if (document.getElementById('vulndb_url').value) testConnection('vulndb', true);
+                    if (document.getElementById('repgen_url').value) testConnection('repgen', true);
                 }
             } catch (err) {
                 console.error('Failed to load configs:', err);
             }
+        }
+
+        function autoSave(key, value) {
+            if (autoSaveTimers[key]) clearTimeout(autoSaveTimers[key]);
+            autoSaveTimers[key] = setTimeout(async () => {
+                try {
+                    await saveConfig(key, value);
+                    console.log(`Auto-saved: ${key}`);
+                } catch (e) { console.error(e); }
+            }, 500);
         }
 
         async function saveConfig(key, value) {
@@ -171,61 +238,95 @@
             });
         }
 
-        async function saveAllConfigs() {
-            const vulndbUrl = document.getElementById('vulndb_url').value;
-            const repgenUrl = document.getElementById('repgen_url').value;
-            const vulndbEnabled = document.getElementById('vulndb_enabled').checked.toString();
-            const repgenEnabled = document.getElementById('repgen_enabled').checked.toString();
+        async function toggleService(service) {
+            const checkbox = document.getElementById(service + '_enabled');
+            const enabled = checkbox.checked;
             
+            if (enabled) {
+                // If turning ON, verify first
+                const success = await testConnection(service, false);
+                if (!success) {
+                    checkbox.checked = false;
+                    return;
+                }
+            }
+
             try {
-                await Promise.all([
-                    saveConfig('vulndb_url', vulndbUrl),
-                    saveConfig('repgen_url', repgenUrl),
-                    saveConfig('vulndb_enabled', vulndbEnabled),
-                    saveConfig('repgen_enabled', repgenEnabled)
-                ]);
-                window.showNotification('Settings saved.', 'success');
+                await saveConfig(service + '_enabled', enabled.toString());
+                window.showNotification(`${service.toUpperCase()} engine ${enabled ? 'activated' : 'deactivated'}.`, 'info');
+                // Update visibility globally without full reload if possible, 
+                // but reload is safer to ensure all components react.
+                if (window.updateMicroserviceVisibility) {
+                    const configs = {};
+                    configs[service + '_enabled'] = enabled.toString();
+                    window.updateMicroserviceVisibility(configs);
+                }
             } catch (err) {
-                window.showNotification('Failed to save settings.', 'error');
+                console.error(err);
+                checkbox.checked = !enabled;
             }
         }
 
-        async function toggleService(service) {
-            const enabled = document.getElementById(service + '_enabled').checked.toString();
-            await saveConfig(service + '_enabled', enabled);
-            window.showNotification(`${service.toUpperCase()} engine status updated.`, 'info');
-            setTimeout(() => location.reload(), 800);
-        }
-
-        async function testConnection(service) {
+        async function testConnection(service, silent = false) {
             const statusDiv = document.getElementById(service + '-status');
             const statusIcon = document.getElementById(service + '-status-icon');
             const statusText = document.getElementById(service + '-status-text');
+            const statusDetail = document.getElementById(service + '-status-detail');
+            const iconContainer = document.getElementById(service + '-status-icon-container');
+            const checkbox = document.getElementById(service + '_enabled');
             const color = service === 'vulndb' ? 'primary' : 'tertiary';
             
-            statusDiv.classList.remove('hidden', `border-${color}`, `bg-${color}/5`, `text-${color}`, 'border-error', 'bg-error/5', 'text-error');
-            statusDiv.classList.add('flex');
-            statusText.innerText = "PROBING...";
-            statusIcon.innerText = "refresh";
-            statusIcon.classList.add('animate-spin');
+            if (!silent) {
+                statusText.innerText = "PROBING...";
+                statusIcon.innerText = "refresh";
+                statusIcon.classList.add('animate-spin');
+                iconContainer.className = "w-10 h-10 rounded-lg bg-neutral-900 flex items-center justify-center border border-neutral-800";
+            }
 
             try {
                 const url = document.getElementById(service + '_url').value;
+                if (!url) throw new Error("Endpoint URL is empty");
+
                 const res = await fetch(`/api/config/test-connection?url=${encodeURIComponent(url)}`);
                 const data = await res.json();
                 
                 if (data.success) {
-                    statusDiv.classList.add(`border-primary`, `bg-primary/5`, `text-primary`);
+                    statusDiv.className = `mt-6 p-6 rounded-xl border border-solid border-${color}/30 bg-${color}/5 flex items-center gap-4 transition-all`;
+                    iconContainer.className = `w-10 h-10 rounded-lg bg-${color}/20 flex items-center justify-center border border-${color}/30`;
+                    statusIcon.className = `material-symbols-outlined text-${color}`;
                     statusIcon.innerText = "check_circle";
                     statusText.innerText = "LINK ESTABLISHED";
+                    statusText.className = `text-[10px] font-black uppercase tracking-widest text-${color}`;
+                    statusDetail.innerText = "External engine is responsive and ready";
+                    
+                    if (!silent && !checkbox.checked) {
+                        window.showNotification(`${service.toUpperCase()} connection successful. You can now enable the service.`, 'success');
+                    }
+                    return true;
                 } else {
-                    throw new Error(data.error);
+                    throw new Error(data.error || "Connection failed");
                 }
             } catch (err) {
-                statusDiv.classList.add('border-error', 'bg-error/5', 'text-error');
+                statusDiv.className = "mt-6 p-6 rounded-xl border border-solid border-error/30 bg-error/5 flex items-center gap-4 transition-all";
+                iconContainer.className = "w-10 h-10 rounded-lg bg-error/20 flex items-center justify-center border border-error/30";
+                statusIcon.className = "material-symbols-outlined text-error";
                 statusIcon.innerText = "error";
                 statusText.innerText = "LINK FAILED";
-                console.error(err);
+                statusText.className = "text-[10px] font-black uppercase tracking-widest text-error";
+                statusDetail.innerText = err.message || "Endpoint unreachable";
+                
+                // If failed, and it was enabled, turn it off
+                if (checkbox.checked) {
+                    checkbox.checked = false;
+                    await saveConfig(service + '_enabled', 'false');
+                    if (!silent) window.showNotification(`${service.toUpperCase()} disabled due to connection failure.`, 'error');
+                    if (window.updateMicroserviceVisibility) {
+                        const configs = {};
+                        configs[service + '_enabled'] = 'false';
+                        window.updateMicroserviceVisibility(configs);
+                    }
+                }
+                return false;
             } finally {
                 statusIcon.classList.remove('animate-spin');
             }

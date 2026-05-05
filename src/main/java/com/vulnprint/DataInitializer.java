@@ -173,8 +173,10 @@ public class DataInitializer implements CommandLineRunner {
     @Transactional
     public void initializeConfigs() {
         if (systemConfigRepository.findAll().isEmpty()) {
-            systemConfigRepository.save(new com.vulnprint.model.SystemConfig("repgen_enabled", "true"));
+            systemConfigRepository.save(new com.vulnprint.model.SystemConfig("repgen_enabled", "false"));
+            systemConfigRepository.save(new com.vulnprint.model.SystemConfig("vulndb_enabled", "false"));
             systemConfigRepository.save(new com.vulnprint.model.SystemConfig("vulndb_url", ""));
+            systemConfigRepository.save(new com.vulnprint.model.SystemConfig("repgen_url", ""));
         }
     }
 }

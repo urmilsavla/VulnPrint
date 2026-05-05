@@ -15,6 +15,15 @@ public class ViewController {
     @Autowired
     private PentestRepository pentestRepository;
 
+    @Autowired
+    private com.vulnprint.repository.SystemConfigRepository systemConfigRepository;
+
+    private boolean isRepGenEnabled() {
+        return systemConfigRepository.findById("repgen_enabled")
+                .map(c -> "true".equals(c.getConfigValue()))
+                .orElse(false);
+    }
+
     @GetMapping("/login")
     public String login() {
         return "login";

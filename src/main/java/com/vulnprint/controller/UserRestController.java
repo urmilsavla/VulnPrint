@@ -82,6 +82,19 @@ public class UserRestController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @DeleteMapping("/roles/{id}")
+    @PreAuthorize("hasAuthority('MANAGE_ACCESS')")
+    public ResponseEntity<?> deleteRole(@PathVariable Long id) {
+        return roleRepository.findById(id).map(role -> {
+            // Check if any users are assigned to this role
+            if (!userRepository.findAllByRole(role).isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Cannot delete role as it is currently assigned to one or more users"));
+            }
+            roleRepository.delete(role);
+            return ResponseEntity.ok().build();
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/permissions")
     @PreAuthorize("hasAuthority('MANAGE_ACCESS')")
     public ResponseEntity<?> getAllPermissions() {

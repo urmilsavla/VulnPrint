@@ -17,13 +17,12 @@ public class RateLimitFilter implements Filter {
     private final Map<String, RequestCounter> requestCounts = new ConcurrentHashMap<>();
     
     // Global limits
-    private static final int MAX_REQUESTS_GLOBAL = 100;
+    private static final int MAX_REQUESTS_GLOBAL = 300;
     private static final long TIME_WINDOW_GLOBAL = TimeUnit.MINUTES.toMillis(1);
-    
-    // Strict limits for sensitive operations (Login, Create, Update, Delete)
-    private static final int MAX_REQUESTS_STRICT = 5;
-    private static final long TIME_WINDOW_STRICT = TimeUnit.MINUTES.toMillis(5);
 
+    // Strict limits for sensitive operations (Login, Create, Update, Delete)
+    private static final int MAX_REQUESTS_STRICT = 50;
+    private static final long TIME_WINDOW_STRICT = TimeUnit.MINUTES.toMillis(1);
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
