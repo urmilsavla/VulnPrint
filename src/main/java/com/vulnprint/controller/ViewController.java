@@ -25,6 +25,7 @@ public class ViewController {
     }
 
     @GetMapping("/login")
+    @PreAuthorize("permitAll()")
     public String login() {
         return "login";
     }
@@ -56,7 +57,7 @@ public class ViewController {
     }
 
     @GetMapping("/pentest/edit/{id}")
-    @PreAuthorize("hasAuthority('EDIT_ALL_PROJECTS') or (hasAuthority('EDIT_ASSIGNED_PROJECTS') and @securityService.isAssignedToPentest(#id))")
+    @PreAuthorize("@securityService.canEditProject(#id)")
     public String editPentest(@PathVariable Long id, Model model) {
         model.addAttribute("id", id);
         return "add-pentest";
@@ -84,14 +85,14 @@ public class ViewController {
     }
 
     @GetMapping("/pentest/details/{id}")
-    @PreAuthorize("hasAuthority('VIEW_ALL_PROJECTS') or @securityService.isAssignedToPentest(#id)")
+    @PreAuthorize("@securityService.canViewProject(#id)")
     public String pentestDetails(@PathVariable Long id, Model model) {
         model.addAttribute("id", id);
         return "pentest-detail";
     }
 
     @GetMapping("/pentest/report-designer/{id}")
-    @PreAuthorize("hasAuthority('MANAGE_REPORT_DESIGN') and (hasAuthority('EDIT_ALL_PROJECTS') or @securityService.isAssignedToPentest(#id))")
+    @PreAuthorize("hasAuthority('MANAGE_REPORT_DESIGN') and @securityService.canEditProject(#id)")
     public String reportDesigner(@PathVariable Long id, Model model) {
         model.addAttribute("id", id);
         return "report-designer";
@@ -104,14 +105,14 @@ public class ViewController {
     }
 
     @GetMapping("/pentest/{id}/vulnerability/add")
-    @PreAuthorize("hasAuthority('ADD_VULNERABILITY') and (hasAuthority('VIEW_ALL_PROJECTS') or @securityService.isAssignedToPentest(#id))")
+    @PreAuthorize("hasAuthority('ADD_VULNERABILITY') and @securityService.canEditProject(#id)")
     public String addVulnerability(@PathVariable Long id, Model model) {
         model.addAttribute("id", id);
         return "add-vulnerability";
     }
 
     @GetMapping("/pentest/{pentestId}/vulnerability/edit/{vulnId}")
-    @PreAuthorize("hasAuthority('EDIT_ALL_VULNS') or (hasAuthority('EDIT_ASSIGNED_VULNS') and @securityService.isAssignedToVuln(#vulnId))")
+    @PreAuthorize("@securityService.canEditVuln(#vulnId)")
     public String editVulnerability(@PathVariable Long pentestId, @PathVariable Long vulnId, Model model) {
         model.addAttribute("id", pentestId);
         model.addAttribute("vulnId", vulnId);
@@ -119,7 +120,7 @@ public class ViewController {
     }
 
     @GetMapping("/vulnerability-approver")
-    @PreAuthorize("hasAuthority('APPROVE_VULNERABILITIES')")
+    @PreAuthorize("hasAuthority('APPROVE_ALL_VULNS') or hasAuthority('APPROVE_ASSIGNED_VULNS')")
     public String vulnerabilityApprover() {
         return "vulnerability-approver";
     }
@@ -167,6 +168,7 @@ public class ViewController {
     }
 
     @GetMapping("/")
+    @PreAuthorize("permitAll()")
     public String index() {
         return "redirect:/login";
     }

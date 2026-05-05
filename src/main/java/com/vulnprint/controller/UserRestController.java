@@ -21,6 +21,7 @@ import com.vulnprint.repository.PermissionRepository;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
+import com.vulnprint.security.Permissions;
 
 @RestController
 @RequestMapping("/api/users")
@@ -139,8 +140,10 @@ public class UserRestController {
         
         boolean securityModified = false;
 
+
+
         // Admin only overrides
-        if (securityUtils.hasPermission(user, "MANAGE_USERS")) {
+        if (securityUtils.hasPermission(user, Permissions.MANAGE_USERS)) {
             if (data.containsKey("newUsername")) {
                 String newUsername = (String) data.get("newUsername");
                 if (!newUsername.equals(targetUser.getUsername()) && userRepository.findByUsername(newUsername).isPresent()) {
@@ -155,7 +158,7 @@ public class UserRestController {
         }
 
         // Manage Role and Extra Permissions
-        if (securityUtils.hasPermission(user, "MANAGE_ACCESS")) {
+        if (securityUtils.hasPermission(user, Permissions.MANAGE_ACCESS)) {
             if (data.containsKey("roleId")) {
                 Long newRoleId = Long.valueOf(data.get("roleId").toString());
                 if (targetUser.getRole() == null || !targetUser.getRole().getId().equals(newRoleId)) {

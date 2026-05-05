@@ -32,6 +32,9 @@ import com.vulnprint.repository.RoleRepository;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import com.vulnprint.security.Permissions;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -67,32 +70,41 @@ public class DataInitializer implements CommandLineRunner {
 
     @Transactional
     public void initializePermissions() {
-        createPermission("VIEW_DASHBOARD", "Access the executive dashboard and global metrics.");
-        createPermission("VIEW_ALERTS", "View system-wide notifications and security alerts.");
-        createPermission("MANAGE_ALERTS", "Mark alerts as read or clear system notifications.");
-        createPermission("VIEW_ASSIGNED_PROJECTS", "See only the projects you are working on.");
-        createPermission("VIEW_ALL_PROJECTS", "See every project in the system.");
-        createPermission("ADD_PROJECT", "Create a new project record.");
-        createPermission("EDIT_ASSIGNED_PROJECTS", "Change details of projects assigned to you.");
-        createPermission("EDIT_ALL_PROJECTS", "Change details of any project in the system.");
-        createPermission("DELETE_PROJECT", "Permanently remove a project record.");
-        createPermission("CHANGE_PENTEST_STATUS", "Update if a project is Active, Pending, or Completed.");
-        createPermission("MANAGE_REPORT_DESIGN", "Edit report logos, methodology, and disclaimers.");
-        createPermission("VIEW_VULNERABILITIES", "Read and view vulnerability findings and evidence.");
-        createPermission("ADD_VULNERABILITY", "Add a new vulnerability finding to a project.");
-        createPermission("EDIT_ASSIGNED_VULNS", "Edit vulnerabilities in projects assigned to you.");
-        createPermission("EDIT_ALL_VULNS", "Edit any vulnerability in the system, even if not assigned.");
-        createPermission("DELETE_VULNERABILITY", "Permanently remove a vulnerability finding.");
-        createPermission("APPROVE_VULNERABILITIES", "Act as an Approver to accept or reject findings.");
-        createPermission("CHANGE_VULN_REPORTING_STATUS", "Update the reporting status (e.g. Sent for Approval).");
-        createPermission("CHANGE_VULN_STATUS", "Update the technical status (e.g. Open, Fixed).");
-        createPermission("GENERATE_REPORT", "Create and download the final PDF/Doc report.");
-        createPermission("VIEW_USERS", "See the list of all people using the system.");
-        createPermission("MANAGE_USERS", "Create new user accounts and edit profiles.");
-        createPermission("MANAGE_ACCESS", "Configure Roles and specific User Permission keys.");
-        createPermission("MANAGE_MICROSERVICES", "Enable/Disable the external Vulnerability Database.");
-        createPermission("EDIT_MY_PROFILE", "Update your own name and profile information.");
-        createPermission("RESET_PASSWORD", "Change login passwords for yourself or others.");
+        createPermission(Permissions.VIEW_DASHBOARD, "Access the executive dashboard and global metrics.");
+        createPermission(Permissions.VIEW_ALERTS, "View system-wide notifications and security alerts.");
+        createPermission(Permissions.MANAGE_ALERTS, "Mark alerts as read or clear system notifications.");
+        
+        createPermission(Permissions.VIEW_ASSIGNED_PROJECTS, "See only the projects you are working on.");
+        createPermission(Permissions.VIEW_ALL_PROJECTS, "See every project in the system.");
+        createPermission(Permissions.ADD_PROJECT, "Create a new project record.");
+        createPermission(Permissions.EDIT_ASSIGNED_PROJECTS, "Change details of projects assigned to you.");
+        createPermission(Permissions.EDIT_ALL_PROJECTS, "Change details of any project in the system.");
+        createPermission(Permissions.DELETE_ASSIGNED_PROJECTS, "Delete projects you are assigned to.");
+        createPermission(Permissions.DELETE_ALL_PROJECTS, "Permanently remove any project record.");
+        createPermission(Permissions.CHANGE_PENTEST_STATUS, "Update if a project is Active, Pending, or Completed.");
+        
+        createPermission(Permissions.MANAGE_REPORT_DESIGN, "Edit report logos, methodology, and disclaimers.");
+        createPermission(Permissions.GENERATE_REPORT, "Create and download the final PDF/Doc report.");
+        
+        createPermission(Permissions.VIEW_ASSIGNED_VULNS, "Read and view vulnerability findings in assigned projects.");
+        createPermission(Permissions.VIEW_ALL_VULNS, "Read and view any vulnerability finding in the system.");
+        createPermission(Permissions.ADD_VULNERABILITY, "Add a new vulnerability finding to a project.");
+        createPermission(Permissions.EDIT_ASSIGNED_VULNS, "Edit vulnerabilities in projects assigned to you.");
+        createPermission(Permissions.EDIT_ALL_VULNS, "Edit any vulnerability in the system.");
+        createPermission(Permissions.DELETE_ASSIGNED_VULNS, "Remove a vulnerability finding from an assigned project.");
+        createPermission(Permissions.DELETE_ALL_VULNS, "Permanently remove any vulnerability finding.");
+        createPermission(Permissions.APPROVE_ASSIGNED_VULNS, "Approve or reject findings in assigned projects.");
+        createPermission(Permissions.APPROVE_ALL_VULNS, "Act as a global Approver to accept or reject findings.");
+        
+        createPermission(Permissions.CHANGE_VULN_REPORTING_STATUS, "Update the reporting status (e.g. Sent for Approval).");
+        createPermission(Permissions.CHANGE_VULN_STATUS, "Update the technical status (e.g. Open, Fixed).");
+        
+        createPermission(Permissions.VIEW_USERS, "See the list of all people using the system.");
+        createPermission(Permissions.MANAGE_USERS, "Create new user accounts and edit profiles.");
+        createPermission(Permissions.MANAGE_ACCESS, "Configure Roles and specific User Permission keys.");
+        createPermission(Permissions.MANAGE_MICROSERVICES, "Enable/Disable the external Vulnerability Database.");
+        createPermission(Permissions.EDIT_MY_PROFILE, "Update your own name and profile information.");
+        createPermission(Permissions.RESET_PASSWORD, "Change login passwords for yourself or others.");
     }
 
     private void createPermission(String name, String desc) {
@@ -118,10 +130,11 @@ public class DataInitializer implements CommandLineRunner {
         if (roleRepository.findByName("Penetration Tester").isEmpty()) {
             Role testerRole = new Role("Penetration Tester");
             testerRole.setPermissions(getPermissions(
-                "VIEW_DASHBOARD", "VIEW_ALERTS", "VIEW_ASSIGNED_PROJECTS", 
-                "EDIT_ASSIGNED_PROJECTS", "VIEW_VULNERABILITIES", 
-                "ADD_VULNERABILITY", "EDIT_ASSIGNED_VULNS", 
-                "CHANGE_VULN_STATUS", "EDIT_MY_PROFILE", "RESET_PASSWORD"
+                Permissions.VIEW_DASHBOARD, Permissions.VIEW_ALERTS, Permissions.VIEW_ASSIGNED_PROJECTS,
+                Permissions.EDIT_ASSIGNED_PROJECTS, Permissions.VIEW_ASSIGNED_VULNS,
+                Permissions.ADD_VULNERABILITY, Permissions.EDIT_ASSIGNED_VULNS,
+                Permissions.CHANGE_VULN_STATUS, Permissions.CHANGE_VULN_REPORTING_STATUS,
+                Permissions.EDIT_MY_PROFILE, Permissions.RESET_PASSWORD
             ));
             roleRepository.save(testerRole);
         }

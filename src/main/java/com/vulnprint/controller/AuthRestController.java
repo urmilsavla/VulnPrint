@@ -70,6 +70,7 @@ public class AuthRestController {
     }
 
     @PostMapping("/logout")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> logout(HttpServletResponse response) {
         String cookieHeader = "JWT=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict";
         response.addHeader("Set-Cookie", cookieHeader);

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.ResponseEntity;
 import com.vulnprint.service.SecurityUtils;
+import com.vulnprint.security.Permissions;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -43,11 +44,13 @@ public class DashboardRestController {
     @Autowired
     private SecurityUtils securityUtils;
 
+
+
     private List<Pentest> getAuthorizedPentests(User user) {
-        if (securityUtils.hasPermission(user, "VIEW_ALL_PROJECTS")) {
+        if (securityUtils.hasPermission(user, Permissions.VIEW_ALL_PROJECTS)) {
             return pentestRepository.findAll();
         }
-        if (securityUtils.hasPermission(user, "VIEW_ASSIGNED_PROJECTS")) {
+        if (securityUtils.hasPermission(user, Permissions.VIEW_ASSIGNED_PROJECTS)) {
             return pentestRepository.findByAssignedPentestersId(user.getId());
         }
         return new ArrayList<>();
@@ -104,7 +107,7 @@ public class DashboardRestController {
     }
 
     @GetMapping("/vulnerabilities")
-    @PreAuthorize("hasAuthority('VIEW_VULNERABILITIES')")
+    @PreAuthorize("hasAuthority('VIEW_ALL_VULNS') or hasAuthority('VIEW_ASSIGNED_VULNS')")
     public ResponseEntity<?> getRecentVulnerabilities() {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<Pentest> authorized = getAuthorizedPentests(user);
@@ -128,9 +131,22 @@ public class DashboardRestController {
     }
 
     @GetMapping("/vulnerabilities/pending")
-    @PreAuthorize("hasAuthority('APPROVE_VULNERABILITIES')")
+    @PreAuthorize("hasAuthority('APPROVE_ALL_VULNS') or hasAuthority('APPROVE_ASSIGNED_VULNS')")
     public ResponseEntity<?> getPendingVulnerabilities() {
-        List<Map<String, Object>> pending = vulnerabilityRepository.findByReportingStatusIgnoreCase("Sent for Approval").stream()
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        List<Vulnerability> pending;
+        
+        if (securityUtils.hasPermission(user, "APPROVE_ALL_VULNS")) {
+            pending = vulnerabilityRepository.findByReportingStatusIgnoreCase("Sent for Approval");
+        } else {
+            // Only show pending findings for projects they are assigned to
+            pending = vulnerabilityRepository.findByReportingStatusIgnoreCase("Sent for Approval").stream()
+                    .filter(v -> v.getPentest() != null && v.getPentest().getAssignedPentesters().stream()
+                            .anyMatch(u -> u.getId().equals(user.getId())))
+                    .collect(Collectors.toList());
+        }
+
+        List<Map<String, Object>> mapped = pending.stream()
                 .map(v -> {
                     Map<String, Object> m = new HashMap<>();
                     m.put("id", v.getId());
@@ -155,7 +171,7 @@ public class DashboardRestController {
                 })
                 .collect(Collectors.toList());
                 
-        return ResponseEntity.ok(pending);
+        return ResponseEntity.ok(mapped);
     }
 
     @GetMapping("/alerts")

@@ -34,7 +34,7 @@ public class RepGenRestController {
     }
 
     @GetMapping("/repGenApi/{pentestId}")
-    @PreAuthorize("hasAuthority('GENERATE_REPORT') and (hasAuthority('VIEW_ALL_PROJECTS') or @securityService.isAssignedToPentest(#pentestId))")
+    @PreAuthorize("hasAuthority('GENERATE_REPORT') and @securityService.canViewProject(#pentestId)")
     public ResponseEntity<?> getReportGenerationData(@PathVariable Long pentestId) {
         if (!isEnabled()) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
