@@ -39,7 +39,7 @@ public class VulnDbService {
         return RestClient.builder().baseUrl(baseUrl).build();
     }
 
-    public Map<String, Object> search(String query, String category, String severity) {
+    public Map search(String query, String category, String severity) {
         try {
             return getClient().get()
                     .uri(uriBuilder -> uriBuilder

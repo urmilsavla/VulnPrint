@@ -57,9 +57,24 @@ public class AppSecurityGuard {
     private PasswordEncoder passwordEncoder;
 
     // --- 1. JWT & CRYPTO PILLAR ---
-    private static final String SECRET_KEY_STRING = "VulnPrint_Production_Hardened_Guard_Key_2026_Secure_Static_v1";
-    private final SecretKey jwtKey = Keys.hmacShaKeyFor(SECRET_KEY_STRING.getBytes(StandardCharsets.UTF_8));
-    private final long expirationMs = 86400000; // 24 hours
+    private final SecretKey jwtKey;
+    private final long expirationMs = 900000; // 15 minutes for enhanced security
+    private final Set<String> tokenBlocklist = ConcurrentHashMap.newKeySet();
+
+    public AppSecurityGuard() {
+        String envKey = System.getenv("VULNPRINT_JWT_SECRET");
+        if (envKey != null && envKey.length() >= 32) {
+            this.jwtKey = Keys.hmacShaKeyFor(envKey.getBytes(StandardCharsets.UTF_8));
+        } else {
+            this.jwtKey = Keys.secretKeyFor(io.jsonwebtoken.SignatureAlgorithm.HS256);
+        }
+    }
+
+    public void blockToken(String token) {
+        if (token != null) {
+            tokenBlocklist.add(token);
+        }
+    }
 
     public String generateToken(User user) {
         Map<String, Object> claims = new HashMap<>();
@@ -76,6 +91,7 @@ public class AppSecurityGuard {
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(user.getUsername())
+                .setId(UUID.randomUUID().toString())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(jwtKey)
@@ -95,6 +111,7 @@ public class AppSecurityGuard {
     }
 
     public boolean validateToken(String token) {
+        if (tokenBlocklist.contains(token)) return false;
         try {
             Jwts.parserBuilder().setSigningKey(jwtKey).build().parseClaimsJws(token);
             return true;
@@ -265,7 +282,10 @@ public class AppSecurityGuard {
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
             http
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(csrf -> csrf
+                    .csrfTokenRepository(org.springframework.security.web.csrf.CookieCsrfTokenRepository.withHttpOnlyFalse())
+                    .ignoringRequestMatchers("/api/auth/login")
+                )
                 .headers(headers -> headers
                     .contentSecurityPolicy(csp -> csp
                         .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self';")

@@ -126,13 +126,12 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    localStorage.setItem('token', data.token);
                     localStorage.setItem('user', JSON.stringify(data));
+                    localStorage.removeItem('token'); // Ensure no old token persists
                     
-                    // Decode JWT to check permissions for intelligent redirection
+                    // Intelligent redirection based on user permissions
                     try {
-                        const payload = JSON.parse(atob(data.token.split('.')[1]));
-                        const perms = payload.perms || [];
+                        const perms = data.perms || [];
                         
                         if (perms.includes('VIEW_DASHBOARD')) {
                             window.location.href = '/dashboard';

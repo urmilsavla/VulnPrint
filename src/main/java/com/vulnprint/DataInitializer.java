@@ -143,7 +143,12 @@ public class DataInitializer implements CommandLineRunner {
         List<User> users = userRepository.findAll();
         if (users.isEmpty()) {
             Role adminRole = roleRepository.findByName("Administrator").orElse(null);
-            createUser("admin", "p455w0rd", "admin@vulnprint.local", "System", "Administrator", adminRole, "Global HQ", "Root Authority");
+            String pass = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+            System.out.println("\n======================================================");
+            System.out.println("INITIAL ADMIN PASSWORD GENERATED: " + pass);
+            System.out.println("PLEASE SAVE THIS AND CHANGE IT AFTER FIRST LOGIN.");
+            System.out.println("======================================================\n");
+            createUser("admin", pass, "admin@vulnprint.local", "System", "Administrator", adminRole, "Global HQ", "Root Authority");
         } else {
             // Fix for existing users: Ensure everyone is enabled and passwords are hashed
             for (User u : users) {

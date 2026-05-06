@@ -49,6 +49,9 @@ public class User implements UserDetails {
     private String profileImage;
 
     private boolean enabled = true;
+    private boolean deleted = false;
+    private int failedLoginAttempts = 0;
+    private java.time.LocalDateTime lockedUntil;
 
     private java.time.LocalDateTime lastRoleChange = java.time.LocalDateTime.now();
 
@@ -76,6 +79,9 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
+        if (lockedUntil != null && java.time.LocalDateTime.now().isBefore(lockedUntil)) {
+            return false;
+        }
         return true;
     }
 

@@ -158,10 +158,13 @@ public class UserRestController {
         if (guard.hasPermission(user, Permissions.MANAGE_USERS)) {
             if (data.containsKey("newUsername")) {
                 String newUsername = (String) data.get("newUsername");
-                if (!newUsername.equals(targetUser.getUsername()) && userRepository.findByUsername(newUsername).isPresent()) {
-                    return ResponseEntity.badRequest().body(Map.of("message", "Username already exists"));
+                if (!newUsername.equals(targetUser.getUsername())) {
+                    if (userRepository.findByUsername(newUsername).isPresent()) {
+                        return ResponseEntity.badRequest().body(Map.of("message", "Username already exists"));
+                    }
+                    targetUser.setUsername(newUsername);
+                    securityModified = true;
                 }
-                targetUser.setUsername(newUsername);
             }
             if (data.containsKey("newPassword") && !((String) data.get("newPassword")).isEmpty()) {
                 targetUser.setPassword(guard.hashPassword((String) data.get("newPassword")));
@@ -279,8 +282,9 @@ public class UserRestController {
                     return ResponseEntity.badRequest().body(Map.of("message", "Invalid current password"));
                 }
                 targetUser.setPassword(guard.hashPassword(newPassword));
+                targetUser.setLastRoleChange(java.time.LocalDateTime.now());
                 userRepository.save(targetUser);
-                return ResponseEntity.ok().body(Map.of("message", "Password updated successfully"));
+                return ResponseEntity.ok().body(Map.of("message", "Password updated successfully and all active sessions revoked for security"));
             }).orElse(ResponseEntity.status(404).body(Map.of("message", "User not found")));
     }
 }
