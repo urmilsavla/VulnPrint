@@ -274,7 +274,7 @@
             const statusDetail = document.getElementById(service + '-status-detail');
             const iconContainer = document.getElementById(service + '-status-icon-container');
             const checkbox = document.getElementById(service + '_enabled');
-            const color = service === 'vulndb' ? 'primary' : 'tertiary';
+            const isVulnDb = service === 'vulndb';
             
             if (!silent) {
                 statusText.innerText = "PROBING...";
@@ -291,12 +291,21 @@
                 const data = await res.json();
                 
                 if (data.success) {
-                    statusDiv.className = `mt-6 p-6 rounded-xl border border-solid border-${color}/30 bg-${color}/5 flex items-center gap-4 transition-all`;
-                    iconContainer.className = `w-10 h-10 rounded-lg bg-${color}/20 flex items-center justify-center border border-${color}/30`;
-                    statusIcon.className = `material-symbols-outlined text-${color}`;
+                    // Success Classes
+                    if (isVulnDb) {
+                        statusDiv.className = "mt-6 p-6 rounded-xl border border-solid border-primary/30 bg-primary/5 flex items-center gap-4 transition-all";
+                        iconContainer.className = "w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30";
+                        statusIcon.className = "material-symbols-outlined text-primary";
+                        statusText.className = "text-[10px] font-black uppercase tracking-widest text-primary";
+                    } else {
+                        statusDiv.className = "mt-6 p-6 rounded-xl border border-solid border-tertiary/30 bg-tertiary/5 flex items-center gap-4 transition-all";
+                        iconContainer.className = "w-10 h-10 rounded-lg bg-tertiary/20 flex items-center justify-center border border-tertiary/30";
+                        statusIcon.className = "material-symbols-outlined text-tertiary";
+                        statusText.className = "text-[10px] font-black uppercase tracking-widest text-tertiary";
+                    }
+                    
                     statusIcon.innerText = "check_circle";
                     statusText.innerText = "LINK ESTABLISHED";
-                    statusText.className = `text-[10px] font-black uppercase tracking-widest text-${color}`;
                     statusDetail.innerText = "External engine is responsive and ready";
                     
                     if (!silent && !checkbox.checked) {
@@ -315,17 +324,7 @@
                 statusText.className = "text-[10px] font-black uppercase tracking-widest text-error";
                 statusDetail.innerText = err.message || "Endpoint unreachable";
                 
-                // If failed, and it was enabled, turn it off
-                if (checkbox.checked) {
-                    checkbox.checked = false;
-                    await saveConfig(service + '_enabled', 'false');
-                    if (!silent) window.showNotification(`${service.toUpperCase()} disabled due to connection failure.`, 'error');
-                    if (window.updateMicroserviceVisibility) {
-                        const configs = {};
-                        configs[service + '_enabled'] = 'false';
-                        window.updateMicroserviceVisibility(configs);
-                    }
-                }
+                if (!silent) window.showNotification(`${service.toUpperCase()} connection failed: ${err.message}`, 'error');
                 return false;
             } finally {
                 statusIcon.classList.remove('animate-spin');

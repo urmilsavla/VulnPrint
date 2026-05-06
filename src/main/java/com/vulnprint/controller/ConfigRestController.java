@@ -25,13 +25,13 @@ public class ConfigRestController {
     private AppSecurityGuard guard;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('MANAGE_MICROSERVICES')")
+    @PreAuthorize("hasAuthority(T(com.vulnprint.security.AppSecurityGuard).MANAGE_MICROSERVICES)")
     public ResponseEntity<?> getAllConfigs() {
         return ResponseEntity.ok(systemConfigRepository.findAll());
     }
 
     @GetMapping("/{key}")
-    @PreAuthorize("hasAuthority('MANAGE_MICROSERVICES')")
+    @PreAuthorize("hasAuthority(T(com.vulnprint.security.AppSecurityGuard).MANAGE_MICROSERVICES)")
     public ResponseEntity<?> getConfig(@PathVariable String key) {
         return ResponseEntity.ok(systemConfigRepository.findById(key).orElse(new SystemConfig(key, "")));
     }
@@ -47,7 +47,7 @@ public class ConfigRestController {
     }
 
     @PutMapping
-    @PreAuthorize("hasAuthority('MANAGE_MICROSERVICES')")
+    @PreAuthorize("hasAuthority(T(com.vulnprint.security.AppSecurityGuard).MANAGE_MICROSERVICES)")
     public ResponseEntity<?> saveConfig(@jakarta.validation.Valid @RequestBody com.vulnprint.dto.SystemConfigDTO dto) {
         // Sanitize configuration values to prevent stored XSS
         SystemConfig config = new SystemConfig(guard.sanitize(dto.getConfigKey()), guard.sanitize(dto.getConfigValue()));
@@ -55,7 +55,7 @@ public class ConfigRestController {
     }
 
     @GetMapping("/test-connection")
-    @PreAuthorize("hasAuthority('MANAGE_MICROSERVICES')")
+    @PreAuthorize("hasAuthority(T(com.vulnprint.security.AppSecurityGuard).MANAGE_MICROSERVICES)")
     public ResponseEntity<?> testConnection(@RequestParam String url) {
         // 1. SSRF Protection
         if (!guard.isSafeUrl(url)) {
@@ -63,7 +63,13 @@ public class ConfigRestController {
         }
 
         try {
-            org.springframework.web.client.RestClient.create()
+            org.springframework.http.client.SimpleClientHttpRequestFactory factory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
+            factory.setConnectTimeout(5000);
+            factory.setReadTimeout(5000);
+
+            org.springframework.web.client.RestClient.builder()
+                    .requestFactory(factory)
+                    .build()
                     .get()
                     .uri(url)
                     .retrieve()
@@ -75,7 +81,7 @@ public class ConfigRestController {
     }
 
     @GetMapping("/repgen-url")
-    @PreAuthorize("hasAuthority('GENERATE_REPORT')")
+    @PreAuthorize("hasAuthority(T(com.vulnprint.security.AppSecurityGuard).GENERATE_REPORT)")
     public ResponseEntity<?> getRepGenUrl() {
         return ResponseEntity.ok(Map.of("url", systemConfigRepository.findById("repgen_url").map(SystemConfig::getConfigValue).orElse("")));
     }

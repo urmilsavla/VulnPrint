@@ -52,21 +52,21 @@
 
     <main class="min-h-screen flex items-center justify-center relative px-6 py-20 z-10">
         <div class="w-full max-w-md">
-            <!-- Central Authorization Tile -->
-            <div class="tile-card p-12 rounded-2xl shadow-3xl relative overflow-hidden backdrop-blur-xl">
+            <!-- Login Tile -->
+            <div id="login-tile" class="tile-card p-12 rounded-2xl shadow-3xl relative overflow-hidden backdrop-blur-xl">
                 <div class="mb-12 flex flex-col items-center">
                     <img alt="VulnPrint Logo" class="w-auto h-[90px]" src="/images/logo.png">
                 </div>
 
                 <form id="loginForm" class="space-y-8">
                     <div class="space-y-3">
-                        <label class="font-label text-[10px] tracking-[0.2em] text-primary/60 font-black uppercase block ml-1">Username *</label>
-                        <input name="username" autocomplete="off" class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-all rounded-lg" placeholder="Enter username here" type="text" id="username" required>
+                        <label class="font-label text-[10px] tracking-[0.2em] text-primary/60 font-black uppercase block ml-1">Email ID *</label>
+                        <input name="email" type="email" autocomplete="off" class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-all rounded-lg" placeholder="Enter your email" required>
                     </div>
                     <div class="space-y-3">
                         <label class="font-label text-[10px] tracking-[0.2em] text-primary/60 font-black uppercase block ml-1">Password *</label>
                         <div class="relative">
-                            <input name="password" autocomplete="off" class="w-full bg-black/60 border border-neutral-800 text-white p-4 pr-12 text-sm focus:border-primary outline-none transition-all rounded-lg" placeholder="Enter password here" type="password" id="password" required>
+                            <input name="password" autocomplete="off" class="w-full bg-black/60 border border-neutral-800 text-white p-4 pr-12 text-sm focus:border-primary outline-none transition-all rounded-lg" placeholder="Enter password" type="password" id="password" required>
                             <button type="button" onclick="togglePassword()" class="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-primary transition-colors focus:outline-none">
                                 <span id="eye-icon" class="material-symbols-outlined text-xl">visibility</span>
                             </button>
@@ -75,7 +75,41 @@
                     
                     <div class="pt-6">
                         <button class="w-full bg-primary text-black font-bold py-5 tracking-[0.2em] uppercase text-xs hover:opacity-90 active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(79,254,73,0.2)] rounded-lg" type="submit">
-                            Log in
+                            Secure Entry
+                        </button>
+                    </div>
+
+                    <div class="text-center mt-8">
+                        <button type="button" onclick="openRequestModal()" class="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 hover:text-primary transition-colors">
+                            Not a user yet? Request Access
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- MFA Challenge Tile -->
+            <div id="mfa-tile" class="tile-card p-12 rounded-2xl shadow-3xl relative overflow-hidden backdrop-blur-xl hidden">
+                <div class="mb-10 text-center">
+                    <span class="material-symbols-outlined text-primary text-5xl mb-4">enhanced_encryption</span>
+                    <h3 class="text-xl font-headline font-black uppercase tracking-widest text-white mb-2">Multi-Factor Auth</h3>
+                    <p class="text-[10px] text-neutral-500 tracking-widest uppercase">Verification code sent to your email</p>
+                </div>
+
+                <form id="mfaForm" class="space-y-8">
+                    <input type="hidden" id="preAuthToken" name="preAuthToken">
+                    <div class="space-y-3 text-center">
+                        <label class="font-label text-[10px] tracking-[0.4em] text-primary/60 font-black uppercase block">Enter 6-Digit Code</label>
+                        <input name="otp" maxlength="6" autofocus class="w-full bg-black/60 border border-neutral-800 text-white text-3xl font-mono text-center tracking-[0.5em] p-4 focus:border-primary outline-none transition-all rounded-lg" placeholder="000000" required>
+                    </div>
+                    
+                    <div class="pt-4">
+                        <button class="w-full bg-primary text-black font-bold py-5 tracking-[0.2em] uppercase text-xs hover:opacity-90 transition-all rounded-lg" type="submit">
+                            Verify & Enter
+                        </button>
+                    </div>
+                    <div class="text-center">
+                        <button type="button" onclick="window.location.reload()" class="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-600 hover:text-white transition-colors">
+                            Back to login
                         </button>
                     </div>
                 </form>
@@ -83,10 +117,93 @@
         </div>
     </main>
 
+    <!-- Request Access Modal -->
+    <div id="request-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-[200] hidden items-center justify-center p-4">
+        <div class="bg-[#0e0e0e] border border-neutral-800 w-full max-w-lg p-10 shadow-2xl rounded-2xl relative">
+            <button onclick="closeRequestModal()" class="absolute top-6 right-6 text-neutral-500 hover:text-white transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <div class="text-center mb-8">
+                <h3 class="text-xl font-headline font-black uppercase tracking-widest text-white mb-2">Request Access</h3>
+                <p class="text-xs text-neutral-500 tracking-tight">Your application will be vetted by a system administrator.</p>
+            </div>
+            <form id="requestForm" class="space-y-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-[9px] font-black uppercase tracking-widest text-primary/60 ml-1">First Name</label>
+                        <input name="firstName" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none rounded-lg">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[9px] font-black uppercase tracking-widest text-primary/60 ml-1">Last Name</label>
+                        <input name="lastName" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none rounded-lg">
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black uppercase tracking-widest text-primary/60 ml-1">Email Address</label>
+                    <input name="email" type="email" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none rounded-lg">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black uppercase tracking-widest text-primary/60 ml-1">Professional Qualification</label>
+                    <input name="qualification" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none rounded-lg" placeholder="e.g. Senior Security Researcher">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black uppercase tracking-widest text-primary/60 ml-1">Reason for Access</label>
+                    <textarea name="reason" rows="3" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none rounded-lg resize-none" placeholder="Provide a detailed justification for joining the platform..."></textarea>
+                </div>
+                <button type="submit" class="w-full bg-primary text-black font-bold py-4 tracking-[0.2em] uppercase text-xs hover:opacity-90 transition-all rounded-lg mt-4">
+                    Submit Application
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- Custom Terminal Notifications -->
     <div id="notification-container" class="fixed top-8 right-8 z-[100] flex flex-col gap-4 pointer-events-none"></div>
 
     <script>
+        function openRequestModal() { 
+            const modal = document.getElementById('request-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        function closeRequestModal() { 
+            const modal = document.getElementById('request-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+
+        document.getElementById('requestForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const jsonData = Object.fromEntries(formData.entries());
+
+            try {
+                const res = await fetch('/api/auth/apply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(jsonData)
+                });
+                if (res.ok) {
+                    showNotification('Application submitted successfully. A system administrator will review your request.', 'success');
+                    closeRequestModal();
+                    e.target.reset();
+                } else {
+                    let errorMessage = 'Failed to submit application';
+                    try {
+                        const err = await res.json();
+                        errorMessage = err.message || err.error || errorMessage;
+                    } catch (e) {
+                        if (res.status === 403) errorMessage = 'Security rejection: Please refresh and try again.';
+                        else if (res.status === 500) errorMessage = 'Server error: Please try again later.';
+                    }
+                    showNotification(errorMessage, 'error');
+                }
+            } catch (error) {
+                console.error('CRITICAL: Fetch failed for /api/auth/apply', error);
+                showNotification('Network error: ' + (error.message || 'Check your connection'), 'error');
+            }
+        });
+
         function togglePassword() {
             const pwd = document.getElementById('password');
             const icon = document.getElementById('eye-icon');
@@ -124,33 +241,61 @@
                 });
 
                 const data = await response.json();
-
-                if (response.ok) {
-                    localStorage.setItem('user', JSON.stringify(data));
-                    localStorage.removeItem('token'); // Ensure no old token persists
-                    
-                    // Intelligent redirection based on user permissions
-                    try {
-                        const perms = data.perms || [];
-                        
-                        if (perms.includes('VIEW_DASHBOARD')) {
-                            window.location.href = '/dashboard';
-                        } else if (perms.includes('VIEW_ASSIGNED_PROJECTS') || perms.includes('VIEW_ALL_PROJECTS')) {
-                            window.location.href = '/web-pentest';
-                        } else {
-                            window.location.href = '/profile';
-                        }
-                    } catch (e) {
-                        window.location.href = '/dashboard';
-                    }
-                } else {
-                    showNotification(data.message || 'Invalid username or password. Please try again.', 'error');
-                }
+                handleAuthResponse(response, data);
             } catch (error) { 
                 console.error('Error:', error); 
                 showNotification('System Error: Server unreachable', 'error');
             }
         });
+
+        document.getElementById('mfaForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const jsonData = Object.fromEntries(formData.entries());
+
+            try {
+                const response = await fetch('/api/auth/verify-mfa', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(jsonData)
+                });
+
+                const data = await response.json();
+                handleAuthResponse(response, data);
+            } catch (error) {
+                showNotification('Verification failed', 'error');
+            }
+        });
+
+        function handleAuthResponse(response, data) {
+            if (response.status === 202 && data.status === 'MFA_REQUIRED') {
+                document.getElementById('login-tile').classList.add('hidden');
+                document.getElementById('mfa-tile').classList.remove('hidden');
+                document.getElementById('preAuthToken').value = data.preAuthToken;
+                showNotification('MFA Verification Required', 'info');
+                return;
+            }
+
+            if (response.ok) {
+                localStorage.setItem('user', JSON.stringify(data));
+                
+                try {
+                    const perms = data.perms || [];
+                    if (perms.includes('VIEW_DASHBOARD')) window.location.href = '/dashboard';
+                    else if (perms.includes('VIEW_ASSIGNED_PROJECTS') || perms.includes('VIEW_ALL_PROJECTS')) window.location.href = '/web-pentest';
+                    else window.location.href = '/profile';
+                } catch (e) {
+                    window.location.href = '/dashboard';
+                }
+            } else {
+                if (data.status === 'PASSWORD_CHANGE_REQUIRED') {
+                    showNotification('Security Update: Password Reset Required', 'info');
+                    // Future phase will handle the redirect to dedicated reset page
+                } else {
+                    showNotification(data.message || 'Authentication Failed', 'error');
+                }
+            }
+        }
     </script>
 </body>
 </html>

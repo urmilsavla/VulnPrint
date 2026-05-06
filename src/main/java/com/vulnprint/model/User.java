@@ -24,12 +24,24 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    private String username;
     private String password;
+    
+    @Column(nullable = false, unique = true)
     private String email;
+    
     private String firstName;
     private String lastName;
     
+    @Enumerated(EnumType.STRING)
+    private AccountStatus status = AccountStatus.ACTIVE;
+
+    private int failedMfaAttempts = 0;
+    private String mfaSecretEnc;
+    private String mfaOtp;
+    private java.time.LocalDateTime mfaOtpExpiry;
+    private java.time.LocalDateTime accountExpiry;
+    private int securityVersion = 0;
+
     @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;
@@ -48,12 +60,36 @@ public class User implements UserDetails {
     @Column(columnDefinition = "TEXT")
     private String profileImage;
 
+    public String getProfileImage() {
+        return (profileImage == null || profileImage.isBlank()) ? "/images/user.png" : profileImage;
+    }
+
     private boolean enabled = true;
     private boolean deleted = false;
     private int failedLoginAttempts = 0;
     private java.time.LocalDateTime lockedUntil;
+    
+    @Column(name = "must_change_password", nullable = false)
+    private boolean mustChangePassword = false;
+
+    public enum AccountStatus {
+        APPLIED, INVITED, MFA_PENDING, ACTIVE, LOCKED, DELETED
+    }
 
     private java.time.LocalDateTime lastRoleChange = java.time.LocalDateTime.now();
+
+    private String invitationToken;
+    private java.time.LocalDateTime invitationExpiry;
+
+    @Override
+    public String getUsername() {
+        return this.email; // System ID: Email is the unique principal identifier
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return this.enabled && !this.deleted;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -74,11 +110,15 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
+        if (accountExpiry != null && java.time.LocalDateTime.now().isAfter(accountExpiry)) {
+            return false;
+        }
         return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
+        if (status == AccountStatus.LOCKED) return false;
         if (lockedUntil != null && java.time.LocalDateTime.now().isBefore(lockedUntil)) {
             return false;
         }

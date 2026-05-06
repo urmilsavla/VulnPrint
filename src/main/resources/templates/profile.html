@@ -106,6 +106,7 @@
         </div>
     </main>
 
+    <script th:src="@{/js/main.js}"></script>
     <script>
         function previewImage(input) {
             if (input.files && input.files[0]) {
@@ -113,9 +114,7 @@
                 reader.onload = (e) => {
                     const base64 = e.target.result;
                     document.getElementById('profile-preview').src = base64;
-                    localStorage.setItem('profileImage', base64);
-                    const headerImg = document.getElementById('header-profile-img');
-                    if (headerImg) headerImg.src = base64;
+                    localStorage.setItem('tempProfileImage', base64);
                 };
                 reader.readAsDataURL(input.files[0]);
             }
@@ -131,8 +130,10 @@
             
             const fd = new FormData(e.target);
             const data = Object.fromEntries(fd.entries());
-            data.username = user.username;
-            data.profileImage = localStorage.getItem('profileImage');
+            data.email = user.email; // Use email as system identifier
+            
+            const tempImg = localStorage.getItem('tempProfileImage');
+            if (tempImg) data.profileImage = tempImg;
 
             const res = await fetch('/api/users/profile', {
                 method: 'POST',
@@ -140,16 +141,19 @@
                 body: JSON.stringify(data)
             });
             if(res.ok) {
+                const result = await res.json();
                 // Update local cache
-                user.firstName = data.firstName;
-                user.lastName = data.lastName;
-                user.profileImage = data.profileImage;
+                user.firstName = result.firstName;
+                user.lastName = result.lastName;
+                user.profileImage = result.profileImage;
                 localStorage.setItem('user', JSON.stringify(user));
+                localStorage.removeItem('tempProfileImage');
                 
                 window.showNotification('Your profile changes have been saved.', 'success');
                 setTimeout(() => location.reload(), 1500);
             } else {
-                window.showNotification('Failed to save the profile changes.', 'error');
+                const err = await res.json();
+                window.showNotification(err.message || 'Failed to save the profile changes.', 'error');
             }
         };
 
@@ -160,10 +164,10 @@
                 return;
             }
             const sessionUser = JSON.parse(userJson);
-            const username = sessionUser.username;
+            const email = sessionUser.email; // Use email as system identifier
 
             try {
-                const res = await fetch(`/api/users/profile/${username}`);
+                const res = await fetch(`/api/users/profile/${email}`);
                 if (res.ok) {
                     const user = await res.json();
                     const form = document.getElementById('profile-form');
@@ -175,7 +179,6 @@
                     form.qualification.value = user.qualification || '';
                     if (user.profileImage) {
                         document.getElementById('profile-preview').src = user.profileImage;
-                        localStorage.setItem('profileImage', user.profileImage);
                     }
                 }
             } catch (e) {

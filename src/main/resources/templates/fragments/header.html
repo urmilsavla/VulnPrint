@@ -195,7 +195,7 @@
                     <p id="header-user-role" class="text-[8px] font-bold uppercase text-[#39FF14]">Admin</p>
                 </div>
                 <div class="relative">
-                    <img id="header-profile-img" class="w-10 h-10 rounded-full border border-[#39FF14]/30 object-cover" src="/images/user.png">
+                    <img id="header-user-avatar" class="w-10 h-10 rounded-full border border-[#39FF14]/30 object-cover bg-neutral-900" src="/images/user.png">
                     <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#39FF14] rounded-full border-2 border-black"></div>
                 </div>
             </button>
@@ -228,7 +228,24 @@
         </div>
     </div>
 
+    <!-- Security Assets -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.4.2/zxcvbn.js"></script>
+
     <script>
+        // NIST 800-63B Entropy Utility
+        window.checkPasswordStrength = function(password) {
+            if (!password) return { score: 0, label: 'Empty', color: '#555' };
+            const result = zxcvbn(password);
+            const labels = ['Weak', 'Fair', 'Good', 'Strong', 'Elite'];
+            const colors = ['#ff7351', '#f59e0b', '#fbbf24', '#4FFE49', '#10b981'];
+            return {
+                score: result.score,
+                label: labels[result.score],
+                color: colors[result.score],
+                feedback: result.feedback.warning || result.feedback.suggestions[0] || ''
+            };
+        };
+
         // Global Security Interceptor for API Requests
         (function() {
             const originalFetch = window.fetch;
@@ -265,6 +282,7 @@
                             if (method === 'DELETE') action = "delete this project";
                             else if (method === 'PATCH' && url.includes('/status')) action = "update project status";
                             else if (method === 'POST' || method === 'PUT') action = "save project details";
+                            else if (url.includes('/report-details')) action = "update report design";
                             else action = "view project details";
                         } else if (url.includes('/api/vulnerabilities')) {
                             if (url.includes('/approve')) action = (method === 'POST' ? "approve/reject this finding" : "review findings");
@@ -274,8 +292,10 @@
                         } else if (url.includes('/api/users')) {
                             if (url.includes('/roles') || url.includes('/permissions')) action = "manage access and roles";
                             else if (url.includes('/register')) action = "create new users";
+                            else if (url.includes('/invite')) action = "invite new personnel";
                             else if (method === 'DELETE') action = "delete this user";
                             else if (url.includes('/profile')) action = "update user profile";
+                            else if (url.includes('/requests')) action = "manage onboarding queue";
                             else action = "manage user accounts";
                         } else if (url.includes('/api/organization')) {
                             action = "update organization details";
@@ -285,6 +305,8 @@
                             action = "generate technical reports";
                         } else if (url.includes('/api/dashboard/alerts')) {
                             action = "manage system alerts";
+                        } else if (url.includes('/api/vulndb')) {
+                            action = "access vulnerability intelligence database";
                         }
 
                         if (window.showNotification) {
@@ -474,7 +496,9 @@
             const user = JSON.parse(userJson);
             document.getElementById('header-user-fullname').innerText = (user.firstName || 'User') + ' ' + (user.lastName || '');
             document.getElementById('header-user-role').innerText = user.role || 'User';
-            if(user.profileImage) document.getElementById('header-profile-img').src = user.profileImage;
+            if (user.profileImage) {
+                document.getElementById('header-user-avatar').src = user.profileImage;
+            }
 
             // Granular Permission-based UI Logic
             const adminSettings = document.getElementById('admin-settings-container');

@@ -7,6 +7,7 @@ import com.vulnprint.model.User;
 import com.vulnprint.repository.AlertRepository;
 import com.vulnprint.repository.PentestRepository;
 import com.vulnprint.repository.VulnerabilityRepository;
+import com.vulnprint.security.AppSecurityGuard;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,9 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.ResponseEntity;
-import com.vulnprint.service.SecurityService;
-import com.vulnprint.security.AppSecurityGuard;
-import com.vulnprint.security.Permissions;
+// Imports consolidated
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -46,17 +45,17 @@ public class DashboardRestController {
     private AppSecurityGuard guard;
 
     private List<Pentest> getAuthorizedPentests(User user) {
-        if (guard.hasPermission(user, Permissions.VIEW_ALL_PROJECTS)) {
+        if (guard.hasPermission(user, AppSecurityGuard.VIEW_ALL_PROJECTS)) {
             return pentestRepository.findAll();
         }
-        if (guard.hasPermission(user, Permissions.VIEW_ASSIGNED_PROJECTS)) {
+        if (guard.hasPermission(user, AppSecurityGuard.VIEW_ASSIGNED_PROJECTS)) {
             return pentestRepository.findByAssignedPentestersId(user.getId());
         }
         return new ArrayList<>();
     }
 
     @GetMapping("/metrics")
-    @PreAuthorize("hasAuthority('VIEW_DASHBOARD')")
+    @PreAuthorize("hasAuthority(T(com.vulnprint.security.AppSecurityGuard).VIEW_DASHBOARD)")
     public ResponseEntity<?> getMetrics() {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Map<String, Object> map = new HashMap<>();
@@ -91,7 +90,7 @@ public class DashboardRestController {
     }
 
     @GetMapping("/recent")
-    @PreAuthorize("hasAuthority('VIEW_DASHBOARD')")
+    @PreAuthorize("hasAuthority(T(com.vulnprint.security.AppSecurityGuard).VIEW_DASHBOARD)")
     public ResponseEntity<?> getRecent() {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<Pentest> authorized = getAuthorizedPentests(user);
@@ -106,7 +105,7 @@ public class DashboardRestController {
     }
 
     @GetMapping("/vulnerabilities")
-    @PreAuthorize("hasAuthority('VIEW_ALL_VULNS') or hasAuthority('VIEW_ASSIGNED_VULNS')")
+    @PreAuthorize("hasAuthority(T(com.vulnprint.security.AppSecurityGuard).VIEW_ALL_VULNS) or hasAuthority(T(com.vulnprint.security.AppSecurityGuard).VIEW_ASSIGNED_VULNS)")
     public ResponseEntity<?> getRecentVulnerabilities() {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<Pentest> authorized = getAuthorizedPentests(user);
@@ -130,12 +129,12 @@ public class DashboardRestController {
     }
 
     @GetMapping("/vulnerabilities/pending")
-    @PreAuthorize("hasAuthority('APPROVE_ALL_VULNS') or hasAuthority('APPROVE_ASSIGNED_VULNS')")
+    @PreAuthorize("hasAuthority(T(com.vulnprint.security.AppSecurityGuard).APPROVE_ALL_VULNS) or hasAuthority(T(com.vulnprint.security.AppSecurityGuard).APPROVE_ASSIGNED_VULNS)")
     public ResponseEntity<?> getPendingVulnerabilities() {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<Vulnerability> pending;
         
-        if (guard.hasPermission(user, "APPROVE_ALL_VULNS")) {
+        if (guard.hasPermission(user, AppSecurityGuard.APPROVE_ALL_VULNS)) {
             pending = vulnerabilityRepository.findByReportingStatusIgnoreCase("Sent for Approval");
         } else {
             // Only show pending findings for projects they are assigned to
@@ -174,7 +173,7 @@ public class DashboardRestController {
     }
 
     @GetMapping("/alerts")
-    @PreAuthorize("hasAuthority('VIEW_ALERTS')")
+    @PreAuthorize("hasAuthority(T(com.vulnprint.security.AppSecurityGuard).VIEW_ALERTS)")
     public ResponseEntity<?> getAlerts() {
         return ResponseEntity.ok(alertRepository.findAll().stream()
                 .filter(a -> !a.isRead())
@@ -185,7 +184,7 @@ public class DashboardRestController {
 
     @PostMapping("/alerts/{id}/read")
     @Transactional
-    @PreAuthorize("hasAuthority('MANAGE_ALERTS')")
+    @PreAuthorize("hasAuthority(T(com.vulnprint.security.AppSecurityGuard).MANAGE_ALERTS)")
     public ResponseEntity<?> markAlertRead(@PathVariable Long id) {
         return alertRepository.findById(id).map(a -> {
             a.setRead(true);
@@ -195,7 +194,7 @@ public class DashboardRestController {
     }
 
     @GetMapping("/pentests")
-    @PreAuthorize("hasAuthority('VIEW_DASHBOARD')")
+    @PreAuthorize("hasAuthority(T(com.vulnprint.security.AppSecurityGuard).VIEW_DASHBOARD)")
     public ResponseEntity<?> getPentests(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "3") int size, @RequestParam(required = false) String type) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<Pentest> authorized = getAuthorizedPentests(user);

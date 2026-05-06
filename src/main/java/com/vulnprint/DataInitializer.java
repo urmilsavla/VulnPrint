@@ -24,7 +24,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.vulnprint.security.Permissions;
+import com.vulnprint.security.AppSecurityGuard;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -52,49 +52,50 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        initializePermissions();
+        initializeAppSecurityGuard();
         initializeRoles();
         initializeUsers();
         initializeConfigs();
     }
 
     @Transactional
-    public void initializePermissions() {
-        createPermission(Permissions.VIEW_DASHBOARD, "Access the executive dashboard and global metrics.");
-        createPermission(Permissions.VIEW_ALERTS, "View system-wide notifications and security alerts.");
-        createPermission(Permissions.MANAGE_ALERTS, "Mark alerts as read or clear system notifications.");
+    public void initializeAppSecurityGuard() {
+        createPermission(AppSecurityGuard.VIEW_DASHBOARD, "Access the executive dashboard and global metrics.");
+        createPermission(AppSecurityGuard.VIEW_ALERTS, "View system-wide notifications and security alerts.");
+        createPermission(AppSecurityGuard.MANAGE_ALERTS, "Mark alerts as read or clear system notifications.");
         
-        createPermission(Permissions.VIEW_ASSIGNED_PROJECTS, "See only the projects you are working on.");
-        createPermission(Permissions.VIEW_ALL_PROJECTS, "See every project in the system.");
-        createPermission(Permissions.ADD_PROJECT, "Create a new project record.");
-        createPermission(Permissions.EDIT_ASSIGNED_PROJECTS, "Change details of projects assigned to you.");
-        createPermission(Permissions.EDIT_ALL_PROJECTS, "Change details of any project in the system.");
-        createPermission(Permissions.DELETE_ASSIGNED_PROJECTS, "Delete projects you are assigned to.");
-        createPermission(Permissions.DELETE_ALL_PROJECTS, "Permanently remove any project record.");
-        createPermission(Permissions.CHANGE_PENTEST_STATUS, "Update if a project is Active, Pending, or Completed.");
+        createPermission(AppSecurityGuard.VIEW_ASSIGNED_PROJECTS, "See only the projects you are working on.");
+        createPermission(AppSecurityGuard.VIEW_ALL_PROJECTS, "See every project in the system.");
+        createPermission(AppSecurityGuard.ADD_PROJECT, "Create a new project record.");
+        createPermission(AppSecurityGuard.EDIT_ASSIGNED_PROJECTS, "Change details of projects assigned to you.");
+        createPermission(AppSecurityGuard.EDIT_ALL_PROJECTS, "Change details of any project in the system.");
+        createPermission(AppSecurityGuard.DELETE_ASSIGNED_PROJECTS, "Delete projects you are assigned to.");
+        createPermission(AppSecurityGuard.DELETE_ALL_PROJECTS, "Permanently remove any project record.");
+        createPermission(AppSecurityGuard.CHANGE_PENTEST_STATUS, "Update if a project is Active, Pending, or Completed.");
         
-        createPermission(Permissions.MANAGE_REPORT_DESIGN, "Edit report logos, methodology, and disclaimers.");
-        createPermission(Permissions.GENERATE_REPORT, "Create and download the final PDF/Doc report.");
+        createPermission(AppSecurityGuard.MANAGE_REPORT_DESIGN, "Edit report logos, methodology, and disclaimers.");
+        createPermission(AppSecurityGuard.GENERATE_REPORT, "Create and download the final PDF/Doc report.");
         
-        createPermission(Permissions.VIEW_ASSIGNED_VULNS, "Read and view vulnerability findings in assigned projects.");
-        createPermission(Permissions.VIEW_ALL_VULNS, "Read and view any vulnerability finding in the system.");
-        createPermission(Permissions.ADD_VULNERABILITY, "Add a new vulnerability finding to a project.");
-        createPermission(Permissions.EDIT_ASSIGNED_VULNS, "Edit vulnerabilities in projects assigned to you.");
-        createPermission(Permissions.EDIT_ALL_VULNS, "Edit any vulnerability in the system.");
-        createPermission(Permissions.DELETE_ASSIGNED_VULNS, "Remove a vulnerability finding from an assigned project.");
-        createPermission(Permissions.DELETE_ALL_VULNS, "Permanently remove any vulnerability finding.");
-        createPermission(Permissions.APPROVE_ASSIGNED_VULNS, "Approve or reject findings in assigned projects.");
-        createPermission(Permissions.APPROVE_ALL_VULNS, "Act as a global Approver to accept or reject findings.");
+        createPermission(AppSecurityGuard.VIEW_ASSIGNED_VULNS, "Read and view vulnerability findings in assigned projects.");
+        createPermission(AppSecurityGuard.VIEW_ALL_VULNS, "Read and view any vulnerability finding in the system.");
+        createPermission(AppSecurityGuard.ADD_VULNERABILITY, "Add a new vulnerability finding to a project.");
+        createPermission(AppSecurityGuard.EDIT_ASSIGNED_VULNS, "Edit vulnerabilities in projects assigned to you.");
+        createPermission(AppSecurityGuard.EDIT_ALL_VULNS, "Edit any vulnerability in the system.");
+        createPermission(AppSecurityGuard.DELETE_ASSIGNED_VULNS, "Remove a vulnerability finding from an assigned project.");
+        createPermission(AppSecurityGuard.DELETE_ALL_VULNS, "Permanently remove any vulnerability finding.");
+        createPermission(AppSecurityGuard.APPROVE_ASSIGNED_VULNS, "Approve or reject findings in assigned projects.");
+        createPermission(AppSecurityGuard.APPROVE_ALL_VULNS, "Act as a global Approver to accept or reject findings.");
         
-        createPermission(Permissions.CHANGE_VULN_REPORTING_STATUS, "Update the reporting status (e.g. Sent for Approval).");
-        createPermission(Permissions.CHANGE_VULN_STATUS, "Update the technical status (e.g. Open, Fixed).");
+        createPermission(AppSecurityGuard.CHANGE_VULN_REPORTING_STATUS, "Update the reporting status (e.g. Sent for Approval).");
+        createPermission(AppSecurityGuard.CHANGE_VULN_STATUS, "Update the technical status (e.g. Open, Fixed).");
         
-        createPermission(Permissions.VIEW_USERS, "See the list of all people using the system.");
-        createPermission(Permissions.MANAGE_USERS, "Create new user accounts and edit profiles.");
-        createPermission(Permissions.MANAGE_ACCESS, "Configure Roles and specific User Permission keys.");
-        createPermission(Permissions.MANAGE_MICROSERVICES, "Enable/Disable the external Vulnerability Database.");
-        createPermission(Permissions.EDIT_MY_PROFILE, "Update your own name and profile information.");
-        createPermission(Permissions.RESET_PASSWORD, "Change login passwords for yourself or others.");
+        createPermission(AppSecurityGuard.VIEW_USERS, "See the list of all people using the system.");
+        createPermission(AppSecurityGuard.MANAGE_USERS, "Create new user accounts and edit profiles.");
+        createPermission(AppSecurityGuard.MANAGE_ACCESS, "Configure Roles and specific User Permission keys.");
+        createPermission(AppSecurityGuard.ENABLE_2FA, "Enforce Multi-Factor Authentication for the user.");
+        createPermission(AppSecurityGuard.MANAGE_MICROSERVICES, "Enable/Disable the external Vulnerability Database.");
+        createPermission(AppSecurityGuard.EDIT_MY_PROFILE, "Update your own name and profile information.");
+        createPermission(AppSecurityGuard.RESET_PASSWORD, "Change login passwords for yourself or others.");
     }
 
     private void createPermission(String name, String desc) {
@@ -105,76 +106,48 @@ public class DataInitializer implements CommandLineRunner {
 
     @Transactional
     public void initializeRoles() {
-        Optional<Role> adminOpt = roleRepository.findByName("Administrator");
-        if (adminOpt.isEmpty()) {
-            Role adminRole = new Role("Administrator");
-            adminRole.setPermissions(new HashSet<>(permissionRepository.findAll()));
-            roleRepository.save(adminRole);
-        } else {
-            // Ensure Admin always has all permissions
-            Role adminRole = adminOpt.get();
-            adminRole.setPermissions(new HashSet<>(permissionRepository.findAll()));
-            roleRepository.save(adminRole);
-        }
-
-        if (roleRepository.findByName("Penetration Tester").isEmpty()) {
-            Role testerRole = new Role("Penetration Tester");
-            testerRole.setPermissions(getPermissions(
-                Permissions.VIEW_DASHBOARD, Permissions.VIEW_ALERTS, Permissions.VIEW_ASSIGNED_PROJECTS,
-                Permissions.EDIT_ASSIGNED_PROJECTS, Permissions.VIEW_ASSIGNED_VULNS,
-                Permissions.ADD_VULNERABILITY, Permissions.EDIT_ASSIGNED_VULNS,
-                Permissions.CHANGE_VULN_STATUS, Permissions.CHANGE_VULN_REPORTING_STATUS,
-                Permissions.EDIT_MY_PROFILE, Permissions.RESET_PASSWORD
-            ));
-            roleRepository.save(testerRole);
-        }
-    }
-
-    private Set<Permission> getPermissions(String... names) {
-        Set<Permission> perms = new HashSet<>();
-        for (String n : names) {
-            permissionRepository.findByName(n).ifPresent(perms::add);
-        }
-        return perms;
+        // Upsert Administrator Role
+        Role adminRole = roleRepository.findByName("Administrator").orElseGet(() -> new Role("Administrator"));
+        
+        // Assign all permissions EXCEPT 2FA
+        Set<Permission> allPerms = new HashSet<>(permissionRepository.findAll());
+        Set<Permission> filteredPerms = allPerms.stream()
+                .filter(p -> !p.getName().equals(AppSecurityGuard.ENABLE_2FA))
+                .collect(Collectors.toSet());
+        
+        adminRole.setPermissions(filteredPerms);
+        roleRepository.save(adminRole);
+        System.out.println("[SYSTEM] Administrator Role configured (2FA Disabled).");
     }
 
     @Transactional
     public void initializeUsers() {
-        List<User> users = userRepository.findAll();
-        if (users.isEmpty()) {
-            Role adminRole = roleRepository.findByName("Administrator").orElse(null);
-            String pass = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-            System.out.println("\n======================================================");
-            System.out.println("INITIAL ADMIN PASSWORD GENERATED: " + pass);
-            System.out.println("PLEASE SAVE THIS AND CHANGE IT AFTER FIRST LOGIN.");
-            System.out.println("======================================================\n");
-            createUser("admin", pass, "admin@vulnprint.local", "System", "Administrator", adminRole, "Global HQ", "Root Authority");
-        } else {
-            // Fix for existing users: Ensure everyone is enabled and passwords are hashed
-            for (User u : users) {
-                boolean modified = false;
-                if (!u.isEnabled()) {
-                    u.setEnabled(true);
-                    modified = true;
-                }
-                if (u.getLastRoleChange() == null) {
-                    u.setLastRoleChange(java.time.LocalDateTime.now());
-                    modified = true;
-                }
-                if (u.getPassword() != null && !u.getPassword().startsWith("$2a$") && !u.getPassword().startsWith("$2b$") && !u.getPassword().startsWith("$2y$")) {
-                    u.setPassword(guard.hashPassword(u.getPassword()));
-                    modified = true;
-                }
-                if (modified) userRepository.save(u);
-            }
-        }
+        Role adminRole = roleRepository.findByName("Administrator").orElse(null);
+        String email = "urmilsavla108@gmail.com";
+        String pass = "VulPrintAdmin08$";
+        
+        // Upsert Primary Administrator
+        User owner = userRepository.findByEmail(email).orElseGet(() -> {
+            User u = new User();
+            u.setEmail(email);
+            return u;
+        });
+
+        owner.setPassword(guard.hashPassword(pass));
+        owner.setFirstName("Urmil");
+        owner.setLastName("Savla");
+        owner.setRole(adminRole);
+        owner.setEnabled(true);
+        owner.setStatus(User.AccountStatus.ACTIVE);
+        
+        userRepository.save(owner);
+        System.out.println("[SYSTEM] Primary Administrator updated: " + email);
     }
 
-    private User createUser(String user, String pass, String email, String first, String last, Role role, String address, String qualification) {
+    private User createUser(String pass, String email, String first, String last, Role role) {
         User u = new User();
-        u.setUsername(user); 
         u.setPassword(guard.hashPassword(pass)); 
-        u.setEmail(email); u.setFirstName(first); u.setLastName(last); u.setRole(role); u.setAddress(address); u.setQualification(qualification);
+        u.setEmail(email); u.setFirstName(first); u.setLastName(last); u.setRole(role);
         return userRepository.save(u);
     }
 

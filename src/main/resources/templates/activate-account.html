@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>VulnPrint | Activate Account</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+          darkMode: 'class',
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#4FFE49",
+                "surface": "#0e0e0e",
+                "on-surface": "#ffffff",
+                "error": "#ff7351"
+              },
+              fontFamily: { headline: ['Space Grotesk'], body: ['Inter'] },
+              boxShadow: { terminal: "0 0 0 1px rgba(38,38,38,0.85), 0 30px 80px rgba(0,0,0,0.55)" }
+            }
+          }
+        }
+    </script>
+    <style>
+        :root { color-scheme: dark; }
+        body { margin: 0; background-color: #050505; }
+        .radar-bg {
+            background: 
+                radial-gradient(circle at top right, rgba(79, 254, 73, 0.08), transparent 40%),
+                radial-gradient(circle at bottom left, rgba(136, 246, 255, 0.05), transparent 40%),
+                #050505;
+        }
+        .tile-card { background: rgba(19, 19, 19, 0.6); border: 1px solid #262626; backdrop-filter: blur(12px); }
+    </style>
+</head>
+<body class="radar-bg min-h-screen text-on-surface font-body flex items-center justify-center p-6">
+
+    <!-- Notification Container -->
+    <div id="notification-container" class="fixed top-8 right-8 z-[100] flex flex-col gap-4 pointer-events-none"></div>
+
+    <div class="w-full max-w-md">
+        <div class="text-center mb-10">
+            <img src="/images/logo.png" class="h-16 mx-auto mb-6 brightness-110" alt="VulnPrint">
+            <h1 class="text-2xl font-black uppercase tracking-widest text-white headline">Account Activation</h1>
+            <p class="text-neutral-500 text-[10px] uppercase tracking-[0.3em] mt-2 font-bold">Secure Official Identity Setup</p>
+        </div>
+
+        <div class="tile-card p-10 rounded-2xl shadow-terminal relative overflow-hidden group">
+            <div id="activation-form-container">
+                <form id="activate-form" class="space-y-6">
+                    <div class="space-y-2">
+                        <label class="block text-[9px] font-black text-primary/60 uppercase tracking-widest ml-1">New System Password</label>
+                        <input type="password" id="password" required class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-colors rounded-lg font-mono" placeholder="••••••••">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-[9px] font-black text-primary/60 uppercase tracking-widest ml-1">Confirm Identity Key</label>
+                        <input type="password" id="confirmPassword" required class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-colors rounded-lg font-mono" placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="w-full bg-primary text-black font-black py-4 uppercase text-[10px] tracking-widest hover:opacity-90 transition-all shadow-lg rounded-lg mt-4">Execute Activation</button>
+                </form>
+            </div>
+
+            <div id="success-container" class="hidden text-center py-10">
+                <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <span class="material-symbols-outlined text-primary text-5xl">verified_user</span>
+                </div>
+                <h2 class="text-xl font-bold text-white uppercase mb-2">Identity Verified</h2>
+                <p class="text-neutral-400 text-sm mb-8">Your official credentials have been established.</p>
+                <a href="/login" class="inline-block bg-primary text-black font-black px-10 py-3 uppercase text-[10px] tracking-widest rounded-lg shadow-lg">Sign In to Terminal</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.showNotification = function(message, type = 'info') {
+            const container = document.getElementById('notification-container');
+            const toast = document.createElement('div');
+            let color = '#4FFE49';
+            if (type === 'error') color = '#ff7351';
+            toast.className = `flex items-center gap-4 bg-[#0e0e0e] border-l-4 p-4 shadow-2xl min-w-[300px] pointer-events-auto transition-all duration-300 transform translate-x-full`;
+            toast.style.borderColor = color;
+            toast.innerHTML = `<div class="flex-1 text-xs text-white font-medium">${message}</div>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.style.transform = 'translateX(0)', 10);
+            setTimeout(() => {
+                toast.style.transform = 'translateX(110%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        };
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        if (!token) {
+            document.getElementById('activation-form-container').innerHTML = `
+                <div class="text-center py-10">
+                    <span class="material-symbols-outlined text-error text-6xl mb-4">link_off</span>
+                    <p class="text-error font-black uppercase text-xs tracking-widest">Invalid Authorization Token</p>
+                    <p class="text-neutral-500 text-[10px] mt-2">Please contact your administrator for a new link.</p>
+                </div>`;
+        }
+
+        document.getElementById('activate-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirmPassword').value;
+
+            if (password !== confirm) {
+                showNotification('Credentials mismatch. Verification failed.', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/users/activate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, password })
+                });
+
+                if (res.ok) {
+                    document.getElementById('activation-form-container').classList.add('hidden');
+                    document.getElementById('success-container').classList.remove('hidden');
+                } else {
+                    const err = await res.json();
+                    showNotification(err.message || 'Activation failed.', 'error');
+                }
+            } catch (e) {
+                showNotification('System communication failure.', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

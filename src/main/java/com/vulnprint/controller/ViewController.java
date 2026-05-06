@@ -30,6 +30,12 @@ public class ViewController {
         return "login";
     }
 
+    @GetMapping("/activate-account")
+    @PreAuthorize("permitAll()")
+    public String activateAccount() {
+        return "activate-account";
+    }
+
     @GetMapping("/dashboard")
     @PreAuthorize("hasAuthority('VIEW_DASHBOARD')")
     public String dashboard() {
@@ -57,7 +63,7 @@ public class ViewController {
     }
 
     @GetMapping("/pentest/edit/{id}")
-    @PreAuthorize("@securityService.canEditProject(#id)")
+    @PreAuthorize("@guard.canEditProject(#id)")
     public String editPentest(@PathVariable Long id, Model model) {
         model.addAttribute("id", id);
         return "add-pentest";
@@ -85,14 +91,14 @@ public class ViewController {
     }
 
     @GetMapping("/pentest/details/{id}")
-    @PreAuthorize("@securityService.canViewProject(#id)")
+    @PreAuthorize("@guard.canViewProject(#id)")
     public String pentestDetails(@PathVariable Long id, Model model) {
         model.addAttribute("id", id);
         return "pentest-detail";
     }
 
     @GetMapping("/pentest/report-designer/{id}")
-    @PreAuthorize("hasAuthority('MANAGE_REPORT_DESIGN') and @securityService.canEditProject(#id)")
+    @PreAuthorize("hasAuthority('MANAGE_REPORT_DESIGN') and @guard.canEditProject(#id)")
     public String reportDesigner(@PathVariable Long id, Model model) {
         model.addAttribute("id", id);
         return "report-designer";
@@ -105,14 +111,14 @@ public class ViewController {
     }
 
     @GetMapping("/pentest/{id}/vulnerability/add")
-    @PreAuthorize("hasAuthority('ADD_VULNERABILITY') and @securityService.canEditProject(#id)")
+    @PreAuthorize("hasAuthority('ADD_VULNERABILITY') and @guard.canEditProject(#id)")
     public String addVulnerability(@PathVariable Long id, Model model) {
         model.addAttribute("id", id);
         return "add-vulnerability";
     }
 
     @GetMapping("/pentest/{pentestId}/vulnerability/edit/{vulnId}")
-    @PreAuthorize("@securityService.canEditVuln(#vulnId)")
+    @PreAuthorize("@guard.canEditVuln(#vulnId)")
     public String editVulnerability(@PathVariable Long pentestId, @PathVariable Long vulnId, Model model) {
         model.addAttribute("id", pentestId);
         model.addAttribute("vulnId", vulnId);
