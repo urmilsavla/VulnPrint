@@ -61,7 +61,7 @@ public class UserRestController {
             request.setStatus(com.vulnprint.model.AccessRequest.RequestStatus.APPROVED);
             accessRequestRepository.save(request);
             return ResponseEntity.ok(request);
-        }).orElse(ResponseEntity.notFound().build());
+        }).orElse(ResponseEntity.status(404).body(Map.of("message", "The requested resource was not found.")));
     }
 
     @PostMapping("/requests/{id}/reject")
@@ -71,8 +71,8 @@ public class UserRestController {
             request.setStatus(com.vulnprint.model.AccessRequest.RequestStatus.REJECTED);
             accessRequestRepository.save(request);
             // In a real system, send rejection mail here.
-            return ResponseEntity.ok().build();
-        }).orElse(ResponseEntity.notFound().build());
+            return ResponseEntity.ok().body(Map.of("message", "User operation completed successfully."));
+        }).orElse(ResponseEntity.status(404).body(Map.of("message", "The requested resource was not found.")));
     }
 
     @PostMapping("/invite")
@@ -140,7 +140,7 @@ public class UserRestController {
         } catch (Exception e) {
             System.err.println("[CRITICAL] Error in /api/users/invite: ");
             e.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of("message", "Internal Error: " + e.getMessage()));
+            return ResponseEntity.status(500).body(Map.of("message", "Unable to process the invitation request at this time. Please contact support."));
         }
     }
 
@@ -215,7 +215,7 @@ public class UserRestController {
             }
             
             return ResponseEntity.ok(Map.of("message", "Role permissions updated and all active sessions revoked for security update"));
-        }).orElse(ResponseEntity.notFound().build());
+        }).orElse(ResponseEntity.status(404).body(Map.of("message", "The requested resource was not found.")));
     }
 
     @DeleteMapping("/roles/{id}")
@@ -227,8 +227,8 @@ public class UserRestController {
                 return ResponseEntity.badRequest().body(Map.of("message", "Cannot delete role as it is currently assigned to one or more users"));
             }
             roleRepository.delete(role);
-            return ResponseEntity.ok().build();
-        }).orElse(ResponseEntity.notFound().build());
+            return ResponseEntity.ok().body(Map.of("message", "User operation completed successfully."));
+        }).orElse(ResponseEntity.status(404).body(Map.of("message", "The requested resource was not found.")));
     }
 
     @GetMapping("/permissions")
@@ -303,7 +303,7 @@ public class UserRestController {
             if (data.containsKey("newPassword") && !((String) data.get("newPassword")).isEmpty()) {
                 String np = (String) data.get("newPassword");
                 if (!guard.isPasswordNistCompliant(np)) {
-                    return ResponseEntity.badRequest().body(Map.of("message", "Password does not meet NIST entropy requirements"));
+                    return ResponseEntity.badRequest().body(Map.of("message", "The provided password does not meet the organization's security requirements."));
                 }
                 targetUser.setPassword(guard.hashPassword(np));
                 securityModified = true;
@@ -343,7 +343,7 @@ public class UserRestController {
             guard.triggerGlobalReset(data.get("lockdownSecret"));
             return ResponseEntity.ok(Map.of("message", "Global Security Reset Initiated"));
         } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of("message", e.getMessage()));
+            return ResponseEntity.status(401).body(Map.of("message", "Global Security Reset failed. Please verify credentials."));
         }
     }
 
@@ -355,7 +355,7 @@ public class UserRestController {
             u.setLastRoleChange(java.time.LocalDateTime.now());
             userRepository.save(u);
             return ResponseEntity.ok(Map.of("message", "All permission overrides revoked and security session reset"));
-        }).orElse(ResponseEntity.notFound().build());
+        }).orElse(ResponseEntity.status(404).body(Map.of("message", "The requested resource was not found.")));
     }
 
     @PatchMapping("/{id}/status")
@@ -367,8 +367,8 @@ public class UserRestController {
             }
             u.setEnabled(data.get("enabled"));
             userRepository.save(u);
-            return ResponseEntity.ok().build();
-        }).orElse(ResponseEntity.notFound().build());
+            return ResponseEntity.ok().body(Map.of("message", "User operation completed successfully."));
+        }).orElse(ResponseEntity.status(404).body(Map.of("message", "The requested resource was not found.")));
     }
 
     @DeleteMapping("/{id}")
@@ -381,8 +381,8 @@ public class UserRestController {
                 return ResponseEntity.status(403).body(Map.of("message", "Cannot delete Administrator profile"));
             }
             userRepository.deleteById(id);
-            return ResponseEntity.ok().build();
-        }).orElse(ResponseEntity.notFound().build());
+            return ResponseEntity.ok().body(Map.of("message", "User operation completed successfully."));
+        }).orElse(ResponseEntity.status(404).body(Map.of("message", "The requested resource was not found.")));
     }
 
     @PostMapping("/register")
@@ -396,7 +396,7 @@ public class UserRestController {
             return ResponseEntity.badRequest().body(Map.of("message", "Passwords do not match"));
         }
         
-        if (!isStrongPassword(password)) {
+        if (!guard.isStrongPassword(password)) {
             return ResponseEntity.badRequest().body(Map.of("message", "Password does not meet security requirements."));
         }
 
