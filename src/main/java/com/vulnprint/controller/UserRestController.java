@@ -302,7 +302,7 @@ public class UserRestController {
         if (guard.hasPermission(user, AppSecurityGuard.MANAGE_USERS)) {
             if (data.containsKey("newPassword") && !((String) data.get("newPassword")).isEmpty()) {
                 String np = (String) data.get("newPassword");
-                if (!guard.isPasswordNistCompliant(np)) {
+                if (!guard.isStrongPassword(np)) {
                     return ResponseEntity.badRequest().body(Map.of("message", "The provided password does not meet the organization's security requirements."));
                 }
                 targetUser.setPassword(guard.hashPassword(np));
