@@ -337,21 +337,32 @@ public class AppSecurityGuard {
         userRepository.save(user);
     }
 
-    public boolean isPasswordNistCompliant(String password) {
-        if (password == null || password.length() < 12) return false;
-        double entropy = calculateEntropy(password);
-        return entropy >= 64; 
+    public boolean isStrongPassword(String password) {
+        if (password == null || password.length() < 8) return false;
+        boolean hasUpper = false, hasLower = false, hasNum = false;
+        for (char c : password.toCharArray()) {
+            if (Character.isUpperCase(c)) hasUpper = true;
+            else if (Character.isLowerCase(c)) hasLower = true;
+            else if (Character.isDigit(c)) hasNum = true;
+        }
+        return hasUpper && hasLower && hasNum;
     }
 
-    private double calculateEntropy(String password) {
-        int poolSize = 0;
-        if (password.matches(".*[a-z].*")) poolSize += 26;
-        if (password.matches(".*[A-Z].*")) poolSize += 26;
-        if (password.matches(".*[0-9].*")) poolSize += 10;
-        if (password.matches(".*[^a-zA-Z0-9].*")) poolSize += 32;
-        return (Math.log(poolSize) / Math.log(2)) * password.length();
+    public String hashToken(String token) {
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(token.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder(2 * hash.length);
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
     }
-
     @Transactional
     public void triggerGlobalReset(String lockdownSecret) {
         String envSecret = System.getenv("VULNPRINT_LOCKDOWN_KEY");
@@ -666,7 +677,8 @@ public class AppSecurityGuard {
                         org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/login"),
                         org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/apply"),
                         org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/verify-mfa"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/refresh")
+                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/refresh"),
+                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/users/activate")
                     ).permitAll()
                     .requestMatchers(
                         org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/css/**"),

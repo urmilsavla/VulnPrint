@@ -228,6 +228,61 @@
             setTimeout(() => { toast.classList.replace('toast-entry', 'toast-exit'); setTimeout(() => toast.remove(), 400); }, 4000);
         }
 
+        function evaluatePassword(pwd) {
+            let score = 0;
+            const rules = {
+                length: pwd.length >= 8,
+                upper: /[A-Z]/.test(pwd),
+                lower: /[a-z]/.test(pwd),
+                num: /[0-9]/.test(pwd)
+            };
+
+            if (rules.length) score++;
+            if (rules.upper) score++;
+            if (rules.lower) score++;
+            if (rules.num) score++;
+
+            const getOriginalText = (id) => {
+               if (id === 'req-length') return '8+ Characters';
+               if (id === 'req-upper') return '1 Uppercase';
+               if (id === 'req-lower') return '1 Lowercase';
+               if (id === 'req-num') return '1 Number';
+            };
+
+            const updateReqClean = (id, isValid) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.className = `flex items-center gap-1 ${isValid ? 'text-primary' : 'text-neutral-600'}`;
+                    el.innerHTML = `<span class="material-symbols-outlined text-[10px]">${isValid ? 'check' : 'close'}</span> ${getOriginalText(id)}`;
+                }
+            };
+
+            updateReqClean('req-length', rules.length);
+            updateReqClean('req-upper', rules.upper);
+            updateReqClean('req-lower', rules.lower);
+            updateReqClean('req-num', rules.num);
+
+            const bars = [document.getElementById('bar-1'), document.getElementById('bar-2'), document.getElementById('bar-3'), document.getElementById('bar-4')];
+            const textEl = document.getElementById('pwd-strength-text');
+            
+            bars.forEach(b => { if(b) b.className = 'flex-1 bg-neutral-800 rounded-full transition-all'; });
+            
+            if (pwd.length === 0) {
+                if(textEl) { textEl.innerText = 'None'; textEl.className = 'text-[9px] font-black uppercase tracking-widest text-neutral-500'; }
+            } else if (score <= 2) {
+                if(textEl) { textEl.innerText = 'Weak'; textEl.className = 'text-[9px] font-black uppercase tracking-widest text-error'; }
+                for(let i=0; i<score || i<1; i++) if(bars[i]) bars[i].classList.add('bg-error');
+            } else if (score === 3) {
+                if(textEl) { textEl.innerText = 'Medium'; textEl.className = 'text-[9px] font-black uppercase tracking-widest text-orange-500'; }
+                for(let i=0; i<3; i++) if(bars[i]) bars[i].classList.add('bg-orange-500');
+            } else if (score === 4) {
+                if(textEl) { textEl.innerText = 'Strong'; textEl.className = 'text-[9px] font-black uppercase tracking-widest text-primary'; }
+                for(let i=0; i<4; i++) if(bars[i]) bars[i].classList.add('bg-primary');
+            }
+            
+            return score === 4;
+        }
+
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);

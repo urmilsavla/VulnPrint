@@ -362,6 +362,9 @@ public class UserRestController {
     @PreAuthorize("hasAuthority('MANAGE_USERS')")
     public ResponseEntity<?> toggleStatus(@PathVariable Long id, @RequestBody Map<String, Boolean> data) {
         return userRepository.findById(id).map(u -> {
+            if (u.getRole() != null && "Administrator".equals(u.getRole().getName())) {
+                return ResponseEntity.status(403).body(Map.of("message", "Cannot suspend Administrator profile"));
+            }
             u.setEnabled(data.get("enabled"));
             userRepository.save(u);
             return ResponseEntity.ok().build();
@@ -373,8 +376,13 @@ public class UserRestController {
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (user.getId().equals(id)) return ResponseEntity.badRequest().body(Map.of("message", "Cannot delete self"));
-        userRepository.deleteById(id);
-        return ResponseEntity.ok().build();
+        return userRepository.findById(id).map(target -> {
+            if (target.getRole() != null && "Administrator".equals(target.getRole().getName())) {
+                return ResponseEntity.status(403).body(Map.of("message", "Cannot delete Administrator profile"));
+            }
+            userRepository.deleteById(id);
+            return ResponseEntity.ok().build();
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/register")
@@ -386,6 +394,10 @@ public class UserRestController {
 
         if (password == null || !password.equals(confirmPassword)) {
             return ResponseEntity.badRequest().body(Map.of("message", "Passwords do not match"));
+        }
+        
+        if (!isStrongPassword(password)) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Password does not meet security requirements."));
         }
 
         if (userRepository.findByEmail(email).isPresent()) {
