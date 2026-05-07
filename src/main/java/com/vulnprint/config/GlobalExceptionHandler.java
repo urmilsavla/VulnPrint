@@ -32,7 +32,7 @@ public class GlobalExceptionHandler {
 
         if (request.getRequestURI().startsWith("/api/")) {
             Map<String, Object> body = new HashMap<>();
-            body.put("error", message);
+            body.put("message", message);
             body.put("correlationId", correlationId);
             body.put("status", HttpStatus.FORBIDDEN.value());
             
@@ -50,7 +50,7 @@ public class GlobalExceptionHandler {
         Map<String, Object> body = new HashMap<>();
         body.put("status", HttpStatus.BAD_REQUEST.value());
         
-        body.put("error", "Please fill in all required fields marked with an asterisk (*).");
+        body.put("message", "Please fill in all required fields marked with an asterisk (*).");
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 
@@ -65,7 +65,7 @@ public class GlobalExceptionHandler {
         
         if (request.getRequestURI().startsWith("/api/")) {
             Map<String, Object> body = new HashMap<>();
-            body.put("error", "An unexpected error occurred. Please contact support and provide the Correlation ID.");
+            body.put("message", "An unexpected error occurred. Please contact support and provide the Correlation ID.");
             body.put("correlationId", correlationId);
             body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
             

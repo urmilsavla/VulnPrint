@@ -59,7 +59,7 @@ public class ConfigRestController {
     public ResponseEntity<?> testConnection(@RequestParam String url) {
         // 1. SSRF Protection
         if (!guard.isSafeUrl(url)) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Unauthorized URL: Internal or unsafe destination blocked."));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "The provided configuration URL is restricted or unsafe."));
         }
 
         try {
@@ -76,7 +76,7 @@ public class ConfigRestController {
                     .toBodilessEntity();
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.ok(Map.of("success", false, "error", e.getMessage()));
+            return ResponseEntity.ok(Map.of("success", false, "message", "Connection test failed. Verify the service is reachable."));
         }
     }
 

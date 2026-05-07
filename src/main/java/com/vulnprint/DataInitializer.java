@@ -139,6 +139,8 @@ public class DataInitializer implements CommandLineRunner {
         owner.setRole(adminRole);
         owner.setEnabled(true);
         owner.setStatus(User.AccountStatus.ACTIVE);
+        owner.setQualification("M.S. in Cyber Security, OSCP, OSCE");
+        owner.setAddress(guard.encryptVault("Cyber City HQ, Terminal Tower 1"));
         
         userRepository.save(owner);
         System.out.println("[SYSTEM] Primary Administrator updated: " + email);

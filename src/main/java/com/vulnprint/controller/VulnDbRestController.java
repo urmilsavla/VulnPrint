@@ -40,7 +40,7 @@ public class VulnDbRestController {
                                      @RequestParam(required = false) String severity) {
         if (!isEnabled()) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body(Map.of("error", "VulnDB service is currently disabled in Microservice Management."));
+                    .body(Map.of("message", "Vulnerability Database service is currently disabled in Microservice Management."));
         }
         return ResponseEntity.ok(vulnDbService.search(q, category, severity));
     }
@@ -50,7 +50,7 @@ public class VulnDbRestController {
     public ResponseEntity<?> getVulnerability(@PathVariable String slug) {
         if (!isEnabled()) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body(Map.of("error", "VulnDB service is currently disabled."));
+                    .body(Map.of("message", "Vulnerability Database service is currently disabled."));
         }
         return ResponseEntity.ok(vulnDbService.getVulnerability(slug));
     }

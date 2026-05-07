@@ -61,12 +61,12 @@
                 <form id="loginForm" class="space-y-8">
                     <div class="space-y-3">
                         <label class="font-label text-[10px] tracking-[0.2em] text-primary/60 font-black uppercase block ml-1">Email ID *</label>
-                        <input name="email" type="email" autocomplete="off" class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-all rounded-lg" placeholder="Enter your email" required>
-                    </div>
-                    <div class="space-y-3">
-                        <label class="font-label text-[10px] tracking-[0.2em] text-primary/60 font-black uppercase block ml-1">Password *</label>
+                        <input name="email" type="email" autocomplete="off" class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-all rounded-lg" placeholder="Enter your corporate email" required>
+                        </div>
+                        <div class="space-y-2 relative">
+                        <label class="block text-[9px] font-black text-primary/60 uppercase tracking-widest ml-1">System Password</label>
                         <div class="relative">
-                            <input name="password" autocomplete="off" class="w-full bg-black/60 border border-neutral-800 text-white p-4 pr-12 text-sm focus:border-primary outline-none transition-all rounded-lg" placeholder="Enter password" type="password" id="password" required>
+                            <input name="password" autocomplete="off" class="w-full bg-black/60 border border-neutral-800 text-white p-4 pr-12 text-sm focus:border-primary outline-none transition-all rounded-lg" placeholder="Enter system password" type="password" id="password" required>
                             <button type="button" onclick="togglePassword()" class="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-primary transition-colors focus:outline-none">
                                 <span id="eye-icon" class="material-symbols-outlined text-xl">visibility</span>
                             </button>
@@ -131,20 +131,20 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-2">
                         <label class="text-[9px] font-black uppercase tracking-widest text-primary/60 ml-1">First Name</label>
-                        <input name="firstName" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none rounded-lg">
+                        <input name="firstName" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none rounded-lg" placeholder="e.g. Jane">
                     </div>
                     <div class="space-y-2">
                         <label class="text-[9px] font-black uppercase tracking-widest text-primary/60 ml-1">Last Name</label>
-                        <input name="lastName" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none rounded-lg">
+                        <input name="lastName" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none rounded-lg" placeholder="e.g. Smith">
                     </div>
                 </div>
                 <div class="space-y-2">
                     <label class="text-[9px] font-black uppercase tracking-widest text-primary/60 ml-1">Email Address</label>
-                    <input name="email" type="email" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none rounded-lg">
+                    <input name="email" type="email" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none rounded-lg" placeholder="e.g. jane.smith@acme.com">
                 </div>
                 <div class="space-y-2">
                     <label class="text-[9px] font-black uppercase tracking-widest text-primary/60 ml-1">Professional Qualification</label>
-                    <input name="qualification" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none rounded-lg" placeholder="e.g. Senior Security Researcher">
+                    <input name="qualification" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none rounded-lg" placeholder="e.g. Senior Security Researcher, OSCP">
                 </div>
                 <div class="space-y-2">
                     <label class="text-[9px] font-black uppercase tracking-widest text-primary/60 ml-1">Reason for Access</label>

@@ -38,7 +38,7 @@ public class RepGenRestController {
     public ResponseEntity<?> getReportGenerationData(@PathVariable Long pentestId) {
         if (!isEnabled()) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body(Map.of("error", "Microservice disabled by Admin."));
+                    .body(Map.of("message", "Report Generation service is currently disabled by the administrator."));
         }
         try {
             Map<String, Object> data = reportDataService.getReportGenerationData(pentestId);
@@ -48,9 +48,9 @@ public class RepGenRestController {
                     .header("Expires", "0")
                     .body(data);
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Requested report data could not be found."));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Internal Server Error: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "The report generation service encountered an unexpected error."));
         }
     }
 }

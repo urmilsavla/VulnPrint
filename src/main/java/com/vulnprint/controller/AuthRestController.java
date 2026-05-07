@@ -69,7 +69,7 @@ public class AuthRestController {
         }
 
         if (!guard.checkRateLimit(ip, "LOGIN", 20, 60000)) {
-            return ResponseEntity.status(429).body(Map.of("status", "error", "message", "Too many login attempts. Please try again in a minute."));
+            return ResponseEntity.status(429).body(Map.of("message", "Too many login attempts. Please try again later."));
         }
 
         String email = credentials.get("email");
@@ -95,12 +95,12 @@ public class AuthRestController {
             }
 
             if (!user.isAccountNonLocked()) {
-                return ResponseEntity.status(403).body(Map.of("status", "error", "message", "Account is locked due to too many failed attempts. Try again later."));
+                return ResponseEntity.status(403).body(Map.of("message", "Account is locked due to multiple failed login attempts. Please contact support."));
             }
 
             if (guard.verifyPassword(password, user.getPassword())) {
                 if (!user.isEnabled()) {
-                    return ResponseEntity.status(403).body(Map.of("status", "error", "message", "Account is disabled. Please contact administrator."));
+                    return ResponseEntity.status(403).body(Map.of("message", "This account is currently disabled. Please contact the administrator."));
                 }
 
                 // Check for ENABLE_2FA Permission
@@ -118,7 +118,7 @@ public class AuthRestController {
                         System.out.println("[SECURITY] MFA OTP TRANSMITTED TO " + email);
                     } catch (Exception e) {
                         System.err.println("[CRITICAL] Failed to transmit MFA OTP: " + e.getMessage());
-                        return ResponseEntity.status(500).body(Map.of("status", "error", "message", "Internal Security Error: Communication failure."));
+                        return ResponseEntity.status(500).body(Map.of("message", "Authentication service is temporarily unavailable."));
                     }
                     
                     // Pre-Auth Token (2 mins, 0 perms)
@@ -149,7 +149,7 @@ public class AuthRestController {
             guard.verifyPassword(password, dummyHash);
         }
 
-        return ResponseEntity.status(401).body(Map.of("status", "error", "message", "Invalid credentials"));
+        return ResponseEntity.status(401).body(Map.of("message", "Invalid email or password."));
     }
 
 
@@ -227,9 +227,9 @@ public class AuthRestController {
             responseObj.addHeader("Set-Cookie", refreshCookie);
             responseObj.addHeader("Set-Cookie", sidCookie);
 
-            return ResponseEntity.ok().build();
+            return ResponseEntity.ok().body(Map.of("message", "Session refreshed successfully."));
         } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of("message", e.getMessage()));
+            return ResponseEntity.status(401).body(Map.of("message", "Session refresh failed. Please log in again."));
         }
     }
 
