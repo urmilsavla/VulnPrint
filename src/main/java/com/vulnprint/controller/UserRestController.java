@@ -57,7 +57,7 @@ public class UserRestController {
     @Transactional
     @PreAuthorize("hasAuthority('MANAGE_USERS')")
     public ResponseEntity<?> approveRequest(@PathVariable Long id) {
-        return accessRequestRepository.findById(id).map(request -> {
+        return accessRequestRepository.findById(id).<ResponseEntity<?>>map(request -> {
             request.setStatus(com.vulnprint.model.AccessRequest.RequestStatus.APPROVED);
             accessRequestRepository.save(request);
             return ResponseEntity.ok(request);
