@@ -33,7 +33,7 @@ public class AuthRestController {
     private AppSecurityGuard guard;
 
     @Autowired
-    private com.vulnprint.service.MailService mailService;
+    private com.vulnprint.service.EmailService emailService;
 
     private String dummyHash = null;
 

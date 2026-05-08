@@ -48,4 +48,19 @@ public class EmailService {
             System.err.println("[EMAIL SERVICE] Failed to send rejection email to " + toEmail + ": " + e.getMessage());
         }
     }
+
+    public void sendMfaOtp(String to, String otp) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom("security@vulnprint.local");
+        message.setTo(to);
+        message.setSubject("VulnPrint Security: Your MFA Verification Code");
+        message.setText("Your verification code is: " + otp + "\n\nThis code will expire in 5 minutes.\nIf you did not request this code, please secure your account immediately.");
+        
+        try {
+            emailSender.send(message);
+            System.out.println("[EMAIL SERVICE] MFA OTP sent to " + to);
+        } catch (Exception e) {
+            System.err.println("[EMAIL SERVICE] Failed to send MFA OTP to " + to + ": " + e.getMessage());
+        }
+    }
 }
