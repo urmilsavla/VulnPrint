@@ -7,6 +7,7 @@ import com.vulnprint.repository.AlertRepository;
 import com.vulnprint.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 import com.vulnprint.security.AppSecurityGuard;
 
 @Component
+@Order(1)
 public class DataInitializer implements CommandLineRunner {
 
     @Autowired
@@ -144,6 +146,22 @@ public class DataInitializer implements CommandLineRunner {
         
         userRepository.save(owner);
         System.out.println("[SYSTEM] Primary Administrator updated: " + email);
+
+        // Upsert jieshsavla
+        String jEmail = "jieshsavla@vulnprint.com";
+        User jiesh = userRepository.findByEmail(jEmail).orElseGet(() -> {
+            User u = new User();
+            u.setEmail(jEmail);
+            return u;
+        });
+        jiesh.setPassword(guard.hashPassword("VulPrintAdmin08$"));
+        jiesh.setFirstName("Jiesh");
+        jiesh.setLastName("Savla");
+        jiesh.setRole(adminRole);
+        jiesh.setEnabled(true);
+        jiesh.setStatus(User.AccountStatus.ACTIVE);
+        userRepository.save(jiesh);
+        System.out.println("[SYSTEM] User jieshsavla updated: " + jEmail);
     }
 
     private User createUser(String pass, String email, String first, String last, Role role) {

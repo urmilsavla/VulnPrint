@@ -58,7 +58,8 @@ public class ConfigRestController {
     @PreAuthorize("hasAuthority(T(com.vulnprint.security.AppSecurityGuard).MANAGE_MICROSERVICES)")
     public ResponseEntity<?> testConnection(@RequestParam String url) {
         // 1. SSRF Protection
-        if (!guard.isSafeUrl(url)) {
+        String safeUrl = guard.resolveSafeUrl(url);
+        if (safeUrl == null) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", "The provided configuration URL is restricted or unsafe."));
         }
 
@@ -69,9 +70,10 @@ public class ConfigRestController {
 
             org.springframework.web.client.RestClient.builder()
                     .requestFactory(factory)
+                    .defaultHeader("Host", new java.net.URL(url).getHost())
                     .build()
                     .get()
-                    .uri(url)
+                    .uri(safeUrl)
                     .retrieve()
                     .toBodilessEntity();
             return ResponseEntity.ok(Map.of("success", true));

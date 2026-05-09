@@ -58,9 +58,9 @@
                 <div>
                     <h1 class="text-3xl font-bold text-white uppercase tracking-tight headline flex items-center gap-3">
                         <span class="material-symbols-outlined text-primary text-4xl">engineering</span>
-                        Personnel Command
+                        Manage Users
                     </h1>
-                    <p class="text-neutral-400 mt-1">Unified User Lifecycle & Access Control Center</p>
+                    <p class="text-neutral-400 mt-1">Personnel Management & Authorization Control</p>
                 </div>
                 <div class="flex gap-4">
                      <button onclick="window.location.href='/dashboard'" class="px-6 py-2 border border-neutral-800 text-neutral-500 font-bold text-xs uppercase tracking-wider hover:border-white hover:text-white transition-all rounded">
@@ -80,7 +80,7 @@
                     <div class="tile-card rounded-xl overflow-hidden flex flex-col h-[700px]">
                         <!-- Tabs -->
                         <div class="flex p-1 bg-black/40 border-b border-neutral-800 shrink-0">
-                            <button onclick="switchTab('directory')" id="tab-directory" class="tab-btn active flex-1 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-400 hover:text-white transition-all rounded">Directory</button>
+                            <button onclick="switchTab('directory')" id="tab-directory" class="tab-btn active flex-1 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-400 hover:text-white transition-all rounded">User Management</button>
                             <button onclick="switchTab('applications')" id="tab-applications" class="tab-btn flex-1 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-400 hover:text-white transition-all rounded relative flex items-center justify-center gap-2">
                                 Applications
                                 <span id="app-badge" class="hidden w-4 h-4 bg-primary text-black text-[8px] flex items-center justify-center rounded-full font-black">0</span>
@@ -133,14 +133,32 @@
                                         <h3 id="wu-title" class="text-2xl font-bold uppercase text-white tracking-tight headline">Register Personnel</h3>
                                         <span id="wu-badge" class="status-pill bg-neutral-900 text-neutral-500 border border-neutral-800 hidden">Role</span>
                                     </div>
-                                    <p id="wu-subtitle" class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Initialize new user identity protocols</p>
+                                    <div class="flex items-center gap-4">
+                                        <p id="wu-subtitle" class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Initialize new user identity protocols</p>
+                                        <div id="wu-header-actions" class="flex items-center gap-3 hidden">
+                                            <div class="h-4 w-px bg-neutral-800"></div>
+                                            <div class="flex items-center gap-2">
+                                                <label class="switch" id="status-toggle-wrapper">
+                                                    <input type="checkbox" id="form-status-toggle" onchange="toggleUserStatusLocally()">
+                                                    <span class="slider"></span>
+                                                </label>
+                                                <span id="status-label" class="text-[9px] font-black uppercase tracking-widest text-neutral-500">Active</span>
+                                            </div>
+                                            <button type="button" id="btn-edit-toggle" onclick="toggleEditMode()" class="text-neutral-500 hover:text-primary transition-colors">
+                                                <span class="material-symbols-outlined text-xl">edit</span>
+                                            </button>
+                                            <button type="button" id="btn-header-delete" onclick="purgeUserLocally()" class="text-neutral-500 hover:text-error transition-colors">
+                                                <span class="material-symbols-outlined text-xl">person_remove</span>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Form -->
                         <form id="user-form" class="space-y-8 flex-1 flex flex-col">
-                            <div class="space-y-8 flex-1 overflow-y-auto custom-scrollbar pr-2">
+                            <div class="space-y-8 flex-1 overflow-y-auto custom-scrollbar pr-2" id="form-scroll-container">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div class="space-y-3">
                                         <label class="text-[9px] font-black uppercase tracking-widest text-neutral-500 ml-1">First Name</label>
@@ -160,10 +178,15 @@
 
                                 <div class="space-y-3">
                                     <label class="text-[9px] font-black uppercase tracking-widest text-neutral-500 ml-1">Assigned Security Clearance</label>
-                                    <select id="form-role" required class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-all rounded-lg uppercase font-black tracking-widest">
+                                    <select id="form-role" required class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-all rounded-lg uppercase font-black tracking-widest disabled:opacity-50">
                                         <!-- Populated via JS -->
                                     </select>
                                     <p id="admin-role-warning" class="text-[9px] text-error font-bold italic mt-2 hidden">Administrator clearance modification restricted to prevent lockout.</p>
+                                </div>
+
+                                <div class="space-y-3" id="address-container">
+                                    <label class="text-[9px] font-black uppercase tracking-widest text-neutral-500 ml-1">Operational Address</label>
+                                    <textarea id="form-address" rows="3" class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-all rounded-lg font-bold resize-none disabled:opacity-50" placeholder="ENTER OPERATIONAL LOCATION..."></textarea>
                                 </div>
                             </div>
 
@@ -178,7 +201,7 @@
                                         </label>
                                     </div>
                                     <button type="button" id="btn-purge" onclick="purgeUserLocally()" class="px-4 py-2 border border-error/30 text-error text-[9px] font-bold uppercase tracking-widest rounded hover:bg-error/10 transition-all flex items-center gap-1">
-                                        <span class="material-symbols-outlined text-xs">delete_sweep</span> Purge Identity
+                                        <span class="material-symbols-outlined text-xs">person_remove</span> Remove Identity
                                     </button>
                                 </div>
                                 <div class="ml-auto">
@@ -274,6 +297,7 @@
         let activeTab = 'directory'; // 'directory' or 'applications'
         let workspaceMode = 'empty'; // 'empty', 'register', 'edit', 'review'
         let selectedEntity = null;
+        let isEditEnabled = false;
 
         const sessionUser = JSON.parse(localStorage.getItem('user') || '{"email": ""}');
 
@@ -402,6 +426,33 @@
             renderList(); // Re-render to highlight selection
         }
 
+        function toggleEditMode(force = null) {
+            isEditEnabled = force !== null ? force : !isEditEnabled;
+            const fields = ['form-first-name', 'form-last-name', 'form-role', 'form-address'];
+            fields.forEach(fId => {
+                const el = document.getElementById(fId);
+                if (el) {
+                    // Specific logic for role and admin lock
+                    if (fId === 'form-role' && selectedEntity && selectedEntity.role && selectedEntity.role.name === 'Administrator') {
+                        el.disabled = true;
+                    } else {
+                        el.disabled = !isEditEnabled;
+                    }
+                }
+            });
+            
+            const editBtn = document.getElementById('btn-edit-toggle');
+            if (editBtn) {
+                editBtn.classList.toggle('text-primary', isEditEnabled);
+                editBtn.classList.toggle('text-neutral-500', !isEditEnabled);
+            }
+
+            const submitBtn = document.getElementById('btn-submit-user');
+            if (submitBtn) {
+                submitBtn.classList.toggle('hidden', !isEditEnabled && workspaceMode === 'edit');
+            }
+        }
+
         function initRegistration() {
             setWorkspace('register');
             document.getElementById('user-form').reset();
@@ -412,6 +463,7 @@
             document.getElementById('wu-badge').classList.add('hidden');
             document.getElementById('wu-avatar-container').classList.add('hidden');
             document.getElementById('wu-icon-container').classList.remove('hidden');
+            document.getElementById('wu-header-actions').classList.add('hidden');
             
             // Form config
             document.getElementById('form-email').readOnly = false;
@@ -420,6 +472,8 @@
             document.getElementById('form-role').disabled = false;
             document.getElementById('admin-role-warning').classList.add('hidden');
             
+            toggleEditMode(true); // Always editable in register mode
+
             // Actions config
             document.getElementById('wu-status-actions').classList.add('hidden');
             const btn = document.getElementById('btn-submit-user');
@@ -455,6 +509,12 @@
             dot.className = `absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-black ${selectedEntity.enabled ? 'bg-primary' : 'bg-neutral-600'}`;
             dot.classList.remove('hidden');
 
+            const headerActions = document.getElementById('wu-header-actions');
+            headerActions.classList.remove('hidden');
+            
+            const headerDeleteBtn = document.getElementById('btn-header-delete');
+            headerDeleteBtn.classList.toggle('hidden', isSelf || isAdmin);
+
             // Form config
             document.getElementById('form-first-name').value = selectedEntity.firstName;
             document.getElementById('form-last-name').value = selectedEntity.lastName;
@@ -462,30 +522,30 @@
             document.getElementById('form-email').readOnly = true;
             document.getElementById('form-email').classList.add('opacity-50');
             document.getElementById('email-validation').classList.add('hidden');
+            document.getElementById('form-address').value = selectedEntity.address || '';
             
             const roleSelect = document.getElementById('form-role');
             roleSelect.value = selectedEntity.role ? selectedEntity.role.id : '';
             
             // Security Constraints UI
             if (isAdmin) {
-                roleSelect.disabled = true;
-                roleSelect.classList.add('opacity-50');
                 document.getElementById('admin-role-warning').classList.remove('hidden');
             } else {
-                roleSelect.disabled = false;
-                roleSelect.classList.remove('opacity-50');
                 document.getElementById('admin-role-warning').classList.add('hidden');
             }
 
-            // Actions config
+            // Status Actions config
             const actionsBlock = document.getElementById('wu-status-actions');
             actionsBlock.classList.remove('hidden');
             
             const toggleWrapper = document.getElementById('status-toggle-wrapper');
             const toggleInput = document.getElementById('form-status-toggle');
+            const statusLabel = document.getElementById('status-label');
             const purgeBtn = document.getElementById('btn-purge');
 
             toggleInput.checked = selectedEntity.enabled;
+            statusLabel.innerText = selectedEntity.enabled ? 'Active' : 'Suspended';
+            statusLabel.className = `text-[9px] font-black uppercase tracking-widest ${selectedEntity.enabled ? 'text-primary' : 'text-neutral-600'}`;
             
             if (isSelf || isAdmin) {
                 toggleWrapper.classList.add('locked');
@@ -498,6 +558,8 @@
             }
             // Update wrapper class based on state for color
             if(selectedEntity.enabled) toggleWrapper.classList.add('active'); else toggleWrapper.classList.remove('active');
+
+            toggleEditMode(false); // Default to read-only in edit mode
 
             const btn = document.getElementById('btn-submit-user');
             btn.className = "px-8 py-3 border border-primary/50 text-primary font-bold text-xs uppercase tracking-wider hover:bg-primary/10 rounded transition-all flex items-center justify-center min-w-[200px]";
@@ -566,7 +628,8 @@
                 firstName: document.getElementById('form-first-name').value,
                 lastName: document.getElementById('form-last-name').value,
                 email: document.getElementById('form-email').value,
-                roleId: document.getElementById('form-role').value
+                roleId: document.getElementById('form-role').value,
+                address: document.getElementById('form-address').value
             };
             if (isEdit) data.id = selectedEntity.id;
 
@@ -639,19 +702,19 @@
 
         async function purgeUserLocally() {
             if (!selectedEntity || workspaceMode !== 'edit') return;
-            if (!(await window.askPermission('PERMANENTLY PURGE USER IDENTITY FROM SYSTEM? THIS CANNOT BE UNDONE.'))) return;
+            if (!(await window.askPermission('PERMANENTLY REMOVE USER IDENTITY FROM SYSTEM? THIS ACTION IS IRREVERSIBLE.'))) return;
             
             try {
                 const res = await fetch(`/api/users/${selectedEntity.id}`, { method: 'DELETE' });
                 if (res.ok) {
-                    window.showNotification('User identity purged.', 'success');
+                    window.showNotification('User identity successfully removed from organizational directory.', 'success');
                     setWorkspace('empty');
                     loadUsers();
                 } else {
                     const data = await res.json();
-                    window.showNotification(data.message || 'Purge failed.', 'error');
+                    window.showNotification(data.message || 'Removal failed.', 'error');
                 }
-            } catch (err) { console.error('Purge failed:', err); }
+            } catch (err) { console.error('Removal failed:', err); }
         }
 
         // Request Actions
@@ -685,11 +748,6 @@
                     
                     await loadUsers();
                     await loadPendingRequests();
-                    
-                    // Transition to edit mode for the new user
-                    // Note: The approve endpoint currently returns the AccessRequest, not the created User.
-                    // We need to switch to tab directory and prompt registration, or map the data.
-                    // For seamless flow based on the plan, we will pre-fill the Register form with their data.
                     
                     switchTab('directory');
                     initRegistration();

@@ -57,7 +57,7 @@ public class User implements UserDetails {
     private String address;
     private String qualification;
     
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "LONGTEXT")
     private String profileImage;
 
     public String getProfileImage() {

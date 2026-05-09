@@ -143,9 +143,9 @@
             if(res.ok) {
                 const result = await res.json();
                 // Update local cache
-                user.firstName = result.firstName;
-                user.lastName = result.lastName;
-                user.profileImage = result.profileImage;
+                user.firstName = data.firstName;
+                user.lastName = data.lastName;
+                user.profileImage = data.profileImage;
                 localStorage.setItem('user', JSON.stringify(user));
                 localStorage.removeItem('tempProfileImage');
                 

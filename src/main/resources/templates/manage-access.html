@@ -58,12 +58,15 @@
             <!-- Header Section -->
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-neutral-800 pb-8">
                 <div>
-                    <h1 class="text-3xl font-bold text-white uppercase tracking-tight headline">Access Control</h1>
-                    <p class="text-neutral-400 mt-1">Manage security roles and individual personnel clearances</p>
+                    <h1 class="text-3xl font-bold text-white uppercase tracking-tight headline flex items-center gap-3">
+                        <span class="material-symbols-outlined text-primary text-4xl">shield_person</span>
+                        Manage Access
+                    </h1>
+                    <p class="text-neutral-400 mt-1">Assign Security Roles & Individual Clearances</p>
                 </div>
                 <div class="flex gap-4">
                     <button id="delete-role-btn" onclick="deleteActiveRole()" class="px-6 py-2 border border-error/30 text-error font-bold text-xs uppercase tracking-wider hover:bg-error/10 transition-all hidden rounded">
-                        Delete Role
+                        Remove Role
                     </button>
                     <button onclick="openRoleModal()" class="px-6 py-2 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg rounded">
                         Create New Role
@@ -416,11 +419,11 @@
         }
 
         async function deleteActiveRole() {
-            if (!(await window.askPermission(`Are you sure you want to permanently delete the "${selectedEntity.name}" role? This action cannot be undone.`))) return;
+            if (!(await window.askPermission(`Are you sure you want to permanently remove the "${selectedEntity.name}" role? This action cannot be undone.`))) return;
             try {
                 const res = await fetch(`/api/users/roles/${selectedId}`, { method: 'DELETE' });
                 if (res.ok) {
-                    window.showNotification('The security role has been deleted successfully.', 'success');
+                    window.showNotification('The security role has been removed successfully.', 'success');
                     selectedId = null;
                     selectedEntity = null;
                     document.getElementById('config-panel').classList.add('hidden');
@@ -429,7 +432,7 @@
                     await init();
                 } else {
                     const err = await res.json();
-                    window.showNotification(err.message || 'Failed to delete the security role.', 'error');
+                    window.showNotification(err.message || 'Failed to remove the security role.', 'error');
                 }
             } catch (e) { console.error(e); }
         }

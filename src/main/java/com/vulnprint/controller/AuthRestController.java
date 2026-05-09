@@ -33,7 +33,7 @@ public class AuthRestController {
     private AppSecurityGuard guard;
 
     @Autowired
-    private com.vulnprint.service.EmailService emailService;
+    private com.vulnprint.service.EmailService mailService;
 
     private String dummyHash = null;
 
@@ -105,7 +105,7 @@ public class AuthRestController {
 
                 // Check for ENABLE_2FA Permission
                 if (guard.hasPermission(user, "ENABLE_2FA")) {
-                    String otp = String.format("%06d", new java.util.Random().nextInt(999999));
+                    String otp = String.format("%06d", new java.security.SecureRandom().nextInt(999999));
                     
                     // Store OTP and Expiry in User record
                     user.setMfaOtp(otp);

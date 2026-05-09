@@ -6,7 +6,7 @@ import java.util.TimeZone;
 import jakarta.annotation.PostConstruct;
 
 @SpringBootApplication
-public class            VulnPrintApplication {
+public class VulnPrintApplication {
     static {
         // Force UTC timezone at the earliest possible moment
         System.setProperty("user.timezone", "UTC");

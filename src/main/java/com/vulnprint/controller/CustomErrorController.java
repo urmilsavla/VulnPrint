@@ -27,7 +27,7 @@ public class CustomErrorController implements ErrorController {
             } else if (statusCode == HttpStatus.INTERNAL_SERVER_ERROR.value()) {
                 model.addAttribute("message", "500 Internal Server Error: An unexpected condition was encountered.");
             } else if (statusCode == HttpStatus.FORBIDDEN.value()) {
-                model.addAttribute("message", "Insufficient AppSecurityGuard");
+                model.addAttribute("message", "Permission Denied: You do not have the required authorization to access this resource.");
             } else {
                 model.addAttribute("message", "An unexpected error occurred.");
             }

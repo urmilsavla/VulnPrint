@@ -79,6 +79,9 @@ public class AppSecurityGuard {
     @Autowired
     private VulnerabilityRepository vulnerabilityRepository;
 
+    @Autowired
+    private com.vulnprint.repository.AlertRepository alertRepository;
+
     // --- PERMISSIONS CONSTANTS ---
     // Projects (Pentests)
     public static final String VIEW_ASSIGNED_PROJECTS = "VIEW_ASSIGNED_PROJECTS";
@@ -129,21 +132,52 @@ public class AppSecurityGuard {
     private final SecretKey jwtKey;
     private final long expirationMs = 900000; // 15 minutes for enhanced security
     private final Set<String> tokenBlocklist = ConcurrentHashMap.newKeySet();
+    private final String jwtEnvKey;
+    private final String vaultEnvKey;
 
     public AppSecurityGuard() {
-        String jwtEnvKey = System.getenv("VULNPRINT_JWT_SECRET");
+        jwtEnvKey = System.getenv("VULNPRINT_JWT_SECRET");
         if (jwtEnvKey != null && jwtEnvKey.length() >= 32) {
             this.jwtKey = Keys.hmacShaKeyFor(jwtEnvKey.getBytes(StandardCharsets.UTF_8));
         } else {
             this.jwtKey = Keys.secretKeyFor(io.jsonwebtoken.SignatureAlgorithm.HS256);
         }
 
-        String envKey = System.getenv("VULNPRINT_INTERNAL_ENC");
-        if (envKey != null && envKey.length() >= 32) {
-            this.vaultKey = new SecretKeySpec(envKey.substring(0, 32).getBytes(StandardCharsets.UTF_8), "AES");
+        vaultEnvKey = System.getenv("VULNPRINT_INTERNAL_ENC");
+        if (vaultEnvKey != null && vaultEnvKey.length() >= 32) {
+            this.vaultKey = new SecretKeySpec(vaultEnvKey.substring(0, 32).getBytes(StandardCharsets.UTF_8), "AES");
         } else {
-            // Development fallback - in production this must be set
             this.vaultKey = new SecretKeySpec("Fallback_Secure_Internal_Enc_Key_2026".substring(0, 32).getBytes(StandardCharsets.UTF_8), "AES");
+        }
+    }
+
+    @jakarta.annotation.PostConstruct
+    public void validateKeys() {
+        if (jwtEnvKey == null || jwtEnvKey.length() < 32) {
+            try {
+                com.vulnprint.model.Alert alert = new com.vulnprint.model.Alert();
+                alert.setTitle("Missing JWT Secret");
+                alert.setDetails("VULNPRINT_JWT_SECRET is missing. The system is using a session-based fallback key. All active sessions will be invalidated upon system restart.");
+                alert.setLevel("CRITICAL");
+                alert.setTimeAgo("Just now");
+                alert.setRead(false);
+                alertRepository.save(alert);
+            } catch(Exception e){
+                System.err.println("[CRITICAL] Failed to log JWT alert to dashboard: " + e.getMessage());
+            }
+        }
+        if (vaultEnvKey == null || vaultEnvKey.length() < 32) {
+            try {
+                com.vulnprint.model.Alert alert = new com.vulnprint.model.Alert();
+                alert.setTitle("Missing Vault Key");
+                alert.setDetails("VULNPRINT_INTERNAL_ENC is missing. Using a hardcoded internal fallback. Sensitive data encryption is NOT optimized for production.");
+                alert.setLevel("CRITICAL");
+                alert.setTimeAgo("Just now");
+                alert.setRead(false);
+                alertRepository.save(alert);
+            } catch(Exception e){
+                System.err.println("[CRITICAL] Failed to log Vault alert to dashboard: " + e.getMessage());
+            }
         }
     }
 
@@ -391,26 +425,32 @@ public class AppSecurityGuard {
 
     // --- 3. SSRF SHIELD PILLAR ---
     public boolean isSafeUrl(String urlString) {
-        if (urlString == null || urlString.isBlank()) return false;
+        return resolveSafeUrl(urlString) != null;
+    }
+
+    public String resolveSafeUrl(String urlString) {
+        if (urlString == null || urlString.isBlank()) return null;
         
         if (urlString.startsWith("http://localhost:8000") || 
             urlString.startsWith("http://localhost:3000") ||
             urlString.startsWith("http://127.0.0.1:8000") ||
             urlString.startsWith("http://127.0.0.1:3000")) {
-            return true;
+            return urlString;
         }
 
         try {
             URL url = new URL(urlString);
             String protocol = url.getProtocol().toLowerCase();
-            if (!"http".equals(protocol) && !"https".equals(protocol)) return false;
+            if (!"http".equals(protocol) && !"https".equals(protocol)) return null;
 
             InetAddress address = InetAddress.getByName(url.getHost());
             if (address.isLoopbackAddress() || address.isAnyLocalAddress() || 
-                address.isLinkLocalAddress() || address.isSiteLocalAddress()) return false;
-            if ("169.254.169.254".equals(address.getHostAddress())) return false;
-            return true;
-        } catch (Exception e) { return false; }
+                address.isLinkLocalAddress() || address.isSiteLocalAddress()) return null;
+            if ("169.254.169.254".equals(address.getHostAddress())) return null;
+            
+            URL safeUrl = new URL(protocol, address.getHostAddress(), url.getPort() != -1 ? url.getPort() : url.getDefaultPort(), url.getFile());
+            return safeUrl.toString();
+        } catch (Exception e) { return null; }
     }
 
     // --- 4. FILE & RCE SHIELD PILLAR ---

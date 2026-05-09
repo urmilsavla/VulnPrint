@@ -517,7 +517,7 @@
                 let menuHtml = `<p class="px-4 py-2 text-[8px] font-black uppercase tracking-widest text-neutral-600 border-b border-neutral-900 mb-1">System Administration</p>`;
                 if (canApprove) menuHtml += `<a href="/vulnerability-approver" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-error hover:bg-neutral-800 transition-colors">Vulnerability Approver</a>`;
                 if (canManageUsers || canViewUsers) {
-                    const label = canManageUsers ? "Manage Users" : "User Directory";
+                    const label = canManageUsers ? "Manage Users" : "User Management";
                     menuHtml += `<a href="/user-management" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">${label}</a>`;
                 }
                 if (canManageAccess) menuHtml += `<a href="/manage-access" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">Manage Access</a>`;

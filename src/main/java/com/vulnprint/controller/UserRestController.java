@@ -171,7 +171,17 @@ public class UserRestController {
     @GetMapping
     @PreAuthorize("hasAuthority('VIEW_USERS')")
     public ResponseEntity<?> getAllUsers() {
-        return ResponseEntity.ok(userRepository.findAll());
+        List<User> users = userRepository.findAll();
+        users.forEach(u -> {
+            if (u.getAddress() != null && !u.getAddress().isEmpty()) {
+                try {
+                    u.setAddress(guard.decryptVault(u.getAddress()));
+                } catch (Exception e) {
+                    // Log but continue
+                }
+            }
+        });
+        return ResponseEntity.ok(users);
     }
 
     @GetMapping("/check-email")
