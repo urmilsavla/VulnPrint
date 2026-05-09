@@ -3,26 +3,10 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>VulnPrint | Organization Details</title>
+    <title>VulnPrint | Organizational Details</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-    <script id="tailwind-config">
-        tailwind.config = {
-          darkMode: 'class',
-          theme: {
-            extend: {
-              colors: {
-                "primary": "#4FFE49",
-                "surface": "#0e0e0e",
-                "on-surface": "#ffffff",
-                "error": "#ff7351"
-              },
-              fontFamily: { headline: ['Space Grotesk'], body: ['Inter'], label: ['Space Grotesk'] }
-            }
-          }
-        }
-    </script>
     <style>
         :root { color-scheme: dark; }
         body { margin: 0; }
@@ -31,7 +15,7 @@
         body.sidebar-expanded #header { left: 256px; }
         @media (max-width: 1024px) { #main-content { margin-left: 0 !important; } }
 
-        .tile-card { background: rgba(19, 19, 19, 0.4); border: 1px solid #262626; transition: all 0.3s ease; }
+        .tile-card { background: rgba(19, 19, 19, 0.4) !important; border: 1px solid #262626 !important; backdrop-filter: blur(12px); transition: all 0.3s ease; }
         .tile-header { cursor: pointer; }
         .tile-content { max-height: 5000px; overflow: visible; transition: all 0.5s cubic-bezier(0, 1, 0, 1); }
         .collapse-icon { transition: transform 0.3s ease; color: #525252; }
@@ -48,44 +32,48 @@
     <div th:replace="~{fragments/sidebar :: sidebar}"></div>
     <div th:replace="~{fragments/header :: header}"></div>
 
-    <main id="main-content" class="px-8 pb-20">
+    <main id="main-content" class="px-8 pb-20 relative z-10">
         <div class="max-w-6xl mx-auto">
-            <div class="flex justify-between items-center mb-12 border-b border-neutral-800 pb-8">
+            <!-- Header Section -->
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-neutral-800 pb-8">
                 <div>
-                    <h1 class="text-3xl font-bold text-white uppercase">Organization Details</h1>
-                    <p class="text-neutral-400 mt-1">Configure global reporting identity and branding</p>
+                    <h1 class="heading-main flex items-center gap-3">
+                        <span class="material-symbols-outlined text-primary text-4xl">business</span>
+                        Organizational Details
+                    </h1>
+                    <p class="label-sub mt-1">Manage system-wide branding and contact information</p>
                 </div>
-                <button onclick="saveSettings()" class="px-8 py-2 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg">Save Profile</button>
+                <button onclick="saveSettings()" class="btn-primary px-10">Save Changes</button>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                <!-- Tile 1: Master Branding -->
+                <!-- Tile 1: System Branding -->
                 <div class="tile-card p-8 rounded-xl shadow-2xl h-fit" id="tile-branding">
                     <div class="tile-header flex justify-between items-center mb-8 text-white" onclick="toggleTile('tile-branding')">
                         <div class="flex items-center gap-4">
                             <span class="material-symbols-outlined text-primary text-3xl">palette</span>
-                            <h2 class="text-xl font-bold">Branding</h2>
+                            <h2 class="text-xl font-headline font-bold uppercase tracking-tight">System Branding</h2>
                         </div>
                         <span class="material-symbols-outlined collapse-icon">expand_more</span>
                     </div>
                     <div class="tile-content">
                         <div class="space-y-6">
-                            <div id="logo-preview-container" class="h-48 w-full flex items-center justify-center bg-black/40 rounded-xl overflow-hidden border border-neutral-800 p-4">
+                            <div id="logo-preview-container" class="h-48 w-full flex items-center justify-center bg-black/40 rounded-xl overflow-hidden border border-white/5 p-4">
                                 <img id="img-logo" src="/images/logo.png" class="max-h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity">
                             </div>
-                            <button onclick="document.getElementById('logo-input').click()" class="w-full px-4 py-3 border border-neutral-800 bg-neutral-900/50 text-[10px] font-bold uppercase hover:text-primary transition-colors rounded-lg">Update Master Logo</button>
+                            <button onclick="document.getElementById('logo-input').click()" class="btn-secondary w-full py-3.5 !text-[10px]">Upload New Logo</button>
                             <input type="file" id="logo-input" class="hidden" accept="image/*" onchange="handleLogoUpload(event)">
-                            <p class="text-[9px] text-neutral-600 text-center italic leading-relaxed">This logo serves as the default branding for all new assessments and report covers.</p>
+                            <p class="text-[9px] text-neutral-600 text-center italic leading-relaxed px-4">Default logo used for automated reporting and client deliverables.</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Tile 2: Core Identity -->
+                <!-- Tile 2: Contact Information -->
                 <div class="tile-card p-8 rounded-xl shadow-2xl lg:col-span-2" id="tile-identity">
                     <div class="tile-header flex justify-between items-center mb-8 text-white" onclick="toggleTile('tile-identity')">
                         <div class="flex items-center gap-4">
-                            <span class="material-symbols-outlined text-primary text-3xl">business</span>
-                            <h2 class="text-xl font-bold">Core Identity</h2>
+                            <span class="material-symbols-outlined text-primary text-3xl">contact_mail</span>
+                            <h2 class="text-xl font-headline font-bold uppercase tracking-tight">Contact Information</h2>
                         </div>
                         <span class="material-symbols-outlined collapse-icon">expand_more</span>
                     </div>
@@ -93,21 +81,21 @@
                         <div class="space-y-8">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div class="space-y-2">
-                                    <label class="text-[10px] uppercase font-bold text-primary/60 tracking-widest">Organization Name *</label>
-                                    <input type="text" id="org-name" class="w-full bg-black/60 border border-neutral-800 rounded-lg p-4 text-sm focus:border-primary outline-none transition-all" placeholder="e.g. VulnPrint Security Services">
+                                    <label class="label-sub ml-1">Entity Name</label>
+                                    <input type="text" id="org-name" class="input-terminal" placeholder="e.g. VulnPrint Security Services">
                                 </div>
                                 <div class="space-y-2">
-                                    <label class="text-[10px] uppercase font-bold text-primary/60 tracking-widest">Official Email *</label>
-                                    <input type="email" id="org-email" class="w-full bg-black/60 border border-neutral-800 rounded-lg p-4 text-sm focus:border-primary outline-none transition-all" placeholder="e.g. security@vulnprint.io">
+                                    <label class="label-sub ml-1">Email ID</label>
+                                    <input type="email" id="org-email" class="input-terminal font-mono" placeholder="e.g. security@vulnprint.io">
                                 </div>
                                 <div class="space-y-2">
-                                    <label class="text-[10px] uppercase font-bold text-primary/60 tracking-widest">Contact Number</label>
-                                    <input type="text" id="org-phone" class="w-full bg-black/60 border border-neutral-800 rounded-lg p-4 text-sm focus:border-primary outline-none transition-all" placeholder="e.g. +1 (555) 123-4567">
+                                    <label class="label-sub ml-1">Phone Number</label>
+                                    <input type="text" id="org-phone" class="input-terminal" placeholder="e.g. +1 (555) 123-4567">
                                 </div>
                             </div>
                             <div class="space-y-2">
-                                <label class="text-[10px] uppercase font-bold text-primary/60 tracking-widest">Headquarters Address *</label>
-                                <textarea id="org-address" rows="5" class="w-full bg-black/60 border border-neutral-800 rounded-lg p-4 text-sm focus:border-primary outline-none transition-all resize-none" placeholder="e.g. 123 Terminal Elite Tower, Cyber City"></textarea>
+                                <label class="label-sub ml-1">Location / Address</label>
+                                <textarea id="org-address" rows="5" class="input-terminal resize-none" placeholder="e.g. 123 Terminal Elite Tower, Cyber City"></textarea>
                             </div>
                         </div>
                     </div>
@@ -125,19 +113,21 @@
         }
 
         async function loadSettings() {
-            const res = await fetch('/api/organization');
-            if (res.ok) {
-                const org = await res.json();
-                document.getElementById('org-name').value = org.name || '';
-                document.getElementById('org-address').value = org.address || '';
-                document.getElementById('org-phone').value = org.phone || '';
-                document.getElementById('org-email').value = org.email || '';
-                if (org.logo) {
-                    logoBase64 = org.logo;
-                    document.getElementById('img-logo').src = logoBase64;
-                    document.getElementById('img-logo').classList.remove('opacity-80');
+            try {
+                const res = await fetch('/api/organization');
+                if (res.ok) {
+                    const org = await res.json();
+                    document.getElementById('org-name').value = org.name || '';
+                    document.getElementById('org-address').value = org.address || '';
+                    document.getElementById('org-phone').value = org.phone || '';
+                    document.getElementById('org-email').value = org.email || '';
+                    if (org.logo) {
+                        logoBase64 = org.logo;
+                        document.getElementById('img-logo').src = logoBase64;
+                        document.getElementById('img-logo').classList.remove('opacity-80');
+                    }
                 }
-            }
+            } catch (err) { console.error('Failed to load organization settings'); }
         }
 
         function handleLogoUpload(event) {
@@ -148,12 +138,13 @@
                 logoBase64 = e.target.result;
                 document.getElementById('img-logo').src = logoBase64;
                 document.getElementById('img-logo').classList.remove('opacity-80');
+                window.showNotification("Logo preview updated. Save changes to commit.", "info");
             };
             reader.readAsDataURL(file);
         }
 
         async function saveSettings() {
-            if (!(await window.askPermission("Are you sure you want to update the organization details?"))) return;
+            if (!(await window.askPermission("Commit changes to organizational branding and contact details?"))) return;
 
             const data = {
                 name: document.getElementById('org-name').value,
@@ -162,15 +153,20 @@
                 email: document.getElementById('org-email').value,
                 logo: logoBase64
             };
-            const res = await fetch('/api/organization', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            if (res.ok) {
-                window.showNotification("Successfully updated the organization's branding and details.", 'success');
-            } else {
-                window.showNotification("Failed to update the organization details.", 'error');
+            try {
+                const res = await fetch('/api/organization', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    window.showNotification("System profile updated successfully.", 'success');
+                } else {
+                    const err = await res.json();
+                    window.showNotification(err.message || "Failed to commit changes.", 'error');
+                }
+            } catch (err) { 
+                window.showNotification("Communication failure with security backend.", 'error');
             }
         }
 

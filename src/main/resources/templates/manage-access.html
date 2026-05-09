@@ -252,9 +252,9 @@
                 `).join('') || '<p class="text-center py-8 text-[9px] text-neutral-600 uppercase font-bold tracking-widest">No matching roles</p>';
             } else {
                 const filtered = allUsers.filter(u => 
-                    u.username.toLowerCase().includes(query) || 
-                    u.firstName.toLowerCase().includes(query) || 
-                    u.lastName.toLowerCase().includes(query)
+                    (u.email && u.email.toLowerCase().includes(query)) || 
+                    (u.firstName && u.firstName.toLowerCase().includes(query)) || 
+                    (u.lastName && u.lastName.toLowerCase().includes(query))
                 );
                 list.innerHTML = filtered.map(u => `
                     <div onclick="selectEntity('user', ${u.id})" class="p-3 border ${selectedId === u.id && activeTab === 'users' ? 'border-primary/50 bg-primary/5' : 'border-transparent hover:bg-neutral-900/50'} cursor-pointer transition-all flex items-center gap-3 rounded-xl group">
@@ -404,7 +404,7 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             id: selectedEntity.id,
-                            username: selectedEntity.username,
+                            email: selectedEntity.email,
                             firstName: selectedEntity.firstName,
                             lastName: selectedEntity.lastName,
                             extraPermissionIds: nonInheritedIds

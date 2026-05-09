@@ -63,4 +63,25 @@ public class EmailService {
             System.err.println("[EMAIL SERVICE] Failed to send MFA OTP to " + to + ": " + e.getMessage());
         }
     }
+
+    public void sendPasswordResetEmail(String toEmail, String firstName, String resetLink) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom("security@vulnprint.local");
+        message.setTo(toEmail);
+        message.setSubject("Security Notification: Password Reset Requested");
+        message.setText("Hello " + firstName + ",\n\n" +
+                "An administrator has initiated a password reset for your VulnPrint account.\n\n" +
+                "Please click the link below to set your new password:\n" +
+                resetLink + "\n\n" +
+                "This link will expire in 15 minutes.\n\n" +
+                "If you did not request this, please notify your administrator immediately.\n\n" +
+                "Securely,\nThe VulnPrint Security Team");
+        
+        try {
+            emailSender.send(message);
+            System.out.println("[EMAIL SERVICE] Password reset email sent to " + toEmail);
+        } catch (Exception e) {
+            System.err.println("[EMAIL SERVICE] Failed to send password reset email to " + toEmail + ": " + e.getMessage());
+        }
+    }
 }

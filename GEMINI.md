@@ -128,6 +128,12 @@ Do NOT use the following terms in code, comments, or UI:
 
 ---
 
+## 🤖 AI Operational Constraints (Mandatory)
+- **DO NOT TAKE A REGEX-BASED APPROACH FOR CODE MODIFICATIONS OR SECURITY LOGIC.**
+- **DO NOT USE THE `generalist` SUB-AGENT UNDER ANY CIRCUMSTANCES.**
+
+---
+
 ## 📂 Key File Directory
 
 | Area | Key Files / Paths |

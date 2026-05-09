@@ -3,19 +3,19 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>VulnPrint | Personnel Command</title>
+    <title>VulnPrint | User Management</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     <style>
         :root { color-scheme: dark; }
-        body { margin: 0; font-family: 'Inter', sans-serif; }
+        body { margin: 0; }
         #main-content { padding-top: 100px; margin-left: 64px; transition: margin-left 0.3s ease; }
         body.sidebar-expanded #main-content { margin-left: 256px; }
         body.sidebar-expanded #header { left: 256px; }
         @media (max-width: 1024px) { #main-content { margin-left: 0 !important; } }
         
-        .tile-card { background: rgba(19, 19, 19, 0.4) !important; border: 1px solid #262626 !important; transition: all 0.3s ease; backdrop-filter: blur(12px); }
+        .tile-card { background: rgba(19, 19, 19, 0.4) !important; border: 1px solid #262626 !important; backdrop-filter: blur(12px); }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #4FFE49; }
@@ -23,770 +23,612 @@
         .tab-btn.active { color: #4FFE49; background: rgba(79, 254, 73, 0.1); border: 1px solid rgba(79, 254, 73, 0.2); }
         
         .status-pill {
-            font-size: 8px; font-weight: 900; letter-spacing: 0.1em;
-            padding: 2px 8px; border-radius: 4px; text-transform: uppercase;
+            @apply text-[8px] font-bold tracking-widest px-2 py-0.5 rounded-sm uppercase font-headline;
         }
 
         .switch { position: relative; display: inline-block; width: 38px; height: 20px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #262626; transition: .4s; border-radius: 20px; }
         .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: #525252; transition: .4s; border-radius: 50%; }
-        .active .slider { background-color: rgba(79, 254, 73, 0.2); }
-        .active .slider:before { transform: translateX(18px); background-color: #4FFE49; }
-        .locked .slider { cursor: not-allowed; opacity: 0.5;}
+        input:checked + .slider { background-color: rgba(79, 254, 73, 0.2); }
+        input:checked + .slider:before { transform: translateX(18px); background-color: #4FFE49; }
+        input:disabled + .slider { opacity: 0.3; cursor: not-allowed; }
 
-        /* Loader Animation */
-        .spinner {
-            border: 2px solid rgba(0, 0, 0, 0.1);
-            border-left-color: #000;
-            border-radius: 50%;
-            width: 16px;
-            height: 16px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .modal-backdrop { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); }
     </style>
 </head>
-<body class="radar-bg min-h-screen text-on-surface font-body selection:bg-primary selection:text-black">
+<body class="radar-bg text-on-surface font-body selection:bg-primary selection:text-black">
     <div th:replace="~{fragments/sidebar :: sidebar}"></div>
     <div th:replace="~{fragments/header :: header}"></div>
 
-    <main id="main-content" class="px-8 pb-20 relative z-10">
-        <div class="max-w-7xl mx-auto">
+    <main id="main-content" class="px-8 pb-20 relative z-10 font-body">
+        <div class="max-w-[1600px] mx-auto">
             <!-- Header Section -->
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-neutral-800 pb-8">
                 <div>
-                    <h1 class="text-3xl font-bold text-white uppercase tracking-tight headline flex items-center gap-3">
-                        <span class="material-symbols-outlined text-primary text-4xl">engineering</span>
-                        Manage Users
+                    <h1 class="heading-main flex items-center gap-3">
+                        <span class="material-symbols-outlined text-primary text-4xl">group</span>
+                        User Management
                     </h1>
-                    <p class="text-neutral-400 mt-1">Personnel Management & Authorization Control</p>
+                    <p class="label-sub mt-1">Manage system users and access requests</p>
                 </div>
                 <div class="flex gap-4">
-                     <button onclick="window.location.href='/dashboard'" class="px-6 py-2 border border-neutral-800 text-neutral-500 font-bold text-xs uppercase tracking-wider hover:border-white hover:text-white transition-all rounded">
-                        System Audit Logs
-                    </button>
-                    <button onclick="window.location.href='/manage-access'" class="px-6 py-2 border border-neutral-800 text-neutral-500 font-bold text-xs uppercase tracking-wider hover:border-white hover:text-white transition-all rounded">
-                        Define Roles
+                     <button onclick="openInviteModal()" class="btn-primary flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">person_add</span> Add User
                     </button>
                 </div>
             </div>
 
-            <!-- Split Pane Container -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                
-                <!-- LEFT PANE: Navigation & List -->
+                <!-- Left Sidebar: Selection List -->
                 <div class="lg:col-span-3 space-y-6">
-                    <div class="tile-card rounded-xl overflow-hidden flex flex-col h-[700px]">
-                        <!-- Tabs -->
-                        <div class="flex p-1 bg-black/40 border-b border-neutral-800 shrink-0">
-                            <button onclick="switchTab('directory')" id="tab-directory" class="tab-btn active flex-1 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-400 hover:text-white transition-all rounded">User Management</button>
-                            <button onclick="switchTab('applications')" id="tab-applications" class="tab-btn flex-1 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-400 hover:text-white transition-all rounded relative flex items-center justify-center gap-2">
-                                Applications
-                                <span id="app-badge" class="hidden w-4 h-4 bg-primary text-black text-[8px] flex items-center justify-center rounded-full font-black">0</span>
+                    <div class="tile-card rounded-xl overflow-hidden">
+                        <div class="flex p-1 bg-black/40 border-b border-neutral-800">
+                            <button onclick="switchTab('users')" id="tab-users" class="tab-btn active flex-1 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-400 hover:text-white transition-all rounded">Users</button>
+                            <button onclick="switchTab('requests')" id="tab-requests" class="tab-btn flex-1 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-400 hover:text-white transition-all rounded flex items-center justify-center gap-2">
+                                Requests
+                                <span id="app-count-badge" class="bg-primary/20 text-primary text-[8px] px-1.5 py-0.5 rounded-full hidden">0</span>
                             </button>
+                            <button onclick="switchTab('deleted')" id="tab-deleted" class="tab-btn flex-1 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-400 hover:text-white transition-all rounded">Deleted</button>
                         </div>
                         
-                        <!-- Search & List -->
-                        <div class="p-4 flex flex-col h-full overflow-hidden">
-                            <div class="mb-4 relative shrink-0">
-                                <input type="text" id="target-search" oninput="handleSearch(this.value)" placeholder="SEARCH PERSONNEL..." class="w-full bg-black/60 border border-neutral-800 text-[10px] uppercase tracking-widest p-3 pl-10 focus:border-primary outline-none transition-all rounded-lg text-neutral-300">
+                        <div class="p-4">
+                            <div class="mb-4 relative">
+                                <input type="text" id="directory-search" oninput="handleSearch(this.value)" placeholder="SEARCH DIRECTORY..." class="w-full bg-black/60 border border-neutral-800 text-[10px] uppercase tracking-widest p-3 pl-10 focus:border-primary outline-none transition-all rounded-lg text-neutral-300">
                                 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-neutral-600 text-sm">search</span>
                             </div>
 
-                            <div id="target-list" class="space-y-1 overflow-y-auto custom-scrollbar pr-1 flex-1">
+                            <div id="directory-list" class="space-y-1 max-h-[600px] overflow-y-auto custom-scrollbar pr-1">
                                 <!-- Populated via JS -->
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- RIGHT PANE: Dynamic Workspace -->
-                <div class="lg:col-span-9 h-[700px]">
-                    
-                    <!-- STATE A: Empty State -->
-                    <div id="empty-state" class="h-full flex items-center justify-center border-2 border-dashed border-neutral-800 rounded-xl text-center bg-black/20">
-                        <div class="max-w-xs">
-                            <span class="material-symbols-outlined text-4xl text-neutral-700 mb-6">badge</span>
-                            <h3 class="text-xs font-black uppercase tracking-[0.3em] text-neutral-400 mb-2">Awaiting Selection</h3>
-                            <p class="text-[10px] text-neutral-600 uppercase font-bold leading-relaxed mb-6">Choose personnel or an application to review.</p>
-                            <button onclick="initRegistration()" class="px-6 py-3 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-[0_0_20px_rgba(79,254,73,0.1)] rounded transition-all flex items-center gap-2 mx-auto">
-                                <span class="material-symbols-outlined text-sm">person_add</span> Register Personnel
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- STATE B & C: User Form (Register & Edit) -->
-                    <div id="workspace-user" class="tile-card p-10 rounded-xl h-full hidden flex-col">
-                        <!-- Header -->
-                        <div class="flex justify-between items-start gap-6 mb-8 border-b border-neutral-800/50 pb-8 shrink-0">
-                            <div class="flex items-center gap-5">
-                                <div id="wu-avatar-container" class="relative">
-                                    <img id="wu-avatar" src="/images/user.png" class="w-16 h-16 rounded-xl border border-neutral-800 object-cover bg-black">
-                                    <div id="wu-status-dot" class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-black hidden"></div>
-                                </div>
-                                <div id="wu-icon-container" class="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 hidden">
-                                    <span class="material-symbols-outlined text-primary text-3xl">person_add</span>
+                <!-- Right Content: Profile / Request Details -->
+                <div class="lg:col-span-9 h-full">
+                    <div id="profile-panel" class="tile-card p-10 rounded-xl hidden">
+                        <div class="flex flex-col md:flex-row justify-between items-start gap-6 mb-12 border-b border-white/5 pb-8">
+                            <div class="flex items-center gap-6">
+                                <div class="relative">
+                                    <img id="profile-avatar" src="/images/user.png" class="w-20 h-20 rounded-2xl border border-neutral-800 object-cover shadow-2xl">
+                                    <div id="profile-status-indicator" class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[#131313] bg-neutral-500"></div>
                                 </div>
                                 <div>
                                     <div class="flex items-center gap-3 mb-1">
-                                        <h3 id="wu-title" class="text-2xl font-bold uppercase text-white tracking-tight headline">Register Personnel</h3>
-                                        <span id="wu-badge" class="status-pill bg-neutral-900 text-neutral-500 border border-neutral-800 hidden">Role</span>
+                                        <h3 id="profile-full-name" class="heading-main !text-2xl">User Profile</h3>
+                                        <!-- Role badge removed from header as requested -->
                                     </div>
-                                    <div class="flex items-center gap-4">
-                                        <p id="wu-subtitle" class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Initialize new user identity protocols</p>
-                                        <div id="wu-header-actions" class="flex items-center gap-3 hidden">
-                                            <div class="h-4 w-px bg-neutral-800"></div>
-                                            <div class="flex items-center gap-2">
-                                                <label class="switch" id="status-toggle-wrapper">
-                                                    <input type="checkbox" id="form-status-toggle" onchange="toggleUserStatusLocally()">
-                                                    <span class="slider"></span>
-                                                </label>
-                                                <span id="status-label" class="text-[9px] font-black uppercase tracking-widest text-neutral-500">Active</span>
-                                            </div>
-                                            <button type="button" id="btn-edit-toggle" onclick="toggleEditMode()" class="text-neutral-500 hover:text-primary transition-colors">
-                                                <span class="material-symbols-outlined text-xl">edit</span>
-                                            </button>
-                                            <button type="button" id="btn-header-delete" onclick="purgeUserLocally()" class="text-neutral-500 hover:text-error transition-colors">
-                                                <span class="material-symbols-outlined text-xl">person_remove</span>
-                                            </button>
-                                        </div>
-                                    </div>
+                                    <p id="profile-email-label" class="label-sub mt-1"></p>
                                 </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button id="delete-user-btn" onclick="deleteUser()" class="btn-secondary !text-error !border-error/20 hover:!bg-error/10">Delete User</button>
+                                <button onclick="saveProfile()" class="btn-primary px-10">Save Changes</button>
                             </div>
                         </div>
 
-                        <!-- Form -->
-                        <form id="user-form" class="space-y-8 flex-1 flex flex-col">
-                            <div class="space-y-8 flex-1 overflow-y-auto custom-scrollbar pr-2" id="form-scroll-container">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div class="space-y-3">
-                                        <label class="text-[9px] font-black uppercase tracking-widest text-neutral-500 ml-1">First Name</label>
-                                        <input type="text" id="form-first-name" required class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-all rounded-lg font-bold">
+                        <form id="profile-form" class="grid grid-cols-2 gap-x-12 gap-y-8" onsubmit="event.preventDefault(); saveProfile();">
+                            <div class="space-y-2">
+                                <label class="label-sub ml-1">First Name</label>
+                                <input type="text" id="form-first-name" required class="input-terminal">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="label-sub ml-1">Last Name</label>
+                                <input type="text" id="form-last-name" required class="input-terminal">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="label-sub ml-1">Email Address</label>
+                                <input type="email" id="form-email" required class="input-terminal font-mono">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="label-sub ml-1">Assigned Role</label>
+                                <select id="form-role" required class="input-terminal !py-3.5 appearance-none cursor-pointer uppercase tracking-widest text-[11px] font-bold">
+                                    <!-- Populated via JS -->
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="label-sub ml-1">Account Status</label>
+                                <div class="flex items-center gap-4 bg-black/20 p-4 rounded-lg border border-white/5">
+                                    <label class="switch">
+                                        <input type="checkbox" id="form-enabled" onchange="toggleEnabled(this.checked)">
+                                        <span class="slider"></span>
+                                    </label>
+                                    <div>
+                                        <p id="status-text" class="text-[10px] font-bold uppercase tracking-widest text-white">Active Account</p>
+                                        <p class="text-[8px] font-bold text-neutral-600 uppercase">Controls system access and authentication</p>
                                     </div>
-                                    <div class="space-y-3">
-                                        <label class="text-[9px] font-black uppercase tracking-widest text-neutral-500 ml-1">Last Name</label>
-                                        <input type="text" id="form-last-name" required class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-all rounded-lg font-bold">
-                                    </div>
-                                </div>
-                                
-                                <div class="space-y-3">
-                                    <label class="text-[9px] font-black uppercase tracking-widest text-neutral-500 ml-1">Digital Address (Email)</label>
-                                    <input type="email" id="form-email" required oninput="checkEmail(this.value)" class="w-full bg-black/60 border border-neutral-800 text-neutral-300 p-4 text-sm font-mono focus:border-primary outline-none transition-all rounded-lg">
-                                    <p id="email-validation" class="text-[8px] font-black uppercase mt-2 hidden"></p>
-                                </div>
-
-                                <div class="space-y-3">
-                                    <label class="text-[9px] font-black uppercase tracking-widest text-neutral-500 ml-1">Assigned Security Clearance</label>
-                                    <select id="form-role" required class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-all rounded-lg uppercase font-black tracking-widest disabled:opacity-50">
-                                        <!-- Populated via JS -->
-                                    </select>
-                                    <p id="admin-role-warning" class="text-[9px] text-error font-bold italic mt-2 hidden">Administrator clearance modification restricted to prevent lockout.</p>
-                                </div>
-
-                                <div class="space-y-3" id="address-container">
-                                    <label class="text-[9px] font-black uppercase tracking-widest text-neutral-500 ml-1">Operational Address</label>
-                                    <textarea id="form-address" rows="3" class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-all rounded-lg font-bold resize-none disabled:opacity-50" placeholder="ENTER OPERATIONAL LOCATION..."></textarea>
                                 </div>
                             </div>
-
-                            <!-- Footer Actions -->
-                            <div class="pt-6 border-t border-neutral-800 flex justify-between items-center shrink-0">
-                                <div id="wu-status-actions" class="flex items-center gap-6 hidden">
-                                    <div class="flex items-center gap-3">
-                                        <label class="text-[9px] font-black uppercase tracking-widest text-neutral-500">Access</label>
-                                        <label class="switch" id="status-toggle-wrapper">
-                                            <input type="checkbox" id="form-status-toggle" onchange="toggleUserStatusLocally()">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                    <button type="button" id="btn-purge" onclick="purgeUserLocally()" class="px-4 py-2 border border-error/30 text-error text-[9px] font-bold uppercase tracking-widest rounded hover:bg-error/10 transition-all flex items-center gap-1">
-                                        <span class="material-symbols-outlined text-xs">person_remove</span> Remove Identity
-                                    </button>
-                                </div>
-                                <div class="ml-auto">
-                                    <button type="submit" id="btn-submit-user" class="px-8 py-3 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg rounded transition-all flex items-center justify-center min-w-[200px]">
-                                        <span id="btn-submit-icon" class="material-symbols-outlined mr-2">send</span>
-                                        <span id="btn-submit-text">Initialize Activation</span>
-                                    </button>
-                                </div>
+                            <div class="space-y-2">
+                                <label class="label-sub ml-1">Professional Qualifications</label>
+                                <input type="text" id="form-qualification" required class="input-terminal">
+                            </div>
+                            <div class="col-span-2 space-y-2">
+                                <label class="label-sub ml-1">Address / Location</label>
+                                <textarea id="form-address" rows="3" class="input-terminal resize-none"></textarea>
                             </div>
                         </form>
                     </div>
 
-                    <!-- STATE D: Request Review -->
-                    <div id="workspace-request" class="tile-card p-10 rounded-xl h-full hidden flex-col">
-                        <!-- Header -->
-                        <div class="flex justify-between items-start gap-6 mb-8 border-b border-neutral-800/50 pb-8 shrink-0">
-                            <div class="flex items-center gap-5">
-                                <div class="w-16 h-16 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
-                                    <span class="material-symbols-outlined text-orange-500 text-3xl">how_to_reg</span>
+                    <div id="request-panel" class="tile-card p-10 rounded-xl hidden">
+                        <div class="flex flex-col md:flex-row justify-between items-start gap-6 mb-12 border-b border-white/5 pb-8">
+                            <div class="flex items-center gap-6">
+                                <div class="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                                    <span class="material-symbols-outlined text-primary text-4xl">how_to_reg</span>
                                 </div>
                                 <div>
                                     <div class="flex items-center gap-3 mb-1">
-                                        <h3 id="wr-name" class="text-2xl font-bold uppercase text-white tracking-tight headline">Applicant Name</h3>
-                                        <span class="status-pill bg-orange-500/20 text-orange-500 border border-orange-500/30">Pending Authorization</span>
+                                        <h3 id="request-full-name" class="heading-main !text-2xl">Access Request</h3>
+                                        <span class="status-pill bg-neutral-800 text-neutral-400 border border-neutral-700">Pending Review</span>
                                     </div>
-                                    <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Reviewing external personnel request</p>
+                                    <p id="request-email-label" class="label-sub">Reviewing submission for system access</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button onclick="rejectRequest()" class="btn-secondary !text-error !border-error/20 hover:!bg-error/10">Delete Request</button>
+                                <button onclick="approveRequest()" class="btn-primary px-10">Approve Request</button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-12">
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="label-sub mb-2 block">Personal Details</label>
+                                    <div class="bg-black/40 p-6 rounded-xl border border-white/5 space-y-4">
+                                        <div class="flex justify-between border-b border-white/5 pb-3">
+                                            <span class="text-[9px] font-bold text-neutral-500 uppercase">First Name</span>
+                                            <span id="req-first-name" class="text-[10px] font-bold text-white uppercase tracking-widest">---</span>
+                                        </div>
+                                        <div class="flex justify-between border-b border-white/5 pb-3">
+                                            <span class="text-[9px] font-bold text-neutral-500 uppercase">Last Name</span>
+                                            <span id="req-last-name" class="text-[10px] font-bold text-white uppercase tracking-widest">---</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-[9px] font-bold text-neutral-500 uppercase">Email</span>
+                                            <span id="req-email" class="text-[10px] font-mono text-primary uppercase">---</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="label-sub mb-2 block">Professional Qualifications</label>
+                                    <div class="bg-black/40 p-6 rounded-xl border border-white/5">
+                                        <p id="req-qualification" class="text-[10px] font-bold text-white uppercase leading-relaxed tracking-widest">---</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="label-sub mb-2 block">Reason for Request</label>
+                                    <div class="bg-black/20 p-6 rounded-xl border border-white/5 min-h-[200px]">
+                                        <p id="req-reason" class="text-[11px] text-neutral-400 italic leading-relaxed font-body">---</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Data -->
-                        <div class="space-y-8 flex-1 overflow-y-auto custom-scrollbar pr-2">
-                            <div class="space-y-2">
-                                <label class="text-[9px] font-black uppercase tracking-widest text-neutral-500 ml-1">Digital Address</label>
-                                <div id="wr-email" class="w-full bg-black/40 border border-neutral-800 text-neutral-400 p-4 text-sm font-mono rounded-lg"></div>
-                            </div>
-                            
-                            <div class="space-y-2">
-                                <label class="text-[9px] font-black uppercase tracking-widest text-neutral-500 ml-1">Credentials / Qualifications</label>
-                                <div id="wr-qual" class="w-full bg-black/40 border border-neutral-800 text-white p-4 text-sm rounded-lg font-bold tracking-wide"></div>
-                            </div>
-
-                            <div class="space-y-2">
-                                <label class="text-[9px] font-black uppercase tracking-widest text-neutral-500 ml-1">Operational Intent</label>
-                                <textarea id="wr-reason" readonly rows="5" class="w-full bg-black/40 border border-neutral-800 text-neutral-400 p-4 text-sm rounded-lg resize-none italic leading-relaxed"></textarea>
-                            </div>
-                        </div>
-
-                        <!-- Actions -->
-                        <div class="pt-6 border-t border-neutral-800 flex justify-end gap-4 shrink-0">
-                            <button type="button" onclick="openRejectOverlay()" class="px-6 py-3 border border-error/50 text-error text-xs font-bold uppercase tracking-wider rounded hover:bg-error/10 transition-all flex items-center gap-2">
-                                <span class="material-symbols-outlined text-sm">block</span> Decline
-                            </button>
-                            <button type="button" id="btn-authorize" onclick="approveSelectedRequest()" class="px-8 py-3 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg rounded transition-all flex items-center justify-center min-w-[200px]">
-                                <span id="btn-auth-icon" class="material-symbols-outlined mr-2">verified_user</span>
-                                <span id="btn-auth-text">Authorize Clearance</span>
-                            </button>
+                    </div>
+                    
+                    <div id="empty-state" class="h-full min-h-[600px] flex items-center justify-center border-2 border-dashed border-neutral-800 rounded-xl text-center">
+                        <div class="max-w-xs">
+                            <span class="material-symbols-outlined text-4xl text-neutral-700 mb-6">shield_person</span>
+                            <h3 class="text-xs font-black uppercase tracking-[0.3em] text-neutral-400 mb-2">Awaiting Selection</h3>
+                            <p class="text-[10px] text-neutral-600 uppercase font-bold leading-relaxed">Select a user or request from the list to manage their system access.</p>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- REJECTION OVERLAY (Z-Index Adjusted) -->
-    <div id="reject-overlay" class="fixed inset-0 z-[50] hidden items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-        <div class="tile-card w-full max-w-lg p-10 rounded-2xl relative shadow-2xl">
-            <div class="text-center mb-8">
-                <span class="material-symbols-outlined text-error text-5xl mb-4">cancel</span>
-                <h3 class="text-xl font-bold uppercase text-white tracking-tight headline">Deny Application</h3>
-                <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mt-2">Transmit deactivation notice to applicant</p>
+    <!-- Invite Modal -->
+    <div id="invite-modal" class="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] hidden items-center justify-center p-4">
+        <div class="tile-card border border-neutral-800 w-full max-w-md p-10 relative rounded-3xl shadow-[0_0_100px_rgba(0,0,0,0.8)]">
+            <button onclick="closeInviteModal()" class="absolute top-6 right-6 text-neutral-600 hover:text-white transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <div class="flex items-center gap-4 mb-10">
+                <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                    <span class="material-symbols-outlined text-primary text-3xl">person_add</span>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-white uppercase tracking-tighter headline">Add User</h3>
+                    <p class="label-sub mt-0.5">Register a new system operator</p>
+                </div>
             </div>
-            
-            <div class="bg-black/60 border border-error/20 p-6 rounded-xl mb-8">
-                <p class="text-[10px] text-neutral-400 font-medium italic leading-relaxed text-center">
-                    "Your application for access to VulnPrint has been reviewed and declined at this time. Unauthorized attempts to gain access are strictly prohibited."
-                </p>
-            </div>
-
-            <div class="flex gap-4">
-                <button onclick="closeRejectOverlay()" class="flex-1 py-3 border border-neutral-700 text-neutral-400 font-bold uppercase text-[10px] tracking-widest hover:text-white hover:border-white transition-all rounded">Cancel</button>
-                <button id="confirm-reject-btn" class="flex-1 py-3 bg-error text-white font-bold uppercase text-[10px] tracking-widest hover:opacity-90 rounded transition-all shadow-[0_0_15px_rgba(239,68,68,0.2)]">Confirm Deny</button>
-            </div>
+            <form id="invite-form" class="space-y-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="label-sub ml-1">First Name</label>
+                        <input type="text" id="invite-first-name" required class="input-terminal">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="label-sub ml-1">Last Name</label>
+                        <input type="text" id="invite-last-name" required class="input-terminal">
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <label class="label-sub ml-1">Email Address</label>
+                    <input type="email" id="invite-email" required class="input-terminal font-mono">
+                </div>
+                <div class="space-y-2">
+                    <label class="label-sub ml-1">Initial Role</label>
+                    <select id="invite-role" required class="input-terminal !py-3.5 appearance-none cursor-pointer uppercase tracking-widest text-[11px] font-bold">
+                        <!-- Populated via JS -->
+                    </select>
+                </div>
+                <button type="submit" id="invite-submit-btn" class="btn-primary w-full py-4 mt-4">Confirm Registration</button>
+            </form>
         </div>
     </div>
-
 
     <script>
         let allUsers = [];
         let allRoles = [];
         let pendingRequests = [];
-        let activeTab = 'directory'; // 'directory' or 'applications'
-        let workspaceMode = 'empty'; // 'empty', 'register', 'edit', 'review'
+        let activeTab = 'users';
+        let selectedId = null;
         let selectedEntity = null;
-        let isEditEnabled = false;
-
         const sessionUser = JSON.parse(localStorage.getItem('user') || '{"email": ""}');
 
         async function init() {
             await Promise.all([loadRoles(), loadUsers(), loadPendingRequests()]);
-            switchTab(activeTab); // Render initial state
         }
 
         async function loadRoles() {
             try {
                 const res = await fetch('/api/users/roles');
+                if (!res.ok) return;
                 allRoles = await res.json();
-                const select = document.getElementById('form-role');
-                select.innerHTML = '<option value="">SELECT CLEARANCE...</option>' + 
-                    allRoles.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+                const selects = [document.getElementById('form-role'), document.getElementById('invite-role')];
+                selects.forEach(s => {
+                    s.innerHTML = '<option value="">SELECT ROLE...</option>' + 
+                        allRoles.map(r => `<option value="${r.id}">${r.name.toUpperCase()}</option>`).join('');
+                });
             } catch (err) { console.error('Role sync failed:', err); }
         }
 
         async function loadUsers() {
             try {
-                const res = await fetch('/api/users');
+                const res = await fetch('/api/users?includeDeleted=true');
+                if (!res.ok) return;
                 allUsers = await res.json();
-                if(activeTab === 'directory') renderList();
+                if (activeTab === 'users') renderDirectory();
+                if (selectedId && activeTab === 'users') {
+                    selectedEntity = allUsers.find(u => u.id === selectedId);
+                    if (selectedEntity) updateProfilePanel();
+                }
             } catch (err) { console.error('User sync failed:', err); }
         }
 
         async function loadPendingRequests() {
             try {
                 const res = await fetch('/api/users/requests');
+                if (!res.ok) return;
                 pendingRequests = (await res.json()).filter(r => r.status === 'PENDING');
                 
-                const badge = document.getElementById('app-badge');
+                const countBadge = document.getElementById('app-count-badge');
                 if (pendingRequests.length > 0) {
-                    badge.innerText = pendingRequests.length;
-                    badge.classList.remove('hidden');
+                    countBadge.innerText = pendingRequests.length;
+                    countBadge.classList.remove('hidden');
                 } else {
-                    badge.classList.add('hidden');
+                    countBadge.classList.add('hidden');
                 }
-                if(activeTab === 'applications') renderList();
+                
+                if (activeTab === 'requests') renderDirectory();
+                if (selectedId && activeTab === 'requests') {
+                    selectedEntity = pendingRequests.find(r => r.id === selectedId);
+                    if (selectedEntity) updateRequestPanel();
+                }
             } catch (err) { console.error('Request sync failed', err); }
         }
 
-        function switchTab(tabId) {
-            activeTab = tabId;
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`tab-${tabId}`).classList.add('active');
+        function switchTab(tab) {
+            activeTab = tab;
+            selectedId = null;
+            selectedEntity = null;
             
-            document.getElementById('target-search').value = '';
-            document.getElementById('target-search').placeholder = tabId === 'directory' ? "SEARCH PERSONNEL..." : "SEARCH APPLICATIONS...";
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
             
-            renderList();
+            document.getElementById('directory-search').value = '';
+            document.getElementById('empty-state').classList.remove('hidden');
+            document.getElementById('profile-panel').classList.add('hidden');
+            document.getElementById('request-panel').classList.add('hidden');
+            
+            renderDirectory();
         }
 
-        function handleSearch(val) {
-            renderList(val);
+        function handleSearch(query) {
+            renderDirectory(query.toLowerCase());
         }
 
-        function renderList(filter = '') {
-            const list = document.getElementById('target-list');
-            const query = filter.toLowerCase();
-
-            if (activeTab === 'directory') {
+        function renderDirectory(filter = '') {
+            const list = document.getElementById('directory-list');
+            
+            if (activeTab === 'users') {
                 const filtered = allUsers.filter(u => 
-                    u.firstName.toLowerCase().includes(query) || 
-                    u.lastName.toLowerCase().includes(query) ||
-                    u.email.toLowerCase().includes(query) ||
-                    (u.role && u.role.name.toLowerCase().includes(query))
+                    !u.deleted && (
+                    u.firstName.toLowerCase().includes(filter) || 
+                    u.lastName.toLowerCase().includes(filter) ||
+                    u.email.toLowerCase().includes(filter)
+                    )
                 );
-
-                list.innerHTML = filtered.map(u => {
-                    const isSelected = selectedEntity && workspaceMode === 'edit' && selectedEntity.id === u.id;
-                    const isAdmin = u.role && u.role.name === 'Administrator';
-                    const statusColor = u.enabled ? 'bg-primary' : 'bg-neutral-600';
-                    return `
-                        <div onclick="selectUser(${u.id})" class="p-3 border ${isSelected ? 'border-primary/50 bg-primary/5' : 'border-transparent hover:bg-neutral-900/50'} cursor-pointer transition-all flex items-center gap-3 rounded-xl group">
-                            <div class="relative shrink-0">
-                                <img src="${u.profileImage || '/images/user.png'}" class="w-8 h-8 rounded-lg border border-neutral-800 object-cover ${!u.enabled ? 'grayscale' : ''}">
-                                <div class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#131313] ${statusColor}"></div>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-primary' : 'text-white group-hover:text-primary transition-colors'} truncate">${u.firstName} ${u.lastName}</p>
-                                <p class="text-[7px] font-bold ${isAdmin ? 'text-primary/80' : 'text-neutral-500'} uppercase tracking-widest truncate mt-0.5">${u.role ? u.role.name : 'Unassigned'}</p>
-                            </div>
+                
+                list.innerHTML = filtered.map(u => `
+                    <div onclick="selectEntity(${u.id})" class="p-3 border ${selectedId === u.id ? 'border-primary/50 bg-primary/5' : 'border-transparent hover:bg-neutral-900/50'} cursor-pointer transition-all flex items-center gap-3 rounded-xl group">
+                        <img src="${u.profileImage || '/images/user.png'}" class="w-8 h-8 rounded-lg border border-neutral-800 grayscale-[0.5] group-hover:grayscale-0 transition-all ${!u.enabled ? 'opacity-30' : ''}">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[10px] font-black uppercase ${selectedId === u.id ? 'text-primary' : 'text-white'} truncate">${u.firstName} ${u.lastName}</p>
+                            <p class="text-[7px] font-bold text-neutral-600 uppercase tracking-widest truncate">${u.email}</p>
                         </div>
-                    `;
-                }).join('') || '<p class="text-center py-8 text-[9px] text-neutral-600 uppercase font-bold tracking-widest">No personnel found</p>';
+                    </div>
+                `).join('') || '<p class="text-center py-10 label-sub text-neutral-600">No matching users</p>';
+            } else if (activeTab === 'deleted') {
+                const filtered = allUsers.filter(u => 
+                    u.deleted && (
+                    u.firstName.toLowerCase().includes(filter) || 
+                    u.lastName.toLowerCase().includes(filter) ||
+                    u.email.toLowerCase().includes(filter)
+                    )
+                );
+                
+                list.innerHTML = filtered.map(u => `
+                    <div onclick="selectEntity(${u.id})" class="p-3 border ${selectedId === u.id ? 'border-error/50 bg-error/5' : 'border-transparent hover:bg-neutral-900/50'} cursor-pointer transition-all flex items-center gap-3 rounded-xl group">
+                        <img src="${u.profileImage || '/images/user.png'}" class="w-8 h-8 rounded-lg border border-neutral-800 grayscale opacity-40">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[10px] font-black uppercase ${selectedId === u.id ? 'text-error' : 'text-neutral-500'} truncate">${u.firstName} ${u.lastName}</p>
+                            <p class="text-[7px] font-bold text-neutral-700 uppercase tracking-widest truncate">Deleted</p>
+                        </div>
+                    </div>
+                `).join('') || '<p class="text-center py-10 label-sub text-neutral-600">No deleted accounts</p>';
             } else {
                 const filtered = pendingRequests.filter(r => 
-                    r.firstName.toLowerCase().includes(query) || 
-                    r.lastName.toLowerCase().includes(query) ||
-                    r.email.toLowerCase().includes(query)
+                    r.firstName.toLowerCase().includes(filter) || 
+                    r.lastName.toLowerCase().includes(filter) ||
+                    r.email.toLowerCase().includes(filter)
                 );
-
-                list.innerHTML = filtered.map(r => {
-                    const isSelected = selectedEntity && workspaceMode === 'review' && selectedEntity.id === r.id;
-                    return `
-                        <div onclick="selectRequest(${r.id})" class="p-3 border ${isSelected ? 'border-orange-500/50 bg-orange-500/5' : 'border-transparent hover:bg-neutral-900/50'} cursor-pointer transition-all flex flex-col gap-2 rounded-xl group">
-                            <div class="flex items-center justify-between">
-                                <p class="text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-orange-500' : 'text-white'} truncate">${r.firstName} ${r.lastName}</p>
-                                <span class="text-[7px] font-black text-orange-500 bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20">PENDING</span>
-                            </div>
-                            <p class="text-[8px] font-mono text-neutral-500 truncate">${r.email}</p>
+                
+                list.innerHTML = filtered.map(r => `
+                    <div onclick="selectEntity(${r.id})" class="p-3 border ${selectedId === r.id ? 'border-primary/40 bg-primary/5' : 'border-transparent hover:bg-neutral-900/40'} cursor-pointer transition-all flex items-center gap-3 rounded-xl group">
+                        <div class="w-8 h-8 rounded-lg bg-neutral-800 flex items-center justify-center border border-neutral-700 group-hover:border-primary/30 transition-all">
+                            <span class="material-symbols-outlined text-neutral-400 group-hover:text-primary text-sm">person</span>
                         </div>
-                    `;
-                }).join('') || '<p class="text-center py-8 text-[9px] text-neutral-600 uppercase font-bold tracking-widest">No active applications</p>';
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[10px] font-black uppercase ${selectedId === r.id ? 'text-primary' : 'text-white'} truncate">${r.firstName} ${r.lastName}</p>
+                            <p class="text-[7px] font-bold text-neutral-600 uppercase tracking-widest truncate">${r.email}</p>
+                        </div>
+                    </div>
+                `).join('') || '<p class="text-center py-10 label-sub text-neutral-600">No pending requests</p>';
             }
         }
 
-        function setWorkspace(mode) {
-            workspaceMode = mode;
+        function selectEntity(id) {
+            if (!id) return;
+            selectedId = id;
             document.getElementById('empty-state').classList.add('hidden');
-            document.getElementById('workspace-user').classList.add('hidden');
-            document.getElementById('workspace-request').classList.add('hidden');
-
-            if (mode === 'empty') {
-                selectedEntity = null;
-                document.getElementById('empty-state').classList.remove('hidden');
-                document.getElementById('empty-state').classList.add('flex');
-            } else if (mode === 'register' || mode === 'edit') {
-                document.getElementById('workspace-user').classList.remove('hidden');
-                document.getElementById('workspace-user').classList.add('flex');
-            } else if (mode === 'review') {
-                document.getElementById('workspace-request').classList.remove('hidden');
-                document.getElementById('workspace-request').classList.add('flex');
-            }
-            renderList(); // Re-render to highlight selection
-        }
-
-        function toggleEditMode(force = null) {
-            isEditEnabled = force !== null ? force : !isEditEnabled;
-            const fields = ['form-first-name', 'form-last-name', 'form-role', 'form-address'];
-            fields.forEach(fId => {
-                const el = document.getElementById(fId);
-                if (el) {
-                    // Specific logic for role and admin lock
-                    if (fId === 'form-role' && selectedEntity && selectedEntity.role && selectedEntity.role.name === 'Administrator') {
-                        el.disabled = true;
-                    } else {
-                        el.disabled = !isEditEnabled;
-                    }
+            
+            if (activeTab === 'users' || activeTab === 'deleted') {
+                selectedEntity = allUsers.find(u => Number(u.id) === Number(id));
+                if (selectedEntity) {
+                    document.getElementById('profile-panel').classList.remove('hidden');
+                    document.getElementById('request-panel').classList.add('hidden');
+                    updateProfilePanel();
                 }
-            });
-            
-            const editBtn = document.getElementById('btn-edit-toggle');
-            if (editBtn) {
-                editBtn.classList.toggle('text-primary', isEditEnabled);
-                editBtn.classList.toggle('text-neutral-500', !isEditEnabled);
+            } else if (activeTab === 'requests') {
+                selectedEntity = pendingRequests.find(r => Number(r.id) === Number(id));
+                if (selectedEntity) {
+                    document.getElementById('profile-panel').classList.add('hidden');
+                    document.getElementById('request-panel').classList.remove('hidden');
+                    updateRequestPanel();
+                }
             }
-
-            const submitBtn = document.getElementById('btn-submit-user');
-            if (submitBtn) {
-                submitBtn.classList.toggle('hidden', !isEditEnabled && workspaceMode === 'edit');
-            }
+            renderDirectory(document.getElementById('directory-search').value);
         }
 
-        function initRegistration() {
-            setWorkspace('register');
-            document.getElementById('user-form').reset();
-            
-            // Header config
-            document.getElementById('wu-title').innerText = "Register Personnel";
-            document.getElementById('wu-subtitle').innerText = "Initialize new user identity protocols";
-            document.getElementById('wu-badge').classList.add('hidden');
-            document.getElementById('wu-avatar-container').classList.add('hidden');
-            document.getElementById('wu-icon-container').classList.remove('hidden');
-            document.getElementById('wu-header-actions').classList.add('hidden');
-            
-            // Form config
-            document.getElementById('form-email').readOnly = false;
-            document.getElementById('form-email').classList.remove('opacity-50');
-            document.getElementById('email-validation').classList.add('hidden');
-            document.getElementById('form-role').disabled = false;
-            document.getElementById('admin-role-warning').classList.add('hidden');
-            
-            toggleEditMode(true); // Always editable in register mode
+        function updateProfilePanel() {
+            const u = selectedEntity;
+            if (!u) return;
 
-            // Actions config
-            document.getElementById('wu-status-actions').classList.add('hidden');
-            const btn = document.getElementById('btn-submit-user');
-            btn.className = "px-8 py-3 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg rounded transition-all flex items-center justify-center min-w-[200px]";
-            document.getElementById('btn-submit-text').innerText = "Initialize Activation";
-            document.getElementById('btn-submit-icon').innerText = "send";
-            document.getElementById('btn-submit-icon').classList.remove('spinner');
-            btn.disabled = false;
-        }
-
-        function selectUser(id) {
-            selectedEntity = allUsers.find(u => u.id === id);
-            if (!selectedEntity) return;
-            setWorkspace('edit');
-
-            const isSelf = sessionUser.email === selectedEntity.email;
-            const isAdmin = selectedEntity.role && selectedEntity.role.name === 'Administrator';
-
-            // Header config
-            document.getElementById('wu-title').innerText = `${selectedEntity.firstName} ${selectedEntity.lastName}`;
-            document.getElementById('wu-subtitle').innerText = "Update organizational identity matrix";
+            const isAdmin = u.role && u.role.name === 'Administrator';
+            const isSelf = sessionUser && sessionUser.email === u.email;
+            const isDeleted = u.deleted === true || u.status === 'DELETED';
             
-            const badge = document.getElementById('wu-badge');
-            badge.innerText = selectedEntity.role ? selectedEntity.role.name : 'UNASSIGNED';
-            badge.className = `status-pill ${isAdmin ? 'bg-primary/10 text-primary border-primary/20' : 'bg-neutral-900 text-neutral-400 border-neutral-800'}`;
-            badge.classList.remove('hidden');
+            document.getElementById('profile-avatar').src = u.profileImage || '/images/user.png';
+            document.getElementById('profile-full-name').innerText = `${u.firstName} ${u.lastName}`;
+            document.getElementById('profile-email-label').innerText = `ACCOUNT STATUS: ${isDeleted ? 'DELETED' : (u.enabled ? 'ACTIVE' : 'SUSPENDED')}`; 
+            
+            const indicator = document.getElementById('profile-status-indicator');
+            indicator.className = `absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[#131313] ${isDeleted ? 'bg-neutral-600' : (u.enabled ? 'bg-primary' : 'bg-error')}`;
 
-            document.getElementById('wu-avatar-container').classList.remove('hidden');
-            document.getElementById('wu-icon-container').classList.add('hidden');
-            document.getElementById('wu-avatar').src = selectedEntity.profileImage || '/images/user.png';
+            // Set Form Values
+            document.getElementById('form-first-name').value = u.firstName || '';
+            document.getElementById('form-last-name').value = u.lastName || '';
+            document.getElementById('form-email').value = u.email || '';
+            document.getElementById('form-role').value = u.role ? u.role.id : '';
+            document.getElementById('form-enabled').checked = u.enabled || false;
+            document.getElementById('form-qualification').value = u.qualification || '';
+            document.getElementById('form-address').value = u.address || '';
             
-            const dot = document.getElementById('wu-status-dot');
-            dot.className = `absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-black ${selectedEntity.enabled ? 'bg-primary' : 'bg-neutral-600'}`;
-            dot.classList.remove('hidden');
+            document.getElementById('status-text').innerText = isDeleted ? 'Deleted Account' : (u.enabled ? 'Active Account' : 'Account Suspended');
 
-            const headerActions = document.getElementById('wu-header-actions');
-            headerActions.classList.remove('hidden');
+            // Handle Read-Only state for ALL inputs
+            const inputs = document.getElementById('profile-form').querySelectorAll('input, select, textarea');
+            inputs.forEach(i => i.disabled = isDeleted);
             
-            const headerDeleteBtn = document.getElementById('btn-header-delete');
-            headerDeleteBtn.classList.toggle('hidden', isSelf || isAdmin);
-
-            // Form config
-            document.getElementById('form-first-name').value = selectedEntity.firstName;
-            document.getElementById('form-last-name').value = selectedEntity.lastName;
-            document.getElementById('form-email').value = selectedEntity.email;
-            document.getElementById('form-email').readOnly = true;
-            document.getElementById('form-email').classList.add('opacity-50');
-            document.getElementById('email-validation').classList.add('hidden');
-            document.getElementById('form-address').value = selectedEntity.address || '';
-            
-            const roleSelect = document.getElementById('form-role');
-            roleSelect.value = selectedEntity.role ? selectedEntity.role.id : '';
-            
-            // Security Constraints UI
-            if (isAdmin) {
-                document.getElementById('admin-role-warning').classList.remove('hidden');
-            } else {
-                document.getElementById('admin-role-warning').classList.add('hidden');
+            if (!isDeleted) {
+                document.getElementById('form-role').disabled = isAdmin || isSelf;
+                document.getElementById('form-enabled').disabled = isAdmin || isSelf;
             }
-
-            // Status Actions config
-            const actionsBlock = document.getElementById('wu-status-actions');
-            actionsBlock.classList.remove('hidden');
             
-            const toggleWrapper = document.getElementById('status-toggle-wrapper');
-            const toggleInput = document.getElementById('form-status-toggle');
-            const statusLabel = document.getElementById('status-label');
-            const purgeBtn = document.getElementById('btn-purge');
-
-            toggleInput.checked = selectedEntity.enabled;
-            statusLabel.innerText = selectedEntity.enabled ? 'Active' : 'Suspended';
-            statusLabel.className = `text-[9px] font-black uppercase tracking-widest ${selectedEntity.enabled ? 'text-primary' : 'text-neutral-600'}`;
+            // Show/Hide buttons based on state
+            const saveBtn = document.querySelector('#profile-panel button.btn-primary');
+            if (saveBtn) saveBtn.style.display = isDeleted ? 'none' : 'block';
             
-            if (isSelf || isAdmin) {
-                toggleWrapper.classList.add('locked');
-                toggleInput.disabled = true;
-                purgeBtn.classList.add('hidden');
-            } else {
-                toggleWrapper.classList.remove('locked');
-                toggleInput.disabled = false;
-                purgeBtn.classList.remove('hidden');
-            }
-            // Update wrapper class based on state for color
-            if(selectedEntity.enabled) toggleWrapper.classList.add('active'); else toggleWrapper.classList.remove('active');
+            const delBtn = document.getElementById('delete-user-btn');
+            if (delBtn) delBtn.style.display = (isDeleted || isAdmin || isSelf) ? 'none' : 'block';
 
-            toggleEditMode(false); // Default to read-only in edit mode
-
-            const btn = document.getElementById('btn-submit-user');
-            btn.className = "px-8 py-3 border border-primary/50 text-primary font-bold text-xs uppercase tracking-wider hover:bg-primary/10 rounded transition-all flex items-center justify-center min-w-[200px]";
-            document.getElementById('btn-submit-text').innerText = "Update Profile";
-            document.getElementById('btn-submit-icon').innerText = "published_with_changes";
-            document.getElementById('btn-submit-icon').classList.remove('spinner');
-            btn.disabled = false;
+            // Ensure panel is visible
+            document.getElementById('profile-panel').classList.remove('hidden');
         }
 
-        function selectRequest(id) {
-            selectedEntity = pendingRequests.find(r => r.id === id);
-            if (!selectedEntity) return;
-            setWorkspace('review');
-
-            document.getElementById('wr-name').innerText = `${selectedEntity.firstName} ${selectedEntity.lastName}`;
-            document.getElementById('wr-email').innerText = selectedEntity.email;
-            document.getElementById('wr-qual').innerText = selectedEntity.qualification || 'UNSPECIFIED';
-            document.getElementById('wr-reason').value = selectedEntity.reason || 'No specific operational intent provided.';
-
-            const authBtn = document.getElementById('btn-authorize');
-            authBtn.disabled = false;
-            document.getElementById('btn-auth-text').innerText = "Authorize Clearance";
-            document.getElementById('btn-auth-icon').innerText = "verified_user";
-            document.getElementById('btn-auth-icon').classList.remove('spinner');
+        function updateRequestPanel() {
+            const r = selectedEntity;
+            document.getElementById('request-full-name').innerText = `${r.firstName} ${r.lastName}`;
+            document.getElementById('request-email-label').innerText = `Access Request: ${r.email}`;
+            document.getElementById('req-first-name').innerText = r.firstName;
+            document.getElementById('req-last-name').innerText = r.lastName;
+            document.getElementById('req-email').innerText = r.email;
+            document.getElementById('req-qualification').innerText = r.qualification || 'Not provided';
+            document.getElementById('req-reason').innerText = r.reason || 'No reason provided';
         }
 
-        // Action Handlers
-        async function checkEmail(val) {
-            const el = document.getElementById('email-validation');
-            const submitBtn = document.getElementById('btn-submit-user');
-            
-            if (!val || workspaceMode === 'edit') {
-                el.classList.add('hidden');
-                submitBtn.disabled = false;
+        async function toggleEnabled(enabled) {
+            if (!(await window.askPermission(`Confirm ${enabled ? 'activation' : 'suspension'} of this user account?`))) {
+                document.getElementById('form-enabled').checked = !enabled;
                 return;
             }
-
             try {
-                const res = await fetch(`/api/users/check-email?email=${encodeURIComponent(val)}`);
-                const data = await res.json();
-                el.classList.remove('hidden');
-                if (data.exists) {
-                    el.innerText = "ADDRESS REGISTERED";
-                    el.className = "text-[8px] font-black uppercase mt-2 text-error";
-                    submitBtn.disabled = true;
-                    submitBtn.classList.add('opacity-50');
-                } else {
-                    el.innerText = "ADDRESS AVAILABLE";
-                    el.className = "text-[8px] font-black uppercase mt-2 text-primary";
-                    submitBtn.disabled = false;
-                    submitBtn.classList.remove('opacity-50');
-                }
-            } catch (err) { console.error('Email verification failed', err); }
-        }
-
-        document.getElementById('user-form').onsubmit = async (e) => {
-            e.preventDefault();
-            
-            const btn = document.getElementById('btn-submit-user');
-            const btnIcon = document.getElementById('btn-submit-icon');
-            const btnText = document.getElementById('btn-submit-text');
-
-            const isEdit = workspaceMode === 'edit';
-            
-            const data = {
-                firstName: document.getElementById('form-first-name').value,
-                lastName: document.getElementById('form-last-name').value,
-                email: document.getElementById('form-email').value,
-                roleId: document.getElementById('form-role').value,
-                address: document.getElementById('form-address').value
-            };
-            if (isEdit) data.id = selectedEntity.id;
-
-            const endpoint = isEdit ? '/api/users/profile' : '/api/users/invite';
-
-            try {
-                // UI Loader state
-                btn.disabled = true;
-                btnText.innerText = isEdit ? "UPDATING..." : "TRANSMITTING...";
-                btnIcon.innerText = "";
-                btnIcon.classList.add('spinner');
-
-                const res = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                
-                if (res.ok) {
-                    const result = await res.json();
-                    
-                    // Success UI State
-                    btnIcon.classList.remove('spinner');
-                    btnIcon.innerText = "check";
-                    btn.classList.remove('border', 'text-primary', 'bg-primary');
-                    btn.classList.add('bg-primary', 'text-black');
-                    btnText.innerText = isEdit ? "UPDATED" : "TRANSMITTED";
-
-                    setTimeout(() => {
-                        window.showNotification(isEdit ? 'Identity updated successfully.' : 'Activation link transmitted via secure channel.', 'success');
-                        setWorkspace('empty');
-                        loadUsers();
-                    }, 800);
-                } else {
-                    const err = await res.json();
-                    window.showNotification(err.message || 'Protocol failure.', 'error');
-                    // Reset button
-                    btn.disabled = false;
-                    btnIcon.classList.remove('spinner');
-                    btnIcon.innerText = isEdit ? "published_with_changes" : "send";
-                    btnText.innerText = isEdit ? "Update Profile" : "Initialize Activation";
-                }
-            } catch (err) { 
-                console.error('Save failed:', err); 
-                window.showNotification('System communication failure.', 'error');
-            }
-        };
-
-        async function toggleUserStatusLocally() {
-            if (!selectedEntity || workspaceMode !== 'edit') return;
-            const toggleInput = document.getElementById('form-status-toggle');
-            const enabled = toggleInput.checked;
-            
-            try {
-                const res = await fetch(`/api/users/${selectedEntity.id}/status`, {
+                const res = await fetch(`/api/users/${selectedId}/status`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ enabled })
                 });
                 if (res.ok) {
-                    window.showNotification(`Account ${enabled ? 'Activated' : 'Suspended'}`, 'success');
+                    window.showNotification(`Account ${enabled ? 'Restored' : 'Suspended'}`, 'success');
                     await loadUsers();
-                    // Reselect to update UI
-                    selectUser(selectedEntity.id);
                 } else {
-                    toggleInput.checked = !enabled; // revert
+                    document.getElementById('form-enabled').checked = !enabled;
+                    const err = await res.json();
+                    window.showNotification(err.message || 'Action restricted.', 'error');
                 }
-            } catch (err) { console.error('Status sync failed:', err); toggleInput.checked = !enabled;}
+            } catch (err) { document.getElementById('form-enabled').checked = !enabled; }
         }
 
-        async function purgeUserLocally() {
-            if (!selectedEntity || workspaceMode !== 'edit') return;
-            if (!(await window.askPermission('PERMANENTLY REMOVE USER IDENTITY FROM SYSTEM? THIS ACTION IS IRREVERSIBLE.'))) return;
+        async function saveProfile() {
+            const data = {
+                id: selectedId,
+                firstName: document.getElementById('form-first-name').value,
+                lastName: document.getElementById('form-last-name').value,
+                email: document.getElementById('form-email').value,
+                roleId: document.getElementById('form-role').value,
+                qualification: document.getElementById('form-qualification').value,
+                address: document.getElementById('form-address').value
+            };
             
             try {
-                const res = await fetch(`/api/users/${selectedEntity.id}`, { method: 'DELETE' });
+                const res = await fetch('/api/users/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
                 if (res.ok) {
-                    window.showNotification('User identity successfully removed from organizational directory.', 'success');
-                    setWorkspace('empty');
-                    loadUsers();
+                    window.showNotification('Profile updates committed successfully.', 'success');
+                    await loadUsers();
                 } else {
-                    const data = await res.json();
-                    window.showNotification(data.message || 'Removal failed.', 'error');
+                    const err = await res.json();
+                    window.showNotification(err.message || 'Update failed.', 'error');
                 }
-            } catch (err) { console.error('Removal failed:', err); }
+            } catch (err) { window.showNotification('System connection error.', 'error'); }
         }
 
-        // Request Actions
-        window.openRejectOverlay = () => {
-            document.getElementById('reject-overlay').classList.remove('hidden');
-            document.getElementById('reject-overlay').classList.add('flex');
-            document.getElementById('confirm-reject-btn').onclick = confirmReject;
-        };
-
-        window.closeRejectOverlay = () => {
-            document.getElementById('reject-overlay').classList.replace('flex', 'hidden');
-        };
-
-        async function approveSelectedRequest() {
-            if (!selectedEntity || workspaceMode !== 'review') return;
-            
-            const btn = document.getElementById('btn-authorize');
-            const btnIcon = document.getElementById('btn-auth-icon');
-            const btnText = document.getElementById('btn-auth-text');
-
+        async function deleteUser() {
+            if (!(await window.askPermission(`Permanently remove ${selectedEntity.firstName} from the system directory? This cannot be undone.`))) return;
             try {
-                btn.disabled = true;
-                btnText.innerText = "AUTHORIZING...";
-                btnIcon.innerText = "";
-                btnIcon.classList.add('spinner');
-
-                const res = await fetch(`/api/users/requests/${selectedEntity.id}/approve`, { method: 'POST' });
+                const res = await fetch(`/api/users/${selectedId}`, { method: 'DELETE' });
                 if (res.ok) {
-                    const newUser = await res.json();
-                    window.showNotification('Application approved. Assign clearance level immediately.', 'success');
-                    
+                    window.showNotification('User deleted.', 'success');
+                    selectedId = null;
+                    selectedEntity = null;
+                    document.getElementById('profile-panel').classList.add('hidden');
+                    document.getElementById('empty-state').classList.remove('hidden');
                     await loadUsers();
+                } else {
+                    const err = await res.json();
+                    window.showNotification(err.message || 'Delete operation failed.', 'error');
+                }
+            } catch (err) { window.showNotification('Backend communication failure.', 'error'); }
+        }
+
+        async function approveRequest() {
+            const req = selectedEntity;
+            if (!(await window.askPermission(`Approve access request for ${req.firstName} ${req.lastName}?`))) return;
+            try {
+                const res = await fetch(`/api/users/requests/${selectedId}/approve`, { method: 'POST' });
+                if (res.ok) {
+                    window.showNotification('Request Approved. Opening registration to assign role.', 'success');
                     await loadPendingRequests();
                     
-                    switchTab('directory');
-                    initRegistration();
-                    document.getElementById('form-first-name').value = newUser.firstName;
-                    document.getElementById('form-last-name').value = newUser.lastName;
-                    document.getElementById('form-email').value = newUser.email;
-                    document.getElementById('form-email').readOnly = true;
-                    document.getElementById('form-email').classList.add('opacity-50');
-                    document.getElementById('wu-subtitle').innerText = "Assign clearance to authorized applicant";
+                    // Open Invite Modal pre-filled
+                    openInviteModal();
+                    document.getElementById('invite-first-name').value = req.firstName;
+                    document.getElementById('invite-last-name').value = req.lastName;
+                    document.getElementById('invite-email').value = req.email;
                     
+                    selectedId = null;
+                    selectedEntity = null;
+                    document.getElementById('request-panel').classList.add('hidden');
+                    document.getElementById('empty-state').classList.remove('hidden');
                 } else {
-                    window.showNotification('Authorization failed.', 'error');
-                    btn.disabled = false;
-                    btnIcon.classList.remove('spinner');
-                    btnIcon.innerText = "verified_user";
-                    btnText.innerText = "Authorize Clearance";
+                    const err = await res.json();
+                    window.showNotification(err.message || 'Approval failed.', 'error');
                 }
-            } catch (err) { console.error('Approval sync failed', err); }
+            } catch (err) { }
         }
 
-        async function confirmReject() {
-             if (!selectedEntity || workspaceMode !== 'review') return;
+        async function rejectRequest() {
+            if (!(await window.askPermission('Discard this access request?'))) return;
             try {
-                const btn = document.getElementById('confirm-reject-btn');
-                btn.disabled = true;
-                btn.innerText = "DENYING...";
-
-                const res = await fetch(`/api/users/requests/${selectedEntity.id}/reject`, { method: 'POST' });
+                const res = await fetch(`/api/users/requests/${selectedId}/reject`, { method: 'POST' });
                 if (res.ok) {
-                    window.showNotification('Access application denied.', 'info');
-                    closeRejectOverlay();
-                    setWorkspace('empty');
-                    loadPendingRequests();
+                    window.showNotification('Access request discarded.', 'info');
+                    selectedId = null;
+                    selectedEntity = null;
+                    document.getElementById('request-panel').classList.add('hidden');
+                    document.getElementById('empty-state').classList.remove('hidden');
+                    await loadPendingRequests();
                 }
-            } catch (err) { 
-                console.error('Rejection sync failed', err); 
-                document.getElementById('confirm-reject-btn').disabled = false;
-                document.getElementById('confirm-reject-btn').innerText = "Confirm Deny";
-            }
+            } catch (err) { }
+        }
+
+        document.getElementById('invite-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('invite-submit-btn');
+            const data = {
+                firstName: document.getElementById('invite-first-name').value,
+                lastName: document.getElementById('invite-last-name').value,
+                email: document.getElementById('invite-email').value,
+                roleId: document.getElementById('invite-role').value
+            };
+            
+            try {
+                btn.disabled = true;
+                btn.innerText = "REGISTERING...";
+                const res = await fetch('/api/users/invite', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    window.showNotification('User registration successful.', 'success');
+                    closeInviteModal();
+                    await loadUsers();
+                    
+                    // Switch to users tab and select the new user
+                    activeTab = 'users';
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.getElementById('tab-users').classList.add('active');
+                } else {
+                    const err = await res.json();
+                    window.showNotification(err.message || 'Registration failed.', 'error');
+                }
+            } catch (err) { }
+            finally { btn.disabled = false; btn.innerText = "Confirm Registration"; }
+        };
+
+        function openInviteModal() { document.getElementById('invite-modal').classList.replace('hidden', 'flex'); }
+        function closeInviteModal() { 
+            document.getElementById('invite-modal').classList.replace('flex', 'hidden'); 
+            document.getElementById('invite-form').reset();
         }
 
         document.addEventListener('DOMContentLoaded', init);

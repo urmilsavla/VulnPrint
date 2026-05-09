@@ -18,7 +18,11 @@
                 "on-surface": "#ffffff",
                 "error": "#ff7351"
               },
-              fontFamily: { headline: ['Space Grotesk'], body: ['Inter'], label: ['Space Grotesk'] }
+              fontFamily: { 
+                headline: ['Space Grotesk', 'sans-serif'], 
+                body: ['Inter', 'sans-serif'] 
+              },
+              boxShadow: { terminal: "0 0 0 1px rgba(38,38,38,0.85), 0 30px 80px rgba(0,0,0,0.55)" }
             }
           }
         }
@@ -27,7 +31,7 @@
         :root { color-scheme: dark; }
         body { background: #000000; margin: 0; }
         
-        .tile-card { background: #000000; border: 1px solid #262626; transition: all 0.3s ease; }
+        .tile-card { background: rgba(19, 19, 19, 0.6); border: 1px solid #262626; transition: all 0.3s ease; backdrop-filter: blur(12px); }
         
         .radar-bg {
             background-color: #000000;
@@ -36,8 +40,8 @@
 
         .terminal-grid {
             background-image: 
-                linear-gradient(to right, rgba(79, 254, 73, 0.03) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(79, 254, 73, 0.03) 1px, transparent 1px);
+                linear-gradient(to right, rgba(79, 254, 73, 0.06) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(79, 254, 73, 0.06) 1px, transparent 1px);
             background-size: 40px 40px;
         }
 
@@ -49,66 +53,75 @@
 </head>
 <body class="radar-bg min-h-screen text-on-surface font-body selection:bg-primary selection:text-black">
     <div class="absolute inset-0 terminal-grid pointer-events-none"></div>
+    
+    <!-- Notification Container -->
+    <div id="notification-container" class="fixed top-8 right-8 z-[300] flex flex-col gap-4 pointer-events-none"></div>
 
-    <main class="min-h-screen flex items-center justify-center relative px-6 py-20 z-10">
+    <main class="min-h-screen flex flex-col items-center justify-center relative px-6 py-20 z-10">
+        <!-- 1. Logo in Upper Middle -->
+        <div class="mb-10 text-center">
+            <img alt="VulnPrint Logo" class="h-16 mx-auto brightness-110" src="/images/logo.png">
+        </div>
+
+        <!-- 2. Centered Content Box -->
         <div class="w-full max-w-md">
             <!-- Login Tile -->
-            <div id="login-tile" class="tile-card p-12 rounded-2xl shadow-3xl relative overflow-hidden backdrop-blur-xl">
-                <div class="mb-12 flex flex-col items-center">
-                    <img alt="VulnPrint Logo" class="w-auto h-[90px]" src="/images/logo.png">
+            <div id="login-tile" class="tile-card p-10 rounded-2xl shadow-terminal relative overflow-hidden">
+                <!-- Header -->
+                <div class="text-center mb-8">
+                    <h1 class="text-2xl font-headline font-black uppercase text-white mb-2">Welcome Back</h1>
+                    <p class="text-[10px] text-neutral-500 uppercase tracking-widest font-bold">Sign in to your account</p>
                 </div>
 
-                <form id="loginForm" class="space-y-8">
-                    <div class="space-y-3">
-                        <label class="font-label text-[10px] tracking-[0.2em] text-primary/60 font-black uppercase block ml-1">Email ID *</label>
-                        <input name="email" type="email" autocomplete="off" class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-all rounded-lg" placeholder="Enter your corporate email" required>
-                        </div>
-                        <div class="space-y-2 relative">
-                        <label class="block text-[9px] font-black text-primary/60 uppercase tracking-widest ml-1">System Password</label>
+                <form id="loginForm" class="space-y-6">
+                    <div class="space-y-2">
+                        <label class="block text-[9px] font-headline font-black text-primary/60 uppercase tracking-widest ml-1 mb-2">Email Address</label>
+                        <input name="email" type="email" autocomplete="off" class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-colors rounded-lg font-body" placeholder="e.g. user@domain.com" required>
+                    </div>
+                    <div class="space-y-2 relative">
+                        <label class="block text-[9px] font-headline font-black text-primary/60 uppercase tracking-widest ml-1 mb-2">Password</label>
                         <div class="relative">
-                            <input name="password" autocomplete="off" class="w-full bg-black/60 border border-neutral-800 text-white p-4 pr-12 text-sm focus:border-primary outline-none transition-all rounded-lg" placeholder="Enter system password" type="password" id="password" required>
+                            <input name="password" autocomplete="off" class="w-full bg-black/60 border border-neutral-800 text-white p-4 pr-12 text-sm focus:border-primary outline-none transition-colors rounded-lg font-body" placeholder="Enter password" type="password" id="password" required>
                             <button type="button" onclick="togglePassword()" class="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-primary transition-colors focus:outline-none">
                                 <span id="eye-icon" class="material-symbols-outlined text-xl">visibility</span>
                             </button>
                         </div>
                     </div>
                     
-                    <div class="pt-6">
-                        <button class="w-full bg-primary text-black font-bold py-5 tracking-[0.2em] uppercase text-xs hover:opacity-90 active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(79,254,73,0.2)] rounded-lg" type="submit">
-                            Secure Entry
+                    <div class="pt-4">
+                        <button class="w-full bg-primary text-black font-headline font-black py-4 uppercase text-[10px] tracking-widest hover:shadow-[0_0_25px_rgba(79,254,73,0.35)] transition-all rounded-lg" type="submit">
+                            Sign In
                         </button>
                     </div>
 
-                    <div class="text-center mt-8">
-                        <button type="button" onclick="openRequestModal()" class="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 hover:text-primary transition-colors">
-                            Not a user yet? Request Access
+                    <div class="text-center mt-6">
+                        <button type="button" onclick="openRequestModal()" class="text-[10px] font-headline font-black uppercase tracking-[0.2em] text-neutral-500 hover:text-primary transition-colors">
+                            Request an account
                         </button>
                     </div>
                 </form>
             </div>
 
             <!-- MFA Challenge Tile -->
-            <div id="mfa-tile" class="tile-card p-12 rounded-2xl shadow-3xl relative overflow-hidden backdrop-blur-xl hidden">
-                <div class="mb-10 text-center">
+            <div id="mfa-tile" class="tile-card p-10 rounded-2xl shadow-terminal relative overflow-hidden hidden">
+                <div class="text-center mb-8">
                     <span class="material-symbols-outlined text-primary text-5xl mb-4">enhanced_encryption</span>
-                    <h3 class="text-xl font-headline font-black uppercase tracking-widest text-white mb-2">Multi-Factor Auth</h3>
-                    <p class="text-[10px] text-neutral-500 tracking-widest uppercase">Verification code sent to your email</p>
+                    <p class="text-[12px] text-neutral-300 uppercase tracking-widest font-black">Check your email for the 6-digit code</p>
                 </div>
 
-                <form id="mfaForm" class="space-y-8">
+                <form id="mfaForm" class="space-y-6">
                     <input type="hidden" id="preAuthToken" name="preAuthToken">
-                    <div class="space-y-3 text-center">
-                        <label class="font-label text-[10px] tracking-[0.4em] text-primary/60 font-black uppercase block">Enter 6-Digit Code</label>
-                        <input name="otp" maxlength="6" autofocus class="w-full bg-black/60 border border-neutral-800 text-white text-3xl font-mono text-center tracking-[0.5em] p-4 focus:border-primary outline-none transition-all rounded-lg" placeholder="000000" required>
+                    <div class="space-y-2 text-center">
+                        <input name="otp" maxlength="6" autofocus class="w-full bg-black/60 border border-neutral-800 text-white text-3xl font-mono text-center tracking-[0.5em] p-4 focus:border-primary outline-none transition-colors rounded-lg" placeholder="000000" required>
                     </div>
                     
                     <div class="pt-4">
-                        <button class="w-full bg-primary text-black font-bold py-5 tracking-[0.2em] uppercase text-xs hover:opacity-90 transition-all rounded-lg" type="submit">
-                            Verify & Enter
+                        <button class="w-full bg-primary text-black font-headline font-black py-4 uppercase text-[10px] tracking-widest hover:shadow-[0_0_25px_rgba(79,254,73,0.35)] transition-all rounded-lg" type="submit">
+                            Verify Code
                         </button>
                     </div>
-                    <div class="text-center">
-                        <button type="button" onclick="window.location.reload()" class="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-600 hover:text-white transition-colors">
+                    <div class="text-center mt-4">
+                        <button type="button" onclick="window.location.reload()" class="text-[9px] font-headline font-black uppercase tracking-[0.2em] text-neutral-600 hover:text-white transition-colors">
                             Back to login
                         </button>
                     </div>
@@ -119,238 +132,176 @@
 
     <!-- Request Access Modal -->
     <div id="request-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-[200] hidden items-center justify-center p-4">
-        <div class="bg-[#0e0e0e] border border-neutral-800 w-full max-w-lg p-10 shadow-2xl rounded-2xl relative">
+        <div class="tile-card w-full max-w-lg p-10 shadow-terminal rounded-2xl relative overflow-hidden">
             <button onclick="closeRequestModal()" class="absolute top-6 right-6 text-neutral-500 hover:text-white transition-colors">
                 <span class="material-symbols-outlined">close</span>
             </button>
             <div class="text-center mb-8">
-                <h3 class="text-xl font-headline font-black uppercase tracking-widest text-white mb-2">Request Access</h3>
-                <p class="text-xs text-neutral-500 tracking-tight">Your application will be vetted by a system administrator.</p>
+                <h3 class="text-2xl font-headline font-black uppercase tracking-widest text-white mb-2">Request Access</h3>
+                <p class="text-[10px] text-neutral-500 uppercase tracking-widest font-bold">Submit your details to request an account.</p>
             </div>
             <form id="requestForm" class="space-y-6">
                 <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-2">
-                        <label class="text-[9px] font-black uppercase tracking-widest text-primary/60 ml-1">First Name</label>
-                        <input name="firstName" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none rounded-lg" placeholder="e.g. Jane">
+                        <label class="block text-[9px] font-headline font-black text-primary/60 uppercase tracking-widest ml-1 mb-2">First Name</label>
+                        <input name="firstName" required class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none rounded-lg font-body" placeholder="e.g. Jane">
                     </div>
                     <div class="space-y-2">
-                        <label class="text-[9px] font-black uppercase tracking-widest text-primary/60 ml-1">Last Name</label>
-                        <input name="lastName" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none rounded-lg" placeholder="e.g. Smith">
+                        <label class="block text-[9px] font-headline font-black text-primary/60 uppercase tracking-widest ml-1 mb-2">Last Name</label>
+                        <input name="lastName" required class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none rounded-lg font-body" placeholder="e.g. Smith">
                     </div>
                 </div>
                 <div class="space-y-2">
-                    <label class="text-[9px] font-black uppercase tracking-widest text-primary/60 ml-1">Email Address</label>
-                    <input name="email" type="email" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none rounded-lg" placeholder="e.g. jane.smith@acme.com">
+                    <label class="block text-[9px] font-headline font-black text-primary/60 uppercase tracking-widest ml-1 mb-2">Email Address</label>
+                    <input name="email" type="email" required class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none rounded-lg font-body" placeholder="e.g. jane.smith@domain.com">
                 </div>
                 <div class="space-y-2">
-                    <label class="text-[9px] font-black uppercase tracking-widest text-primary/60 ml-1">Professional Qualification</label>
-                    <input name="qualification" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none rounded-lg" placeholder="e.g. Senior Security Researcher, OSCP">
+                    <label class="block text-[9px] font-headline font-black text-primary/60 uppercase tracking-widest ml-1 mb-2">Professional Qualification</label>
+                    <input name="qualification" required class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none rounded-lg font-body" placeholder="e.g. Senior Security Researcher">
                 </div>
                 <div class="space-y-2">
-                    <label class="text-[9px] font-black uppercase tracking-widest text-primary/60 ml-1">Reason for Access</label>
-                    <textarea name="reason" rows="3" required class="w-full bg-black/60 border border-neutral-800 text-white p-3 text-sm focus:border-primary outline-none rounded-lg resize-none" placeholder="Provide a detailed justification for joining the platform..."></textarea>
+                    <label class="block text-[9px] font-headline font-black text-primary/60 uppercase tracking-widest ml-1 mb-2">Reason for Access</label>
+                    <textarea name="reason" required rows="2" class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none rounded-lg resize-none font-body" placeholder="Briefly explain your need for access..."></textarea>
                 </div>
-                <button type="submit" class="w-full bg-primary text-black font-bold py-4 tracking-[0.2em] uppercase text-xs hover:opacity-90 transition-all rounded-lg mt-4">
-                    Submit Application
-                </button>
+                <button type="submit" class="w-full bg-primary text-black font-headline font-black py-4 uppercase text-[10px] tracking-widest hover:shadow-[0_0_25px_rgba(79,254,73,0.35)] transition-all rounded-lg mt-4">Submit Request</button>
             </form>
         </div>
     </div>
 
-    <!-- Custom Terminal Notifications -->
-    <div id="notification-container" class="fixed top-8 right-8 z-[100] flex flex-col gap-4 pointer-events-none"></div>
-
     <script>
-        function openRequestModal() { 
-            const modal = document.getElementById('request-modal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-        function closeRequestModal() { 
-            const modal = document.getElementById('request-modal');
-            modal.classList.remove('flex');
-            modal.classList.add('hidden');
-        }
-
-        document.getElementById('requestForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const jsonData = Object.fromEntries(formData.entries());
-
-            try {
-                const res = await fetch('/api/auth/apply', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(jsonData)
-                });
-                if (res.ok) {
-                    showNotification('Application submitted successfully. A system administrator will review your request.', 'success');
-                    closeRequestModal();
-                    e.target.reset();
-                } else {
-                    let errorMessage = 'Failed to submit application';
-                    try {
-                        const err = await res.json();
-                        errorMessage = err.message || err.error || errorMessage;
-                    } catch (e) {
-                        if (res.status === 403) errorMessage = 'Security rejection: Please refresh and try again.';
-                        else if (res.status === 500) errorMessage = 'Server error: Please try again later.';
-                    }
-                    showNotification(errorMessage, 'error');
-                }
-            } catch (error) {
-                console.error('CRITICAL: Fetch failed for /api/auth/apply', error);
-                showNotification('Network error: ' + (error.message || 'Check your connection'), 'error');
-            }
-        });
+        window.showNotification = function(message, type = 'info') {
+            const container = document.getElementById('notification-container');
+            const toast = document.createElement('div');
+            let color = '#4FFE49';
+            if (type === 'error') color = '#ff7351';
+            toast.className = `flex items-center gap-4 bg-[#0e0e0e] border-l-4 p-4 shadow-2xl min-w-[300px] pointer-events-auto transition-all duration-300 transform translate-x-full font-body`;
+            toast.style.borderColor = color;
+            toast.innerHTML = `<div class="flex-1 text-xs text-white font-medium">${message}</div>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.style.transform = 'translateX(0)', 10);
+            setTimeout(() => {
+                toast.style.transform = 'translateX(110%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        };
 
         function togglePassword() {
-            const pwd = document.getElementById('password');
+            const input = document.getElementById('password');
             const icon = document.getElementById('eye-icon');
-            if (pwd.type === 'password') {
-                pwd.type = 'text';
+            if (input.type === 'password') {
+                input.type = 'text';
                 icon.innerText = 'visibility_off';
             } else {
-                pwd.type = 'password';
+                input.type = 'password';
                 icon.innerText = 'visibility';
             }
         }
 
-        function showNotification(message, type = 'info') {
-            const container = document.getElementById('notification-container');
-            const toast = document.createElement('div');
-            let color = '#4FFE49'; let icon = 'info';
-            if (type === 'error') { color = '#ff7351'; icon = 'warning'; }
-            toast.className = `toast-entry pointer-events-auto flex items-center gap-4 bg-[#0e0e0e] border-l-4 p-5 shadow-3xl min-w-[320px] rounded-r-lg border-neutral-800`;
-            toast.style.borderLeftColor = color;
-            toast.innerHTML = `<span class="material-symbols-outlined" style="color: ${color}">${icon}</span><div class="flex-1"><p class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: ${color}">${type}</p><p class="text-xs text-white font-medium mt-1">${message}</p></div>`;
-            container.appendChild(toast);
-            setTimeout(() => { toast.classList.replace('toast-entry', 'toast-exit'); setTimeout(() => toast.remove(), 400); }, 4000);
+        function openRequestModal() {
+            document.getElementById('request-modal').classList.remove('hidden');
+            document.getElementById('request-modal').classList.add('flex');
         }
 
-        function evaluatePassword(pwd) {
-            let score = 0;
-            const rules = {
-                length: pwd.length >= 8,
-                upper: /[A-Z]/.test(pwd),
-                lower: /[a-z]/.test(pwd),
-                num: /[0-9]/.test(pwd)
-            };
-
-            if (rules.length) score++;
-            if (rules.upper) score++;
-            if (rules.lower) score++;
-            if (rules.num) score++;
-
-            const getOriginalText = (id) => {
-               if (id === 'req-length') return '8+ Characters';
-               if (id === 'req-upper') return '1 Uppercase';
-               if (id === 'req-lower') return '1 Lowercase';
-               if (id === 'req-num') return '1 Number';
-            };
-
-            const updateReqClean = (id, isValid) => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.className = `flex items-center gap-1 ${isValid ? 'text-primary' : 'text-neutral-600'}`;
-                    el.innerHTML = `<span class="material-symbols-outlined text-[10px]">${isValid ? 'check' : 'close'}</span> ${getOriginalText(id)}`;
-                }
-            };
-
-            updateReqClean('req-length', rules.length);
-            updateReqClean('req-upper', rules.upper);
-            updateReqClean('req-lower', rules.lower);
-            updateReqClean('req-num', rules.num);
-
-            const bars = [document.getElementById('bar-1'), document.getElementById('bar-2'), document.getElementById('bar-3'), document.getElementById('bar-4')];
-            const textEl = document.getElementById('pwd-strength-text');
-            
-            bars.forEach(b => { if(b) b.className = 'flex-1 bg-neutral-800 rounded-full transition-all'; });
-            
-            if (pwd.length === 0) {
-                if(textEl) { textEl.innerText = 'None'; textEl.className = 'text-[9px] font-black uppercase tracking-widest text-neutral-500'; }
-            } else if (score <= 2) {
-                if(textEl) { textEl.innerText = 'Weak'; textEl.className = 'text-[9px] font-black uppercase tracking-widest text-error'; }
-                for(let i=0; i<score || i<1; i++) if(bars[i]) bars[i].classList.add('bg-error');
-            } else if (score === 3) {
-                if(textEl) { textEl.innerText = 'Medium'; textEl.className = 'text-[9px] font-black uppercase tracking-widest text-orange-500'; }
-                for(let i=0; i<3; i++) if(bars[i]) bars[i].classList.add('bg-orange-500');
-            } else if (score === 4) {
-                if(textEl) { textEl.innerText = 'Strong'; textEl.className = 'text-[9px] font-black uppercase tracking-widest text-primary'; }
-                for(let i=0; i<4; i++) if(bars[i]) bars[i].classList.add('bg-primary');
-            }
-            
-            return score === 4;
+        function closeRequestModal() {
+            document.getElementById('request-modal').classList.add('hidden');
+            document.getElementById('request-modal').classList.remove('flex');
+            document.getElementById('requestForm').reset();
         }
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const formData = new FormData(e.target);
-            const jsonData = Object.fromEntries(formData.entries());
-
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerText = 'SIGNING IN...';
+            
             try {
-                const response = await fetch('/api/auth/login', {
+                const res = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(jsonData)
+                    body: JSON.stringify(Object.fromEntries(new FormData(e.target)))
                 });
-
-                const data = await response.json();
-                handleAuthResponse(response, data);
-            } catch (error) { 
-                console.error('Error:', error); 
-                showNotification('System Error: Server unreachable', 'error');
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    if (data.status === 'MFA_REQUIRED') {
+                        document.getElementById('login-tile').classList.add('hidden');
+                        document.getElementById('mfa-tile').classList.remove('hidden');
+                        document.getElementById('preAuthToken').value = data.preAuthToken;
+                        window.showNotification('Please verify your identity with the code sent to your email.', 'info');
+                    } else {
+                        localStorage.setItem('user', JSON.stringify(data));
+                        window.location.href = '/dashboard';
+                    }
+                } else {
+                    window.showNotification(data.message || 'Login failed. Please check your credentials.', 'error');
+                }
+            } catch (err) {
+                window.showNotification('System Error: Unable to communicate with the server.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'SIGN IN';
             }
         });
 
         document.getElementById('mfaForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const formData = new FormData(e.target);
-            const jsonData = Object.fromEntries(formData.entries());
-
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerText = 'VERIFYING...';
+            
             try {
-                const response = await fetch('/api/auth/verify-mfa', {
+                const res = await fetch('/api/auth/verify-mfa', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(jsonData)
+                    body: JSON.stringify(Object.fromEntries(new FormData(e.target)))
                 });
-
-                const data = await response.json();
-                handleAuthResponse(response, data);
-            } catch (error) {
-                showNotification('Verification failed', 'error');
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    localStorage.setItem('user', JSON.stringify(data));
+                    window.showNotification('Identity verified successfully.', 'success');
+                    setTimeout(() => window.location.href = '/dashboard', 1000);
+                } else {
+                    window.showNotification(data.message || 'Verification failed. Incorrect code.', 'error');
+                }
+            } catch (err) {
+                window.showNotification('System Error: Unable to verify code.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'VERIFY CODE';
             }
         });
 
-        function handleAuthResponse(response, data) {
-            if (response.status === 202 && data.status === 'MFA_REQUIRED') {
-                document.getElementById('login-tile').classList.add('hidden');
-                document.getElementById('mfa-tile').classList.remove('hidden');
-                document.getElementById('preAuthToken').value = data.preAuthToken;
-                showNotification('MFA Verification Required', 'info');
-                return;
-            }
-
-            if (response.ok) {
-                localStorage.setItem('user', JSON.stringify(data));
+        document.getElementById('requestForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerText = 'SUBMITTING...';
+            
+            try {
+                const res = await fetch('/api/auth/apply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(Object.fromEntries(new FormData(e.target)))
+                });
                 
-                try {
-                    const perms = data.perms || [];
-                    if (perms.includes('VIEW_DASHBOARD')) window.location.href = '/dashboard';
-                    else if (perms.includes('VIEW_ASSIGNED_PROJECTS') || perms.includes('VIEW_ALL_PROJECTS')) window.location.href = '/web-pentest';
-                    else window.location.href = '/profile';
-                } catch (e) {
-                    window.location.href = '/dashboard';
-                }
-            } else {
-                if (data.status === 'PASSWORD_CHANGE_REQUIRED') {
-                    showNotification('Security Update: Password Reset Required', 'info');
-                    // Future phase will handle the redirect to dedicated reset page
+                const data = await res.json();
+                
+                if (res.ok) {
+                    closeRequestModal();
+                    window.showNotification('Your request has been submitted successfully.', 'success');
                 } else {
-                    showNotification(data.message || 'Authentication Failed', 'error');
+                    window.showNotification(data.message || 'Failed to submit request.', 'error');
                 }
+            } catch (err) {
+                window.showNotification('System Error: Unable to submit request.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'SUBMIT REQUEST';
             }
-        }
+        });
     </script>
 </body>
 </html>

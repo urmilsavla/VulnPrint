@@ -457,24 +457,39 @@ public class AppSecurityGuard {
     public boolean isSafePath(String requestedPath, String baseDir) {
         if (requestedPath == null || baseDir == null || requestedPath.contains("\0")) return false;
         try {
-            Path base = Paths.get(baseDir).toRealPath();
-            Path target = Paths.get(requestedPath).toRealPath();
+            Path base = Paths.get(baseDir).toAbsolutePath().normalize();
+            Path target = Paths.get(requestedPath).toAbsolutePath().normalize();
+            
+            // On Windows, drive letters and case can cause issues with startsWith on Strings,
+            // but Path.startsWith is generally safe after absolute/normalize.
+            // We use toRealPath() only if the path exists to satisfy the security mandate for resolving symlinks.
+            if (java.nio.file.Files.exists(base)) base = base.toRealPath();
+            if (java.nio.file.Files.exists(target)) target = target.toRealPath();
+            
             return target.startsWith(base);
         } catch (IOException e) { return false; }
     }
 
     public String processAndSaveImage(String base64Data, String uploadDir, String fileNamePrefix) throws IOException {
-        if (base64Data == null || !base64Data.contains(",")) throw new IOException("Invalid image data");
+        if (base64Data == null || !base64Data.contains(",")) throw new IOException("Invalid base64 image data");
         String[] parts = base64Data.split(",");
         byte[] imageBytes = Base64.getDecoder().decode(parts[1]);
 
         try (ByteArrayInputStream bais = new ByteArrayInputStream(imageBytes)) {
             BufferedImage image = ImageIO.read(bais);
-            if (image == null) throw new IOException("Not a valid image or corrupted format");
+            if (image == null) throw new IOException("Corrupted image format detected");
+            
             String fileName = fileNamePrefix + "_" + UUID.randomUUID().toString() + ".png";
             File outputFile = new File(uploadDir, fileName);
-            if (!isSafePath(outputFile.getAbsolutePath(), uploadDir)) throw new IOException("Path traversal blocked");
-            if (!ImageIO.write(image, "png", outputFile)) throw new IOException("Critical failure writing safe image to disk");
+            
+            // Verify that the destination file will be within the project root and not traversing out
+            if (!isSafePath(outputFile.getAbsolutePath(), new File(".").getAbsolutePath())) {
+                throw new IOException("Security Violation: Path traversal blocked during image save");
+            }
+            
+            if (!ImageIO.write(image, "png", outputFile)) {
+                throw new IOException("Failed to write image bytes to disk");
+            }
             return fileName;
         }
     }

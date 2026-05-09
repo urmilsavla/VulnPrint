@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import com.vulnprint.model.Role;
 import com.vulnprint.model.Permission;
@@ -43,6 +44,9 @@ public class UserRestController {
 
     @Autowired
     private com.vulnprint.repository.AccessRequestRepository accessRequestRepository;
+
+    @Autowired
+    private com.vulnprint.repository.AlertRepository alertRepository;
 
     @Autowired
     private EmailService emailService;
@@ -103,6 +107,13 @@ public class UserRestController {
             user.setStatus(User.AccountStatus.INVITED);
             user.setEnabled(false); 
             
+            if (rawData.containsKey("qualification")) {
+                user.setQualification(guard.sanitize((String) rawData.get("qualification")));
+            }
+            if (rawData.containsKey("address")) {
+                user.setAddress(guard.encryptVault(guard.sanitize((String) rawData.get("address"))));
+            }
+            
             if (rawData.containsKey("roleId") && rawData.get("roleId") != null && !String.valueOf(rawData.get("roleId")).isBlank()) {
                 try {
                     Long roleId = Long.valueOf(String.valueOf(rawData.get("roleId")));
@@ -157,6 +168,11 @@ public class UserRestController {
                     return ResponseEntity.badRequest().body(Map.of("message", "Authorization link has expired."));
                 }
                 
+                // Security: Revoke all existing sessions if this is a reset for an active user
+                if (user.getStatus() == User.AccountStatus.ACTIVE) {
+                    user.setLastRoleChange(java.time.LocalDateTime.now());
+                }
+
                 user.setPassword(guard.hashPassword(password));
                 user.setStatus(User.AccountStatus.ACTIVE);
                 user.setEnabled(true);
@@ -170,8 +186,10 @@ public class UserRestController {
 
     @GetMapping
     @PreAuthorize("hasAuthority('VIEW_USERS')")
-    public ResponseEntity<?> getAllUsers() {
-        List<User> users = userRepository.findAll();
+    public ResponseEntity<?> getAllUsers(@RequestParam(required = false, defaultValue = "false") boolean includeDeleted) {
+        List<User> users = userRepository.findAll().stream()
+                .filter(u -> includeDeleted || !u.isDeleted())
+                .collect(Collectors.toList());
         users.forEach(u -> {
             if (u.getAddress() != null && !u.getAddress().isEmpty()) {
                 try {
@@ -270,80 +288,89 @@ public class UserRestController {
     @PostMapping("/profile")
     @PreAuthorize("hasAuthority('MANAGE_USERS') or (hasAuthority('EDIT_MY_PROFILE') and ( #data['email'] == principal.username or ( #data['id'] != null and @guard.isSelf(#data['id']) ) ))")
     public ResponseEntity<?> updateProfile(@RequestBody Map<String, Object> data) {
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String email = (String) data.get("email");
-        Long userId = data.containsKey("id") ? Long.valueOf(data.get("id").toString()) : null;
-        
-        Optional<User> targetOpt = userId != null ? userRepository.findById(userId) : userRepository.findByEmail(email);
-
-        if (targetOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("message", "User not found"));
-        User targetUser = targetOpt.get();
-
-        targetUser.setFirstName(guard.sanitize((String) data.get("firstName")));
-        targetUser.setLastName(guard.sanitize((String) data.get("lastName")));
-        
-        // PII Vault Encryption for Address
-        if (data.containsKey("address")) {
-            String rawAddress = (String) data.get("address");
-            targetUser.setAddress(guard.encryptVault(guard.sanitize(rawAddress)));
-        }
-        
-        if (data.containsKey("qualification")) {
-            targetUser.setQualification(guard.sanitize((String) data.get("qualification")));
-        }
-
-        if (data.containsKey("profileImage")) {
-            targetUser.setProfileImage(guard.sanitizeProfileImage((String) data.get("profileImage")));
-        }
-        
-        if (data.containsKey("email")) {
-            String newEmail = (String) data.get("email");
-            if (newEmail != null && !newEmail.equals(targetUser.getEmail())) {
-                if (userRepository.findByEmail(newEmail).isPresent()) {
-                    return ResponseEntity.badRequest().body(Map.of("message", "Email already in use"));
-                }
-                targetUser.setEmail(guard.sanitize(newEmail));
+        try {
+            User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String email = (String) data.get("email");
+            Long userId = null;
+            if (data.containsKey("id") && data.get("id") != null && !data.get("id").toString().isEmpty()) {
+                userId = Long.valueOf(data.get("id").toString());
             }
-        }
-        
-        boolean securityModified = false;
+            
+            Optional<User> targetOpt = userId != null ? userRepository.findById(userId) : userRepository.findByEmail(email);
 
-        // Admin only overrides
-        if (guard.hasPermission(user, AppSecurityGuard.MANAGE_USERS)) {
-            if (data.containsKey("newPassword") && !((String) data.get("newPassword")).isEmpty()) {
-                String np = (String) data.get("newPassword");
-                if (!guard.isStrongPassword(np)) {
-                    return ResponseEntity.badRequest().body(Map.of("message", "The provided password does not meet the organization's security requirements."));
-                }
-                targetUser.setPassword(guard.hashPassword(np));
-                securityModified = true;
+            if (targetOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("message", "User not found"));
+            User targetUser = targetOpt.get();
+
+            if (data.containsKey("firstName")) targetUser.setFirstName(guard.sanitize((String) data.get("firstName")));
+            if (data.containsKey("lastName")) targetUser.setLastName(guard.sanitize((String) data.get("lastName")));
+            
+            // PII Vault Encryption for Address
+            if (data.containsKey("address")) {
+                String rawAddress = (String) data.get("address");
+                targetUser.setAddress(guard.encryptVault(guard.sanitize(rawAddress)));
             }
-        }
+            
+            if (data.containsKey("qualification")) {
+                targetUser.setQualification(guard.sanitize((String) data.get("qualification")));
+            }
 
-        // Manage Role and Extra Permissions
-        if (guard.hasPermission(user, AppSecurityGuard.MANAGE_ACCESS)) {
+            if (data.containsKey("profileImage")) {
+                targetUser.setProfileImage(guard.sanitizeProfileImage((String) data.get("profileImage")));
+            }
+            
+            if (data.containsKey("email")) {
+                String newEmail = (String) data.get("email");
+                if (newEmail != null && !newEmail.equals(targetUser.getEmail())) {
+                    if (userRepository.findByEmail(newEmail).isPresent()) {
+                        return ResponseEntity.badRequest().body(Map.of("message", "Email already in use"));
+                    }
+                    targetUser.setEmail(guard.sanitize(newEmail));
+                }
+            }
+            
+            boolean securityModified = false;
 
-            if (data.containsKey("roleId")) {
-                Long newRoleId = Long.valueOf(data.get("roleId").toString());
-                if (targetUser.getRole() == null || !targetUser.getRole().getId().equals(newRoleId)) {
-                    roleRepository.findById(newRoleId).ifPresent(targetUser::setRole);
+            // Admin only overrides
+            if (guard.hasPermission(user, AppSecurityGuard.MANAGE_USERS)) {
+                if (data.containsKey("newPassword") && data.get("newPassword") != null && !data.get("newPassword").toString().isEmpty()) {
+                    String np = (String) data.get("newPassword");
+                    if (!guard.isStrongPassword(np)) {
+                        return ResponseEntity.badRequest().body(Map.of("message", "The provided password does not meet the organization's security requirements."));
+                    }
+                    targetUser.setPassword(guard.hashPassword(np));
                     securityModified = true;
                 }
             }
-            if (data.containsKey("extraPermissionIds")) {
-                List<Long> ids = (List<Long>) data.get("extraPermissionIds");
-                Set<Permission> extras = new HashSet<>(permissionRepository.findAllById(ids));
-                targetUser.setExtraPermissions(extras);
-                securityModified = true;
+
+            // Manage Role and Extra Permissions
+            if (guard.hasPermission(user, AppSecurityGuard.MANAGE_ACCESS)) {
+                if (data.containsKey("roleId") && data.get("roleId") != null && !data.get("roleId").toString().isEmpty()) {
+                    try {
+                        Long newRoleId = Long.valueOf(data.get("roleId").toString());
+                        if (targetUser.getRole() == null || !targetUser.getRole().getId().equals(newRoleId)) {
+                            roleRepository.findById(newRoleId).ifPresent(targetUser::setRole);
+                            securityModified = true;
+                        }
+                    } catch (NumberFormatException nfe) {}
+                }
+                if (data.containsKey("extraPermissionIds")) {
+                    List<Long> ids = (List<Long>) data.get("extraPermissionIds");
+                    Set<Permission> extras = new HashSet<>(permissionRepository.findAllById(ids));
+                    targetUser.setExtraPermissions(extras);
+                    securityModified = true;
+                }
             }
-        }
 
-        if (securityModified) {
-            targetUser.setLastRoleChange(java.time.LocalDateTime.now());
-        }
+            if (securityModified) {
+                targetUser.setLastRoleChange(java.time.LocalDateTime.now());
+            }
 
-        userRepository.save(targetUser);
-        return ResponseEntity.ok(Map.of("message", "Profile updated successfully" + (securityModified ? " and security sessions revoked" : "")));
+            userRepository.save(targetUser);
+            return ResponseEntity.ok(Map.of("message", "Profile updated successfully" + (securityModified ? " and security sessions revoked" : "")));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(400).body(Map.of("message", "Unable to update profile. Please ensure all data is correctly formatted."));
+        }
     }
 
     @PostMapping("/lockdown-reset")
@@ -381,6 +408,35 @@ public class UserRestController {
         }).orElse(ResponseEntity.status(404).body(Map.of("message", "The requested resource was not found.")));
     }
 
+    @PostMapping("/{id}/trigger-reset")
+    @PreAuthorize("hasAuthority('MANAGE_USERS')")
+    public ResponseEntity<?> triggerReset(@PathVariable Long id, jakarta.servlet.http.HttpServletRequest httpRequest) {
+        User admin = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return userRepository.findById(id).map(target -> {
+            String rawToken = UUID.randomUUID().toString();
+            String hashedToken = org.springframework.util.DigestUtils.md5DigestAsHex(rawToken.getBytes());
+            
+            target.setInvitationToken(hashedToken);
+            target.setInvitationExpiry(java.time.LocalDateTime.now().plusMinutes(15));
+            userRepository.save(target);
+
+            // Audit Log
+            com.vulnprint.model.Alert alert = new com.vulnprint.model.Alert();
+            alert.setTitle("Password Reset Triggered");
+            alert.setDetails("Admin " + admin.getFirstName() + " " + admin.getLastName() + " initiated a password reset for User " + target.getFirstName() + " " + target.getLastName());
+            alert.setLevel("System");
+            alert.setTimeAgo("Just now");
+            alertRepository.save(alert);
+            
+            String baseUrl = String.format("%s://%s:%d", httpRequest.getScheme(), httpRequest.getServerName(), httpRequest.getServerPort());
+            String resetLink = baseUrl + "/activate-account?token=" + rawToken + "&mode=reset";
+            
+            emailService.sendPasswordResetEmail(target.getEmail(), target.getFirstName(), resetLink);
+
+            return ResponseEntity.ok().body(Map.of("message", "Password reset link transmitted successfully."));
+        }).orElse(ResponseEntity.status(404).body(Map.of("message", "User not found.")));
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('MANAGE_USERS')")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
@@ -390,8 +446,21 @@ public class UserRestController {
             if (target.getRole() != null && "Administrator".equals(target.getRole().getName())) {
                 return ResponseEntity.status(403).body(Map.of("message", "Cannot delete Administrator profile"));
             }
-            userRepository.deleteById(id);
-            return ResponseEntity.ok().body(Map.of("message", "User operation completed successfully."));
+            try {
+                target.setDeleted(true);
+                target.setEnabled(false);
+                target.setStatus(User.AccountStatus.DELETED);
+                
+                // Avoid UNIQUE constraint conflicts for future registrations
+                String timestamp = String.valueOf(System.currentTimeMillis());
+                target.setEmail(target.getEmail() + "_DELETED_" + timestamp);
+                
+                userRepository.save(target);
+                
+                return ResponseEntity.ok().body(Map.of("message", "User operation completed successfully."));
+            } catch (Exception e) {
+                return ResponseEntity.status(500).body(Map.of("message", "An internal system error occurred during the delete operation."));
+            }
         }).orElse(ResponseEntity.status(404).body(Map.of("message", "The requested resource was not found.")));
     }
 
@@ -419,6 +488,13 @@ public class UserRestController {
         newUser.setPassword(guard.hashPassword(password));
         newUser.setFirstName(guard.sanitize((String) data.get("firstName")));
         newUser.setLastName(guard.sanitize((String) data.get("lastName")));
+        
+        if (data.containsKey("qualification")) {
+            newUser.setQualification(guard.sanitize((String) data.get("qualification")));
+        }
+        if (data.containsKey("address")) {
+            newUser.setAddress(guard.encryptVault(guard.sanitize((String) data.get("address"))));
+        }
         
         if (data.containsKey("roleId")) {
             roleRepository.findById(Long.valueOf(data.get("roleId").toString())).ifPresent(newUser::setRole);

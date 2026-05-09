@@ -172,8 +172,14 @@ public class DashboardService {
         if (type != null && !type.isEmpty() && !type.equalsIgnoreCase("undefined") && !type.equalsIgnoreCase("All") && !type.equalsIgnoreCase("Total")) {
             filtered = authorized.stream().filter(p -> type.equalsIgnoreCase(p.getPentestType())).collect(Collectors.toList());
         } else {
-            filtered = authorized;
+            filtered = new ArrayList<>(authorized);
         }
+
+        filtered.sort((p1, p2) -> {
+            LocalDateTime d1 = p1.getCreatedDate() != null ? p1.getCreatedDate() : LocalDateTime.MIN;
+            LocalDateTime d2 = p2.getCreatedDate() != null ? p2.getCreatedDate() : LocalDateTime.MIN;
+            return d2.compareTo(d1);
+        });
 
         int start = Math.min(page * size, filtered.size());
         int end = Math.min(start + size, filtered.size());
