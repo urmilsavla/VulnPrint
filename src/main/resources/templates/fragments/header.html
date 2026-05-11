@@ -203,10 +203,52 @@
             <div class="hidden group-hover:block absolute right-0 mt-0 w-48 pt-2 z-50">
                 <div class="bg-[#131313] border border-neutral-800 p-2 shadow-2xl">
                     <a href="/profile" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">My Profile</a>
-                    <a href="/reset-password" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">Reset Password</a>
+                    <button onclick="requestPasswordReset()" class="w-full text-left block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">Reset Password</button>
                     <div class="border-t border-neutral-800 my-1"></div>
                     <button onclick="logoutWithPermission()" class="w-full text-left px-4 py-2.5 text-[10px] uppercase tracking-widest text-red-500 hover:bg-neutral-800 transition-colors">Logout</button>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+
+                    <!-- Red Alert Modal for Password Reset -->
+                    <div id="reset-confirm-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] hidden items-center justify-center p-4">
+                    <div class="bg-[#0e0e0e] border border-error/30 w-full max-w-md p-10 shadow-[0_0_50px_rgba(255,115,81,0.15)] rounded-2xl relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-error"></div>
+                    <div class="text-center mb-8">
+                    <div class="w-16 h-16 bg-error/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-error/20">
+                    <span class="material-symbols-outlined text-error text-3xl">security</span>
+                    </div>
+                    <h3 class="text-xl font-headline font-black uppercase tracking-widest text-white mb-2">Security Reset</h3>
+                    <p class="text-[10px] text-neutral-500 uppercase tracking-widest font-bold leading-relaxed">
+                    Initiating a security reset will transmit a verification link to your registered email. <br>
+                    <span class="text-error/80 mt-2 block font-black">All active sessions will be purged upon completion.</span>
+                    </p>
+                    </div>
+                    <div class="flex gap-4">
+                    <button onclick="closeResetModal()" class="flex-1 bg-neutral-900 text-white font-headline font-black py-4 uppercase text-[10px] tracking-widest hover:bg-neutral-800 transition-all rounded-lg">Cancel</button>
+                    <button id="confirm-reset-btn" onclick="executeResetTrigger()" class="flex-1 bg-error text-white font-headline font-black py-4 uppercase text-[10px] tracking-widest hover:shadow-[0_0_25px_rgba(255,115,81,0.35)] transition-all rounded-lg">Confirm Reset</button>
+                    </div>
+                    </div>
+                    </div>
+
+                    <!-- Global Confirmation Modal -->
+    <div id="reset-confirm-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] hidden items-center justify-center p-4">
+        <div class="bg-[#0e0e0e] border border-error/30 w-full max-w-md p-10 shadow-[0_0_50px_rgba(255,115,81,0.15)] rounded-2xl relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-error"></div>
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-error/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-error/20">
+                    <span class="material-symbols-outlined text-error text-3xl">security</span>
                 </div>
+                <h3 class="text-xl font-headline font-black uppercase tracking-widest text-white mb-2">Security Reset</h3>
+                <p class="text-[10px] text-neutral-500 uppercase tracking-widest font-bold leading-relaxed">
+                    Initiating a security reset will transmit a verification link to your registered email. <br>
+                    <span class="text-error/80 mt-2 block font-black">All active sessions will be purged upon completion.</span>
+                </p>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="closeResetModal()" class="flex-1 bg-neutral-900 text-white font-headline font-black py-4 uppercase text-[10px] tracking-widest hover:bg-neutral-800 transition-all rounded-lg">Cancel</button>
+                <button id="confirm-reset-btn" onclick="executeResetTrigger()" class="flex-1 bg-error text-white font-headline font-black py-4 uppercase text-[10px] tracking-widest hover:shadow-[0_0_25px_rgba(255,115,81,0.35)] transition-all rounded-lg">Confirm Reset</button>
             </div>
         </div>
     </div>
@@ -542,6 +584,37 @@
                 } catch (e) { console.error('Logout sync failed'); }
                 localStorage.clear();
                 window.location.href = '/login';
+            }
+        }
+
+        function requestPasswordReset() {
+            document.getElementById('reset-confirm-modal').classList.replace('hidden', 'flex');
+        }
+
+        function closeResetModal() {
+            document.getElementById('reset-confirm-modal').classList.replace('flex', 'hidden');
+        }
+
+        async function executeResetTrigger() {
+            const btn = document.getElementById('confirm-reset-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="flex items-center justify-center gap-2"><svg class="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> TRANSMITTING...</span>';
+
+            try {
+                const res = await fetch('/api/users/me/trigger-reset', { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    window.showNotification(data.message, 'success');
+                    closeResetModal();
+                } else {
+                    window.showNotification(data.message || 'Transmission failed', 'error');
+                }
+            } catch (e) {
+                window.showNotification('System Error: Unable to reach security service', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
             }
         }    </script>
 </div>

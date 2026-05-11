@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.time.LocalDateTime;
 
 import com.vulnprint.model.Role;
 import com.vulnprint.model.Permission;
@@ -129,7 +130,7 @@ public class UserRestController {
 
             // Generate and Hash Secure Invitation Token
             String rawToken = UUID.randomUUID().toString();
-            String hashedToken = org.springframework.util.DigestUtils.md5DigestAsHex(rawToken.getBytes()); 
+            String hashedToken = guard.hashToken(rawToken); 
             user.setInvitationToken(hashedToken);
             user.setInvitationExpiry(java.time.LocalDateTime.now().plusHours(24));
             
@@ -160,7 +161,7 @@ public class UserRestController {
     public ResponseEntity<?> activateAccount(@RequestBody Map<String, String> data) {
         String rawToken = data.get("token");
         String password = data.get("password");
-        String hashedToken = org.springframework.util.DigestUtils.md5DigestAsHex(rawToken.getBytes());
+        String hashedToken = guard.hashToken(rawToken);
 
         return userRepository.findByInvitationToken(hashedToken)
             .map(user -> {
@@ -231,6 +232,9 @@ public class UserRestController {
     @PreAuthorize("hasAuthority('MANAGE_ACCESS')")
     public ResponseEntity<?> updateRolePermissions(@PathVariable Long id, @RequestBody List<Long> permissionIds) {
         return roleRepository.findById(id).map(role -> {
+            if ("Super Admin".equals(role.getName())) {
+                return ResponseEntity.status(403).body(Map.of("message", "The Super Admin role is immutable and cannot be modified."));
+            }
             Set<Permission> newPermissions = new HashSet<>(permissionRepository.findAllById(permissionIds));
             role.setPermissions(newPermissions);
             roleRepository.save(role);
@@ -250,6 +254,9 @@ public class UserRestController {
     @PreAuthorize("hasAuthority('MANAGE_ACCESS')")
     public ResponseEntity<?> deleteRole(@PathVariable Long id) {
         return roleRepository.findById(id).map(role -> {
+            if ("Super Admin".equals(role.getName())) {
+                return ResponseEntity.status(403).body(Map.of("message", "The Super Admin role is a core system component and cannot be removed."));
+            }
             // Check if any users are assigned to this role
             if (!userRepository.findAllByRole(role).isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("message", "Cannot delete role as it is currently assigned to one or more users"));
@@ -289,7 +296,7 @@ public class UserRestController {
     @PreAuthorize("hasAuthority('MANAGE_USERS') or (hasAuthority('EDIT_MY_PROFILE') and ( #data['email'] == principal.username or ( #data['id'] != null and @guard.isSelf(#data['id']) ) ))")
     public ResponseEntity<?> updateProfile(@RequestBody Map<String, Object> data) {
         try {
-            User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             String email = (String) data.get("email");
             Long userId = null;
             if (data.containsKey("id") && data.get("id") != null && !data.get("id").toString().isEmpty()) {
@@ -300,6 +307,10 @@ public class UserRestController {
 
             if (targetOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("message", "User not found"));
             User targetUser = targetOpt.get();
+
+            if (guard.isSuperAdmin(targetUser)) {
+                return ResponseEntity.status(403).body(Map.of("message", "The Super Admin profile is immutable and protected by core system logic."));
+            }
 
             if (data.containsKey("firstName")) targetUser.setFirstName(guard.sanitize((String) data.get("firstName")));
             if (data.containsKey("lastName")) targetUser.setLastName(guard.sanitize((String) data.get("lastName")));
@@ -331,7 +342,7 @@ public class UserRestController {
             boolean securityModified = false;
 
             // Admin only overrides
-            if (guard.hasPermission(user, AppSecurityGuard.MANAGE_USERS)) {
+            if (guard.hasPermission(currentUser, AppSecurityGuard.MANAGE_USERS)) {
                 if (data.containsKey("newPassword") && data.get("newPassword") != null && !data.get("newPassword").toString().isEmpty()) {
                     String np = (String) data.get("newPassword");
                     if (!guard.isStrongPassword(np)) {
@@ -343,7 +354,7 @@ public class UserRestController {
             }
 
             // Manage Role and Extra Permissions
-            if (guard.hasPermission(user, AppSecurityGuard.MANAGE_ACCESS)) {
+            if (guard.hasPermission(currentUser, AppSecurityGuard.MANAGE_ACCESS)) {
                 if (data.containsKey("roleId") && data.get("roleId") != null && !data.get("roleId").toString().isEmpty()) {
                     try {
                         Long newRoleId = Long.valueOf(data.get("roleId").toString());
@@ -388,6 +399,9 @@ public class UserRestController {
     @PreAuthorize("hasAuthority('MANAGE_ACCESS')")
     public ResponseEntity<?> resetPermissions(@PathVariable Long id) {
         return userRepository.findById(id).map(u -> {
+            if (guard.isSuperAdmin(u)) {
+                return ResponseEntity.status(403).body(Map.of("message", "The Super Admin profile is immutable and protected by core system logic."));
+            }
             u.getExtraPermissions().clear();
             u.setLastRoleChange(java.time.LocalDateTime.now());
             userRepository.save(u);
@@ -399,8 +413,8 @@ public class UserRestController {
     @PreAuthorize("hasAuthority('MANAGE_USERS')")
     public ResponseEntity<?> toggleStatus(@PathVariable Long id, @RequestBody Map<String, Boolean> data) {
         return userRepository.findById(id).map(u -> {
-            if (u.getRole() != null && "Administrator".equals(u.getRole().getName())) {
-                return ResponseEntity.status(403).body(Map.of("message", "Cannot suspend Administrator profile"));
+            if (guard.isSuperAdmin(u)) {
+                return ResponseEntity.status(403).body(Map.of("message", "The Super Admin profile is immutable and protected by core system logic."));
             }
             u.setEnabled(data.get("enabled"));
             userRepository.save(u);
@@ -408,16 +422,56 @@ public class UserRestController {
         }).orElse(ResponseEntity.status(404).body(Map.of("message", "The requested resource was not found.")));
     }
 
+    @PostMapping("/me/trigger-reset")
+    @PreAuthorize("hasAuthority('EDIT_MY_PROFILE')")
+    public ResponseEntity<?> triggerSelfReset(jakarta.servlet.http.HttpServletRequest httpRequest) {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) return ResponseEntity.status(401).body(Map.of("message", "Authentication required"));
+        
+        User target = (User) auth.getPrincipal();
+        if (guard.isSuperAdmin(target)) {
+            return ResponseEntity.status(403).body(Map.of("message", "The Super Admin credentials are protected and cannot be modified via self-service."));
+        }
+        try {
+            String rawToken = UUID.randomUUID().toString();
+            String hashedToken = guard.hashToken(rawToken);
+
+            target.setActivationToken(hashedToken);
+            target.setTokenExpiry(LocalDateTime.now().plusHours(1));
+            userRepository.save(target);
+
+            com.vulnprint.model.Alert alert = new com.vulnprint.model.Alert();
+            alert.setTitle("Self-Reset Triggered");
+            alert.setDetails("User " + target.getFirstName() + " " + target.getLastName() + " initiated a personal password reset.");
+            alert.setLevel("System");
+            alert.setTimeAgo("Just now");
+            alertRepository.save(alert);
+
+            String baseUrl = httpRequest.getScheme() + "://" + httpRequest.getServerName() + (httpRequest.getServerPort() != 80 && httpRequest.getServerPort() != 443 ? ":" + httpRequest.getServerPort() : "");
+            String resetLink = baseUrl + "/reset-password?token=" + rawToken;
+
+            emailService.sendPasswordResetEmail(target.getEmail(), target.getFirstName(), resetLink);
+
+            return ResponseEntity.ok().body(Map.of("message", "Security reset link transmitted to your registered email."));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("message", "Failed to process security reset request."));
+        }
+    }
+
     @PostMapping("/{id}/trigger-reset")
     @PreAuthorize("hasAuthority('MANAGE_USERS')")
     public ResponseEntity<?> triggerReset(@PathVariable Long id, jakarta.servlet.http.HttpServletRequest httpRequest) {
         User admin = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return userRepository.findById(id).map(target -> {
-            String rawToken = UUID.randomUUID().toString();
-            String hashedToken = org.springframework.util.DigestUtils.md5DigestAsHex(rawToken.getBytes());
+            if (guard.isSuperAdmin(target)) {
+                return ResponseEntity.status(403).body(Map.of("message", "The Super Admin credentials are protected and cannot be modified via self-service."));
+            }
             
-            target.setInvitationToken(hashedToken);
-            target.setInvitationExpiry(java.time.LocalDateTime.now().plusMinutes(15));
+            String rawToken = UUID.randomUUID().toString();
+            String hashedToken = guard.hashToken(rawToken);
+            
+            target.setActivationToken(hashedToken);
+            target.setTokenExpiry(java.time.LocalDateTime.now().plusHours(1));
             userRepository.save(target);
 
             // Audit Log
@@ -429,7 +483,7 @@ public class UserRestController {
             alertRepository.save(alert);
             
             String baseUrl = String.format("%s://%s:%d", httpRequest.getScheme(), httpRequest.getServerName(), httpRequest.getServerPort());
-            String resetLink = baseUrl + "/activate-account?token=" + rawToken + "&mode=reset";
+            String resetLink = baseUrl + "/reset-password?token=" + rawToken;
             
             emailService.sendPasswordResetEmail(target.getEmail(), target.getFirstName(), resetLink);
 
@@ -443,8 +497,8 @@ public class UserRestController {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (user.getId().equals(id)) return ResponseEntity.badRequest().body(Map.of("message", "Cannot delete self"));
         return userRepository.findById(id).map(target -> {
-            if (target.getRole() != null && "Administrator".equals(target.getRole().getName())) {
-                return ResponseEntity.status(403).body(Map.of("message", "Cannot delete Administrator profile"));
+            if (guard.isSuperAdmin(target)) {
+                return ResponseEntity.status(403).body(Map.of("message", "The Super Admin profile is immutable and protected by core system logic."));
             }
             try {
                 target.setDeleted(true);
@@ -504,27 +558,5 @@ public class UserRestController {
         
         User saved = userRepository.save(newUser);
         return ResponseEntity.ok(saved);
-    }
-
-    @PostMapping("/change-password")
-    @PreAuthorize("#request['email'] == principal.username or hasAuthority('RESET_PASSWORD')")
-    public ResponseEntity<?> changePassword(@RequestBody Map<String, String> request) {
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String email = request.get("email");
-        String currentPassword = request.get("currentPassword");
-        String newPassword = request.get("newPassword");
-
-        boolean isSelf = user.getEmail().equals(email);
-
-        return userRepository.findByEmail(email)
-            .map(targetUser -> {
-                if (isSelf && !guard.verifyPassword(currentPassword, targetUser.getPassword())) {
-                    return ResponseEntity.badRequest().body(Map.of("message", "Invalid current password"));
-                }
-                targetUser.setPassword(guard.hashPassword(newPassword));
-                targetUser.setLastRoleChange(java.time.LocalDateTime.now());
-                userRepository.save(targetUser);
-                return ResponseEntity.ok().body(Map.of("message", "Password updated successfully and all active sessions revoked for security"));
-            }).orElse(ResponseEntity.status(404).body(Map.of("message", "User not found")));
     }
 }

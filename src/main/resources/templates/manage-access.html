@@ -280,27 +280,32 @@
             const contextEl = document.getElementById('target-context');
             const syncBtn = document.getElementById('refresh-btn');
             const deleteBtn = document.getElementById('delete-role-btn');
+            const saveBtn = document.querySelector('button[onclick="saveChanges()"]');
             const avatarContainer = document.getElementById('target-avatar-container');
             const iconContainer = document.getElementById('target-icon-container');
+
+            const isSuperAdmin = type === 'role' ? (selectedEntity.name === 'Super Admin') : (selectedEntity.email === 'superadmin@vulnprint.com');
 
             if (type === 'role') {
                 nameEl.innerText = selectedEntity.name;
                 badge.innerText = 'Global Role';
                 badge.className = 'status-pill bg-neutral-900 text-primary border border-neutral-800';
-                contextEl.innerText = 'Defining standard permissions for all assigned users';
+                contextEl.innerText = isSuperAdmin ? 'Core system role - Immutability active' : 'Defining standard permissions for all assigned users';
                 syncBtn.classList.add('hidden');
-                deleteBtn.classList.remove('hidden');
+                deleteBtn.classList.toggle('hidden', isSuperAdmin);
                 avatarContainer.classList.add('hidden');
                 iconContainer.classList.remove('hidden');
+                saveBtn.classList.toggle('hidden', isSuperAdmin);
             } else {
                 nameEl.innerText = `${selectedEntity.firstName} ${selectedEntity.lastName}`;
                 badge.innerText = 'Individual';
                 badge.className = 'status-pill bg-neutral-900 text-white border border-neutral-800';
-                contextEl.innerText = `Managing manual clearance overrides for this user`;
-                syncBtn.classList.toggle('hidden', !selectedEntity.extraPermissions || selectedEntity.extraPermissions.length === 0);
+                contextEl.innerText = isSuperAdmin ? 'Root system authority - Manual overrides restricted' : `Managing manual clearance overrides for this user`;
+                syncBtn.classList.toggle('hidden', isSuperAdmin || !selectedEntity.extraPermissions || selectedEntity.extraPermissions.length === 0);
                 deleteBtn.classList.add('hidden');
                 avatarContainer.classList.remove('hidden');
                 iconContainer.classList.add('hidden');
+                saveBtn.classList.toggle('hidden', isSuperAdmin);
                 document.getElementById('target-avatar').src = selectedEntity.profileImage || '/images/user.png';
             }
 
@@ -314,16 +319,23 @@
             if (activeTab === 'roles') {
                 (selectedEntity.permissions || []).forEach(p => draftPermissionIds.add(p.id));
             } else {
-                const rolePerms = selectedEntity.role ? (selectedEntity.role.permissions || []) : [];
-                const extraPerms = selectedEntity.extraPermissions || [];
-                rolePerms.forEach(p => draftPermissionIds.add(p.id));
-                extraPerms.forEach(p => draftPermissionIds.add(p.id));
+                const isSuperAdmin = selectedEntity.email === 'superadmin@vulnprint.com';
+                if (isSuperAdmin) {
+                    // Super Admin effectively has all permissions
+                    allPermissions.forEach(p => draftPermissionIds.add(p.id));
+                } else {
+                    const rolePerms = selectedEntity.role ? (selectedEntity.role.permissions || []) : [];
+                    const extraPerms = selectedEntity.extraPermissions || [];
+                    rolePerms.forEach(p => draftPermissionIds.add(p.id));
+                    extraPerms.forEach(p => draftPermissionIds.add(p.id));
+                }
             }
         }
 
         function renderMatrix() {
             const container = document.getElementById('matrix-container');
             const rolePermIds = selectedEntity.role ? (selectedEntity.role.permissions || []).map(p => p.id) : [];
+            const isSuperAdmin = activeTab === 'roles' ? (selectedEntity.name === 'Super Admin') : (selectedEntity.email === 'superadmin@vulnprint.com');
 
             container.innerHTML = Object.entries(CATEGORIES).map(([catName, permKeys]) => {
                 const perms = allPermissions.filter(p => permKeys.includes(p.name));
@@ -337,14 +349,14 @@
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             ${perms.map(p => {
-                                const inherited = activeTab === 'users' && rolePermIds.includes(p.id);
+                                const inherited = (activeTab === 'users' && rolePermIds.includes(p.id)) || isSuperAdmin;
                                 const active = draftPermissionIds.has(p.id);
                                 
                                 return `
                                     <div class="perm-card group p-5 rounded-xl flex items-center justify-between ${active ? 'active' : ''} ${inherited ? 'locked' : ''}">
                                         <div class="flex-1 pr-4 relative">
                                             <p class="text-[10px] font-bold uppercase tracking-widest ${active ? 'text-white' : 'text-neutral-500'} transition-colors">${p.name.replace(/_/g, ' ')}</p>
-                                            ${inherited ? '<p class="text-[7px] font-bold text-primary/50 uppercase mt-1 tracking-tighter">Inherited from Role</p>' : ''}
+                                            ${inherited ? `<p class="text-[7px] font-bold text-primary/50 uppercase mt-1 tracking-tighter">${isSuperAdmin ? 'Root Authority Protection' : 'Inherited from Role'}</p>` : ''}
                                             <div class="tooltip">${p.description}</div>
                                         </div>
                                         <label class="switch ${inherited ? 'pointer-events-none' : ''}">

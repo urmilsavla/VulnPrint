@@ -86,78 +86,35 @@ public class DataInitializer implements CommandLineRunner {
         registerPermission(AppSecurityGuard.EDIT_MY_PROFILE, "Update your own name and profile information.");
         registerPermission(AppSecurityGuard.RESET_PASSWORD, "Change login passwords for yourself or others.");
 
-        // 2. Initialize Administrator Role with ALL Keys
-        Role adminRole = roleRepository.findByName("Administrator").orElseGet(() -> new Role("Administrator"));
-        adminRole.setPermissions(new HashSet<>(permissionRepository.findAll()));
-        roleRepository.save(adminRole);
-        System.out.println("[PRODUCTION CORE] Administrator Role provisioned with global permissions.");
+        // 2. Initialize Super Admin Role with ALL Keys
+        Role superAdminRole = roleRepository.findByName("Super Admin").orElseGet(() -> new Role("Super Admin"));
+        superAdminRole.setPermissions(new HashSet<>(permissionRepository.findAll()));
+        roleRepository.save(superAdminRole);
+        System.out.println("[PRODUCTION CORE] Super Admin Role provisioned with global permissions.");
 
-        // 3. Initialize Penetration Tester Role with Scoped Keys
-        Role pentesterRole = roleRepository.findByName("Penetration Tester").orElseGet(() -> new Role("Penetration Tester"));
-        Set<String> pentesterPermNames = Set.of(
-            AppSecurityGuard.VIEW_DASHBOARD,
-            AppSecurityGuard.VIEW_ASSIGNED_PROJECTS,
-            AppSecurityGuard.ADD_PROJECT,
-            AppSecurityGuard.EDIT_ASSIGNED_PROJECTS,
-            AppSecurityGuard.CHANGE_PENTEST_STATUS,
-            AppSecurityGuard.GENERATE_REPORT,
-            AppSecurityGuard.VIEW_ASSIGNED_VULNS,
-            AppSecurityGuard.ADD_VULNERABILITY,
-            AppSecurityGuard.EDIT_ASSIGNED_VULNS,
-            AppSecurityGuard.DELETE_ASSIGNED_VULNS,
-            AppSecurityGuard.CHANGE_VULN_REPORTING_STATUS,
-            AppSecurityGuard.CHANGE_VULN_STATUS,
-            AppSecurityGuard.EDIT_MY_PROFILE,
-            AppSecurityGuard.RESET_PASSWORD
-        );
-        Set<Permission> pentesterPerms = new HashSet<>(permissionRepository.findByNameIn(pentesterPermNames));
-        pentesterRole.setPermissions(pentesterPerms);
-        roleRepository.save(pentesterRole);
-        System.out.println("[PRODUCTION CORE] Penetration Tester Role provisioned with scoped permissions.");
-
-        // 4. Initialize Master Administrator Account
-        String adminEmail = "admin@vulnprint.com";
-        String adminPass = "VulPrintAdmin08$";
+        // 3. Initialize Immutable Superadmin Account
+        String adminEmail = "superadmin@vulnprint.com";
+        String adminPass = "VulnPrintAdmin08$";
         
-        User masterAdmin = userRepository.findByEmail(adminEmail).orElseGet(() -> {
+        User superadmin = userRepository.findByEmail(adminEmail).orElseGet(() -> {
             User u = new User();
             u.setEmail(adminEmail);
             return u;
         });
 
-        masterAdmin.setPassword(guard.hashPassword(adminPass));
-        masterAdmin.setFirstName("System");
-        masterAdmin.setLastName("Administrator");
-        masterAdmin.setRole(adminRole);
-        masterAdmin.setEnabled(true);
-        masterAdmin.setStatus(User.AccountStatus.ACTIVE);
-        masterAdmin.setQualification("Lead System Architect");
-        masterAdmin.setAddress(guard.encryptVault("VulnPrint Command Center"));
+        superadmin.setPassword(guard.hashPassword(adminPass));
+        superadmin.setFirstName("Super Admin");
+        superadmin.setLastName("Root");
+        superadmin.setRole(superAdminRole);
+        superadmin.setEnabled(true);
+        superadmin.setStatus(User.AccountStatus.ACTIVE);
+        superadmin.setQualification("Immutable Root Authority");
+        superadmin.setAddress(guard.encryptVault("VulnPrint Command Center"));
         
-        userRepository.save(masterAdmin);
-        System.out.println("[PRODUCTION CORE] Master Administrator provisioned: " + adminEmail);
+        userRepository.save(superadmin);
+        System.out.println("[PRODUCTION CORE] Immutable Superadmin provisioned: " + adminEmail);
 
-        // 5. Initialize Personal Administrator Account
-        String urmilEmail = "urmilsavla108@gmail.com";
-        User urmil = userRepository.findByEmail(urmilEmail).orElseGet(() -> {
-            User u = new User();
-            u.setEmail(urmilEmail);
-            return u;
-        });
-
-        urmil.setPassword(guard.hashPassword(adminPass));
-        urmil.setFirstName("Urmil");
-        urmil.setLastName("Savla");
-        urmil.setRole(pentesterRole);
-        urmil.setEnabled(true);
-        urmil.setStatus(User.AccountStatus.ACTIVE);
-        urmil.setQualification("M.S. in Cyber Security, OSCP, OSCE");
-        urmil.setAddress(guard.encryptVault("Cyber City HQ, Terminal Tower 1"));
-        
-        userRepository.save(urmil);
-        System.out.println("[PRODUCTION CORE] Personal Pentester account provisioned: " + urmilEmail);
-
-        // 6. Initialize Core Configs
+        // 4. Initialize Core Configs
         if (systemConfigRepository.findAll().isEmpty()) {
             systemConfigRepository.save(new com.vulnprint.model.SystemConfig("repgen_enabled", "false"));
             systemConfigRepository.save(new com.vulnprint.model.SystemConfig("vulndb_enabled", "false"));

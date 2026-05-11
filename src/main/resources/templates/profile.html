@@ -180,6 +180,20 @@
                     if (user.profileImage) {
                         document.getElementById('profile-preview').src = user.profileImage;
                     }
+
+                    // Super Admin Protection
+                    const isSuperAdmin = user.email === 'superadmin@vulnprint.com' || (user.role && user.role.name === 'Super Admin');
+                    if (isSuperAdmin) {
+                        const inputs = form.querySelectorAll('input, textarea');
+                        inputs.forEach(i => i.readOnly = true);
+                        const saveBtn = document.querySelector('button[onclick*="profile-form"]');
+                        if (saveBtn) saveBtn.style.display = 'none';
+                        const uploadHint = document.querySelector('.font-label.text-neutral-500');
+                        if (uploadHint) uploadHint.innerText = 'ROOT AUTHORITY PROTECTION ACTIVE';
+                        const avatarDiv = document.querySelector('.group.cursor-pointer');
+                        if (avatarDiv) avatarDiv.onclick = null;
+                        avatarDiv.classList.remove('cursor-pointer');
+                    }
                 }
             } catch (e) {
                 console.error('Profile fetch failed', e);

@@ -48,6 +48,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URL;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -130,7 +133,7 @@ public class AppSecurityGuard {
 
     // --- 1. JWT & CRYPTO PILLAR ---
     private final SecretKey jwtKey;
-    private final long expirationMs = 900000; // 15 minutes for enhanced security
+    private final long expirationMs = 14400000; // 4 hours for enhanced user experience
     private final Set<String> tokenBlocklist = ConcurrentHashMap.newKeySet();
     private final String jwtEnvKey;
     private final String vaultEnvKey;
@@ -326,6 +329,14 @@ public class AppSecurityGuard {
     }
 
     @Transactional
+    public void revokeAllSessionsForUser(User user) {
+        userSessionRepository.findAllByUserAndRevokedFalse(user).forEach(s -> {
+            s.setRevoked(true);
+            userSessionRepository.save(s);
+        });
+    }
+
+    @Transactional
     public Map<String, Object> rotateSession(String refreshToken, UUID sessionId, String ip, String ua) {
         UserSession oldSession = userSessionRepository.findById(sessionId).orElse(null);
         
@@ -363,6 +374,7 @@ public class AppSecurityGuard {
 
     @Transactional
     public void recordFailedMfa(User user) {
+        if (isSuperAdmin(user)) return; // Bypass locking for root authority
         user.setFailedMfaAttempts(user.getFailedMfaAttempts() + 1);
         if (user.getFailedMfaAttempts() >= 3) {
             user.setStatus(User.AccountStatus.LOCKED);
@@ -430,25 +442,26 @@ public class AppSecurityGuard {
 
     public String resolveSafeUrl(String urlString) {
         if (urlString == null || urlString.isBlank()) return null;
-        
-        if (urlString.startsWith("http://localhost:8000") || 
-            urlString.startsWith("http://localhost:3000") ||
-            urlString.startsWith("http://127.0.0.1:8000") ||
-            urlString.startsWith("http://127.0.0.1:3000")) {
-            return urlString;
-        }
 
         try {
             URL url = new URL(urlString);
             String protocol = url.getProtocol().toLowerCase();
             if (!"http".equals(protocol) && !"https".equals(protocol)) return null;
 
-            InetAddress address = InetAddress.getByName(url.getHost());
+            String host = url.getHost().toLowerCase();
+            int port = url.getPort() != -1 ? url.getPort() : url.getDefaultPort();
+
+            // Strict whitelist for internal services
+            if ((host.equals("localhost") || host.equals("127.0.0.1")) && (port == 8000 || port == 3000)) {
+                return new URL(protocol, host, port, url.getFile()).toString();
+            }
+
+            InetAddress address = InetAddress.getByName(host);
             if (address.isLoopbackAddress() || address.isAnyLocalAddress() || 
                 address.isLinkLocalAddress() || address.isSiteLocalAddress()) return null;
             if ("169.254.169.254".equals(address.getHostAddress())) return null;
             
-            URL safeUrl = new URL(protocol, address.getHostAddress(), url.getPort() != -1 ? url.getPort() : url.getDefaultPort(), url.getFile());
+            URL safeUrl = new URL(protocol, address.getHostAddress(), port, url.getFile());
             return safeUrl.toString();
         } catch (Exception e) { return null; }
     }
@@ -500,7 +513,7 @@ public class AppSecurityGuard {
     public boolean checkRateLimit(String ip, String action, int maxRequests, long windowMs) {
         String key = ip + ":" + action;
         long now = System.currentTimeMillis();
-        hits.putIfAbsent(key, Collections.synchronizedList(new ArrayList<>()));
+        hits.putIfAbsent(key, Collections.synchronizedList(new LinkedList<>()));
         List<Long> timestamps = hits.get(key);
 
         synchronized (timestamps) {
@@ -511,8 +524,15 @@ public class AppSecurityGuard {
         }
     }
 
+    public boolean isSuperAdmin(User user) {
+        return user != null && "superadmin@vulnprint.com".equalsIgnoreCase(user.getEmail());
+    }
+
     public boolean hasPermission(User user, String key) {
         if (user == null || key == null) return false;
+        // Super Admin has all permissions implicitly
+        if (isSuperAdmin(user)) return true;
+        
         if (user.getRole() != null && user.getRole().getPermissions() != null) {
             if (user.getRole().getPermissions().stream().anyMatch(p -> p.getName().equals(key))) return true;
         }
@@ -675,12 +695,52 @@ public class AppSecurityGuard {
         }
     }
 
+    @Component
+    public static class RateLimitingFilter extends OncePerRequestFilter {
+        @Autowired
+        private AppSecurityGuard guard;
+
+        @Override
+        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+                throws ServletException, IOException {
+            
+            String path = request.getRequestURI();
+            String ip = request.getRemoteAddr();
+
+            // Profile 1: Strict Limits for Auth Actions (5 req / min)
+            if (path.startsWith("/api/auth/") || path.equals("/api/users/activate")) {
+                if (!guard.checkRateLimit(ip, "AUTH", 5, 60000)) {
+                    response.setStatus(429);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"message\": \"Rate limit exceeded. Please try again later.\"}");
+                    response.getWriter().flush();
+                    return;
+                }
+            }
+            // Profile 2: Moderate Limits for Public HTML Views (60 req / min)
+            else if (path.equals("/") || path.equals("/login") || path.equals("/activate-account") || path.equals("/error")) {
+                if (!guard.checkRateLimit(ip, "VIEWS", 60, 60000)) {
+                    response.setStatus(429);
+                    response.setContentType("text/html");
+                    response.getWriter().write("<!DOCTYPE html><html><head><title>Too Many Requests</title></head><body style='background:#0e0e0e;color:#4FFE49;font-family:monospace;text-align:center;padding:50px;'><h1>429 - Rate Limit Exceeded</h1><p>Please wait a moment before trying again.</p></body></html>");
+                    response.getWriter().flush();
+                    return;
+                }
+            }
+
+            filterChain.doFilter(request, response);
+        }
+    }
+
     @Configuration
     @EnableWebSecurity
     @EnableMethodSecurity
     public static class SecurityConfig {
         @Autowired
         private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+        @Autowired
+        private RateLimitingFilter rateLimitingFilter;
 
         @Bean
         public PasswordEncoder passwordEncoder() {
@@ -733,6 +793,7 @@ public class AppSecurityGuard {
                         org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/apply"),
                         org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/verify-mfa"),
                         org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/refresh"),
+                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/reset-password"),
                         org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/users/activate")
                     ).permitAll()
                     .requestMatchers(
@@ -745,6 +806,7 @@ public class AppSecurityGuard {
                         org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/"),
                         org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/login"),
                         org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/activate-account"),
+                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/reset-password"),
                         org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/error")
                     ).permitAll()
                     .requestMatchers(
@@ -768,6 +830,7 @@ public class AppSecurityGuard {
                     .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/**")).authenticated()
                     .anyRequest().denyAll()
                 )
+                .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
             return http.build();

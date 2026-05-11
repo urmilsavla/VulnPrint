@@ -103,6 +103,7 @@
                                 </div>
                             </div>
                             <div class="flex items-center gap-3">
+                                <button id="reset-pwd-btn" onclick="triggerReset()" class="btn-secondary hover:bg-neutral-900 flex items-center gap-2" title="Send Reset Link"><span class="material-symbols-outlined text-sm">lock_reset</span> Reset Password</button>
                                 <button id="delete-user-btn" onclick="deleteUser()" class="btn-secondary !text-error !border-error/20 hover:!bg-error/10">Delete User</button>
                                 <button onclick="saveProfile()" class="btn-primary px-10">Save Changes</button>
                             </div>
@@ -429,7 +430,7 @@
             const u = selectedEntity;
             if (!u) return;
 
-            const isAdmin = u.role && u.role.name === 'Administrator';
+            const isSuperAdmin = u.email === 'superadmin@vulnprint.com' || (u.role && u.role.name === 'Super Admin');
             const isSelf = sessionUser && sessionUser.email === u.email;
             const isDeleted = u.deleted === true || u.status === 'DELETED';
             
@@ -453,19 +454,22 @@
 
             // Handle Read-Only state for ALL inputs
             const inputs = document.getElementById('profile-form').querySelectorAll('input, select, textarea');
-            inputs.forEach(i => i.disabled = isDeleted);
+            inputs.forEach(i => i.disabled = isDeleted || isSuperAdmin);
             
-            if (!isDeleted) {
-                document.getElementById('form-role').disabled = isAdmin || isSelf;
-                document.getElementById('form-enabled').disabled = isAdmin || isSelf;
+            if (!isDeleted && !isSuperAdmin) {
+                document.getElementById('form-role').disabled = isSelf;
+                document.getElementById('form-enabled').disabled = isSelf;
             }
             
             // Show/Hide buttons based on state
             const saveBtn = document.querySelector('#profile-panel button.btn-primary');
-            if (saveBtn) saveBtn.style.display = isDeleted ? 'none' : 'block';
+            if (saveBtn) saveBtn.style.display = (isDeleted || isSuperAdmin) ? 'none' : 'block';
             
             const delBtn = document.getElementById('delete-user-btn');
-            if (delBtn) delBtn.style.display = (isDeleted || isAdmin || isSelf) ? 'none' : 'block';
+            if (delBtn) delBtn.style.display = (isDeleted || isSuperAdmin || isSelf) ? 'none' : 'block';
+            
+            const resetBtn = document.getElementById('reset-pwd-btn');
+            if (resetBtn) resetBtn.style.display = (isDeleted || isSuperAdmin) ? 'none' : 'flex';
 
             // Ensure panel is visible
             document.getElementById('profile-panel').classList.remove('hidden');
@@ -547,6 +551,65 @@
                     window.showNotification(err.message || 'Delete operation failed.', 'error');
                 }
             } catch (err) { window.showNotification('Backend communication failure.', 'error'); }
+        }
+
+        async function triggerReset() {
+            // Re-using the Red Alert modal from the header
+            const modal = document.getElementById('reset-confirm-modal');
+            if (!modal) {
+                // Fallback to standard if modal not found (shouldn't happen)
+                if (!(await window.askPermission(`Send a password reset link to ${selectedEntity.firstName}?`))) return;
+                executeResetApi();
+                return;
+            }
+
+            // Update modal text for Admin context
+            const titleEl = modal.querySelector('h3');
+            const descEl = modal.querySelector('p');
+            const originalTitle = titleEl.innerText;
+            const originalDesc = descEl.innerHTML;
+
+            titleEl.innerText = "ADMIN OVERRIDE";
+            descEl.innerHTML = `You are about to force a security reset for <span class="text-primary">${selectedEntity.firstName} ${selectedEntity.lastName}</span>.<br><span class="text-error/80 mt-2 block font-black">This will invalidate their existing credentials.</span>`;
+
+            modal.classList.replace('hidden', 'flex');
+
+            const confirmBtn = document.getElementById('confirm-reset-btn');
+            const cancelBtn = modal.querySelector('button[onclick="closeResetModal()"]');
+
+            const cleanup = () => {
+                titleEl.innerText = originalTitle;
+                descEl.innerHTML = originalDesc;
+                confirmBtn.onclick = executeResetTrigger; // Restore header behavior
+                cancelBtn.onclick = closeResetModal;
+            };
+
+            confirmBtn.onclick = async () => {
+                confirmBtn.disabled = true;
+                confirmBtn.innerHTML = '<span class="flex items-center justify-center gap-2"><svg class="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> TRANSMITTING...</span>';
+                
+                try {
+                    const res = await fetch(`/api/users/${selectedId}/trigger-reset`, { method: 'POST' });
+                    const data = await res.json();
+                    if (res.ok) {
+                        window.showNotification('Security reset link transmitted.', 'success');
+                        closeResetModal();
+                        cleanup();
+                    } else {
+                        window.showNotification(data.message || 'Transmission failed', 'error');
+                    }
+                } catch (e) {
+                    window.showNotification('System Error: Unable to process reset', 'error');
+                } finally {
+                    confirmBtn.disabled = false;
+                    confirmBtn.innerText = "Confirm Reset";
+                }
+            };
+
+            cancelBtn.onclick = () => {
+                closeResetModal();
+                cleanup();
+            };
         }
 
         async function approveRequest() {

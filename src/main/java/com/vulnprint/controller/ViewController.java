@@ -168,7 +168,7 @@ public class ViewController {
     }
 
     @GetMapping("/reset-password")
-    @PreAuthorize("hasAuthority('RESET_PASSWORD')")
+    @PreAuthorize("permitAll()")
     public String resetPassword() {
         return "reset-password";
     }

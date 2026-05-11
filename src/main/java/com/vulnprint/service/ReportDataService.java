@@ -3,6 +3,8 @@ package com.vulnprint.service;
 import com.vulnprint.model.*;
 import com.vulnprint.repository.PentestRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.vulnprint.security.AppSecurityGuard;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
@@ -25,6 +27,9 @@ public class ReportDataService {
 
     @Autowired
     private ResourceLoader resourceLoader;
+
+    @Autowired
+    private AppSecurityGuard guard;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -174,7 +179,7 @@ public class ReportDataService {
         }
         if (hasValue(p.getMethodologyImage())) {
             try {
-                List<String> customImages = objectMapper.readValue(p.getMethodologyImage(), List.class);
+                List<String> customImages = objectMapper.readValue(p.getMethodologyImage(), new TypeReference<List<String>>() {});
                 for (String b64 : customImages) {
                     if (b64 != null && !b64.isEmpty()) {
                         String imgId = "METHOD_CUSTOM_" + imgCounter++;
@@ -284,6 +289,8 @@ public class ReportDataService {
         if (folderPath == null || fileName == null) return null;
         try {
             Path path = Paths.get(folderPath, fileName);
+            if (!guard.isSafePath(path.toString(), folderPath)) return null;
+            
             if (Files.exists(path)) {
                 byte[] bytes = Files.readAllBytes(path);
                 String mimeType = Files.probeContentType(path);

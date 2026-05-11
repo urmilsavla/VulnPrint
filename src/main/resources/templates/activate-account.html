@@ -62,13 +62,33 @@
                 <form id="activate-form" class="space-y-6">
                     <div class="space-y-2">
                         <label class="block text-[9px] font-headline font-black text-primary/60 uppercase tracking-widest ml-1 mb-2">New Password</label>
-                        <input type="password" id="password" required class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-colors rounded-lg font-body" placeholder="Enter new password">
+                        <input type="password" id="password" required oninput="evaluatePassword(this.value)" class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-colors rounded-lg font-body" placeholder="Enter new password">
+                        
+                        <div class="mt-3">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-[8px] font-black uppercase text-neutral-600 tracking-widest font-headline">Security Level</span>
+                                <span id="pwd-strength-text" class="text-[8px] font-black uppercase tracking-widest text-neutral-600 font-headline">None</span>
+                            </div>
+                            <div class="flex gap-1 h-1 mb-3">
+                                <div id="bar-1" class="flex-1 bg-neutral-800 rounded-full transition-all"></div>
+                                <div id="bar-2" class="flex-1 bg-neutral-800 rounded-full transition-all"></div>
+                                <div id="bar-3" class="flex-1 bg-neutral-800 rounded-full transition-all"></div>
+                                <div id="bar-4" class="flex-1 bg-neutral-800 rounded-full transition-all"></div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[8px] font-bold text-neutral-600 uppercase tracking-widest font-headline">
+                                <div class="flex items-center gap-1 transition-colors" id="req-length"><span class="material-symbols-outlined text-[10px]">close</span> 8+ Characters</div>
+                                <div class="flex items-center gap-1 transition-colors" id="req-upper"><span class="material-symbols-outlined text-[10px]">close</span> 1 Uppercase</div>
+                                <div class="flex items-center gap-1 transition-colors" id="req-lower"><span class="material-symbols-outlined text-[10px]">close</span> 1 Lowercase</div>
+                                <div class="flex items-center gap-1 transition-colors" id="req-num"><span class="material-symbols-outlined text-[10px]">close</span> 1 Number</div>
+                                <div class="flex items-center gap-1 transition-colors" id="req-spec"><span class="material-symbols-outlined text-[10px]">close</span> 1 Special Char</div>
+                            </div>
+                        </div>
                     </div>
                     <div class="space-y-2">
                         <label class="block text-[9px] font-headline font-black text-primary/60 uppercase tracking-widest ml-1 mb-2">Confirm Password</label>
                         <input type="password" id="confirmPassword" required class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-colors rounded-lg font-body" placeholder="Confirm new password">
                     </div>
-                    <button type="submit" class="w-full bg-primary text-black font-headline font-black py-4 uppercase text-[10px] tracking-widest hover:shadow-[0_0_25px_rgba(79,254,73,0.35)] transition-all rounded-lg mt-4">Activate Account</button>
+                    <button type="submit" id="submit-btn" class="w-full bg-primary text-black font-headline font-black py-4 uppercase text-[10px] tracking-widest hover:shadow-[0_0_25px_rgba(79,254,73,0.35)] transition-all rounded-lg mt-4">Activate Account</button>
                 </form>
             </div>
 
@@ -84,6 +104,69 @@
     </main>
 
     <script>
+        function evaluatePassword(pwd) {
+            let strength = 0;
+            const reqs = {
+                length: pwd.length >= 8,
+                upper: /[A-Z]/.test(pwd),
+                lower: /[a-z]/.test(pwd),
+                num: /[0-9]/.test(pwd),
+                spec: /[^A-Za-z0-9]/.test(pwd)
+            };
+
+            if (reqs.length) strength++;
+            if (reqs.upper) strength++;
+            if (reqs.lower) strength++;
+            if (reqs.num) strength++;
+            if (reqs.spec) strength++;
+
+            const updateReq = (id, met) => {
+                const el = document.getElementById(id);
+                if (met) {
+                    el.classList.remove('text-neutral-600');
+                    el.classList.add('text-primary');
+                    el.querySelector('span').innerText = 'check';
+                } else {
+                    el.classList.remove('text-primary');
+                    el.classList.add('text-neutral-600');
+                    el.querySelector('span').innerText = 'close';
+                }
+            };
+
+            updateReq('req-length', reqs.length);
+            updateReq('req-upper', reqs.upper);
+            updateReq('req-lower', reqs.lower);
+            updateReq('req-num', reqs.num);
+            updateReq('req-spec', reqs.spec);
+
+            const bars = [document.getElementById('bar-1'), document.getElementById('bar-2'), document.getElementById('bar-3'), document.getElementById('bar-4')];
+            bars.forEach(b => b.className = 'flex-1 bg-neutral-800 rounded-full transition-all');
+            
+            const textEl = document.getElementById('pwd-strength-text');
+            
+            if (pwd.length === 0) {
+                textEl.innerText = 'None';
+                textEl.className = 'text-[8px] font-black uppercase tracking-widest text-neutral-600 font-headline';
+            } else if (strength <= 3) {
+                bars[0].classList.add('bg-error');
+                if (strength >= 2) bars[1].classList.add('bg-error');
+                textEl.innerText = 'Weak';
+                textEl.className = 'text-[8px] font-black uppercase tracking-widest text-error font-headline';
+            } else if (strength === 4) {
+                bars[0].classList.add('bg-orange-500');
+                bars[1].classList.add('bg-orange-500');
+                bars[2].classList.add('bg-orange-500');
+                textEl.innerText = 'Good';
+                textEl.className = 'text-[8px] font-black uppercase tracking-widest text-orange-500 font-headline';
+            } else if (strength === 5) {
+                bars.forEach(b => b.classList.add('bg-primary'));
+                textEl.innerText = 'Strong';
+                textEl.className = 'text-[8px] font-black uppercase tracking-widest text-primary font-headline';
+            }
+            
+            return strength === 5;
+        }
+
         window.showNotification = function(message, type = 'info') {
             const container = document.getElementById('notification-container');
             const toast = document.createElement('div');
@@ -102,19 +185,6 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
-        const mode = urlParams.get('mode');
-
-        if (mode === 'reset') {
-            document.querySelector('h1').innerText = 'Reset Password';
-            document.querySelector('p').innerText = 'Set a new secure password for your account';
-            document.title = 'VulnPrint | Reset Password';
-            const btn = document.querySelector('button[type="submit"]');
-            if (btn) btn.innerText = 'Reset Password';
-            const successH2 = document.querySelector('#success-container h2');
-            if (successH2) successH2.innerText = 'Password Reset';
-            const successP = document.querySelector('#success-container p');
-            if (successP) successP.innerText = 'Your new password has been established.';
-        }
 
         if (!token) {
             document.getElementById('activation-form-container').innerHTML = `
@@ -129,6 +199,11 @@
             e.preventDefault();
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (!evaluatePassword(password)) {
+                window.showNotification('Password does not meet security requirements.', 'error');
+                return;
+            }
 
             if (password !== confirmPassword) {
                 window.showNotification('Passwords do not match.', 'error');

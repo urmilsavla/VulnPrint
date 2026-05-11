@@ -38,6 +38,15 @@ target/
 *~
 .DS_Store
 Thumbs.db
+
+### Runtime & Secrets ###
 /uploads/
+.env
+.env.*
+*.secret
+secrets/
+keys/
+*.jks
+*.p12
 
 

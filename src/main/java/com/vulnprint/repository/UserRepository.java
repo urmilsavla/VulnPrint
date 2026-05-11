@@ -21,6 +21,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 
     Optional<User> findByInvitationToken(String token);
+
+    Optional<User> findByActivationToken(String token);
     
     @Query("SELECT u FROM User u WHERE u.role = :role AND u.deleted = false")
     List<User> findAllByRole(Role role);

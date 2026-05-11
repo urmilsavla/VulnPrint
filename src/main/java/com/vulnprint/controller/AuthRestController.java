@@ -35,6 +35,9 @@ public class AuthRestController {
     @Autowired
     private com.vulnprint.service.EmailService mailService;
 
+    @Autowired
+    private com.vulnprint.repository.AlertRepository alertRepository;
+
     private String dummyHash = null;
 
     @PostMapping("/apply")
@@ -103,8 +106,8 @@ public class AuthRestController {
                     return ResponseEntity.status(403).body(Map.of("message", "This account is currently disabled. Please contact the administrator."));
                 }
 
-                // Check for ENABLE_2FA Permission
-                if (guard.hasPermission(user, "ENABLE_2FA")) {
+                // Check for ENABLE_2FA Permission (Bypass for Super Admin)
+                if (guard.hasPermission(user, "ENABLE_2FA") && !guard.isSuperAdmin(user)) {
                     String otp = String.format("%06d", new java.security.SecureRandom().nextInt(999999));
                     
                     // Store OTP and Expiry in User record
@@ -138,11 +141,14 @@ public class AuthRestController {
 
                 return establishSession(user, request, responseObj);
             } else {
-                user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
-                if (user.getFailedLoginAttempts() >= 5) {
-                    user.setLockedUntil(java.time.LocalDateTime.now().plusMinutes(15));
+                // Bypass locking increments for Super Admin
+                if (!guard.isSuperAdmin(user)) {
+                    user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
+                    if (user.getFailedLoginAttempts() >= 5) {
+                        user.setLockedUntil(java.time.LocalDateTime.now().plusMinutes(15));
+                    }
+                    userRepository.save(user);
                 }
-                userRepository.save(user);
             }
         } else {
             // Dummy verification to mitigate timing attacks
@@ -163,7 +169,7 @@ public class AuthRestController {
         
         // Access Token Cookie
         String accessCookie = String.format("JWT=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=Strict", 
-            session.get("accessToken"), 15 * 60);
+            session.get("accessToken"), 4 * 60 * 60);
         responseObj.addHeader("Set-Cookie", accessCookie);
 
         // Refresh Token & SessionID Cookies (Stateful)
@@ -217,7 +223,7 @@ public class AuthRestController {
             Map<String, Object> session = guard.rotateSession(refreshToken, UUID.fromString(sessionIdStr), ip, request.getHeader("User-Agent"));
             
             String accessCookie = String.format("JWT=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=Strict", 
-                session.get("accessToken"), 15 * 60);
+                session.get("accessToken"), 4 * 60 * 60);
             responseObj.addHeader("Set-Cookie", accessCookie);
 
             String refreshCookie = String.format("RT=%s; Path=/api/auth/refresh; Max-Age=%d; HttpOnly; SameSite=Strict", 
@@ -273,6 +279,61 @@ public class AuthRestController {
             }
         }
         return ResponseEntity.status(401).body(Map.of("message", "User not found"));
+    }
+
+    @PostMapping("/reset-password")
+    @PreAuthorize("permitAll()")
+    @org.springframework.transaction.annotation.Transactional
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> data) {
+        String rawToken = data.get("token");
+        String newPassword = data.get("newPassword");
+        
+        if (rawToken == null || newPassword == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Token and password are required."));
+        }
+
+        String hashedToken = guard.hashToken(rawToken);
+
+        return userRepository.findByActivationToken(hashedToken)
+            .map(user -> {
+                if (guard.isSuperAdmin(user)) {
+                    return ResponseEntity.status(403).body(Map.of("message", "The Super Admin credentials are protected and cannot be modified via self-service."));
+                }
+                
+                if (user.getTokenExpiry() != null && user.getTokenExpiry().isBefore(java.time.LocalDateTime.now())) {
+                    return ResponseEntity.badRequest().body(Map.of("message", "The security reset link has expired. Please initiate a new request."));
+                }
+                
+                // NIST Password Validation on Backend as well
+                if (!guard.isStrongPassword(newPassword)) {
+                    return ResponseEntity.badRequest().body(Map.of("message", "The provided password does not meet the organization's security requirements."));
+                }
+
+                user.setPassword(guard.hashPassword(newPassword));
+                
+                // SECURITY PURGE: Invalidate all existing sessions
+                // 1. Update lastRoleChange to invalidate existing JWTs (JwtAuthenticationFilter checks this)
+                user.setLastRoleChange(java.time.LocalDateTime.now());
+                
+                // 2. Revoke all active Refresh Tokens in the database
+                guard.revokeAllSessionsForUser(user);
+                
+                // 3. Clear token to prevent reuse
+                user.setActivationToken(null);
+                user.setTokenExpiry(null);
+                
+                userRepository.save(user);
+
+                // Audit Log
+                com.vulnprint.model.Alert alert = new com.vulnprint.model.Alert();
+                alert.setTitle("Credential Security Update");
+                alert.setDetails("A password reset was successfully executed for User: " + user.getEmail() + ". All existing sessions have been purged.");
+                alert.setLevel("System");
+                alert.setTimeAgo("Just now");
+                alertRepository.save(alert);
+                
+                return ResponseEntity.ok(Map.of("message", "Security credentials updated. All existing sessions have been revoked. Please sign in with your new credentials."));
+            }).orElse(ResponseEntity.status(404).body(Map.of("message", "Invalid or expired security token.")));
     }
 
     @PostMapping("/logout")
