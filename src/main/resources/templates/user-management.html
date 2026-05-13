@@ -276,6 +276,7 @@
         }
 
         async function loadRoles() {
+            if (!sessionUser.perms.includes('MANAGE_ACCESS')) return;
             try {
                 const res = await fetch('/api/users/roles');
                 if (!res.ok) return;
@@ -405,18 +406,18 @@
 
         function selectEntity(id) {
             if (!id) return;
-            selectedId = id;
+            selectedId = Number(id);
             document.getElementById('empty-state').classList.add('hidden');
             
             if (activeTab === 'users' || activeTab === 'deleted') {
-                selectedEntity = allUsers.find(u => Number(u.id) === Number(id));
+                selectedEntity = allUsers.find(u => Number(u.id) === selectedId);
                 if (selectedEntity) {
                     document.getElementById('profile-panel').classList.remove('hidden');
                     document.getElementById('request-panel').classList.add('hidden');
                     updateProfilePanel();
                 }
             } else if (activeTab === 'requests') {
-                selectedEntity = pendingRequests.find(r => Number(r.id) === Number(id));
+                selectedEntity = pendingRequests.find(r => Number(r.id) === selectedId);
                 if (selectedEntity) {
                     document.getElementById('profile-panel').classList.add('hidden');
                     document.getElementById('request-panel').classList.remove('hidden');
@@ -430,12 +431,13 @@
             const u = selectedEntity;
             if (!u) return;
 
-            const isSuperAdmin = u.email === 'superadmin@vulnprint.com' || (u.role && u.role.name === 'Super Admin');
+            // Strictly target only the root account
+            const isProtectedUser = u.email === '[[${superAdminEmail}]]';
             const isSelf = sessionUser && sessionUser.email === u.email;
             const isDeleted = u.deleted === true || u.status === 'DELETED';
             
             document.getElementById('profile-avatar').src = u.profileImage || '/images/user.png';
-            document.getElementById('profile-full-name').innerText = `${u.firstName} ${u.lastName}`;
+            document.getElementById('profile-full-name').innerText = `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'USER PROFILE';
             document.getElementById('profile-email-label').innerText = `ACCOUNT STATUS: ${isDeleted ? 'DELETED' : (u.enabled ? 'ACTIVE' : 'SUSPENDED')}`; 
             
             const indicator = document.getElementById('profile-status-indicator');
@@ -454,22 +456,22 @@
 
             // Handle Read-Only state for ALL inputs
             const inputs = document.getElementById('profile-form').querySelectorAll('input, select, textarea');
-            inputs.forEach(i => i.disabled = isDeleted || isSuperAdmin);
+            inputs.forEach(i => i.disabled = isDeleted || isProtectedUser);
             
-            if (!isDeleted && !isSuperAdmin) {
+            if (!isDeleted && !isProtectedUser) {
                 document.getElementById('form-role').disabled = isSelf;
                 document.getElementById('form-enabled').disabled = isSelf;
             }
             
             // Show/Hide buttons based on state
             const saveBtn = document.querySelector('#profile-panel button.btn-primary');
-            if (saveBtn) saveBtn.style.display = (isDeleted || isSuperAdmin) ? 'none' : 'block';
+            if (saveBtn) saveBtn.style.display = (isDeleted || isProtectedUser) ? 'none' : 'block';
             
             const delBtn = document.getElementById('delete-user-btn');
-            if (delBtn) delBtn.style.display = (isDeleted || isSuperAdmin || isSelf) ? 'none' : 'block';
+            if (delBtn) delBtn.style.display = (isDeleted || isProtectedUser || isSelf) ? 'none' : 'block';
             
             const resetBtn = document.getElementById('reset-pwd-btn');
-            if (resetBtn) resetBtn.style.display = (isDeleted || isSuperAdmin) ? 'none' : 'flex';
+            if (resetBtn) resetBtn.style.display = (isDeleted || isProtectedUser) ? 'none' : 'flex';
 
             // Ensure panel is visible
             document.getElementById('profile-panel').classList.remove('hidden');

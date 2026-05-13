@@ -21,6 +21,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/auth")
+@org.springframework.transaction.annotation.Transactional
 public class AuthRestController {
 
     @Autowired
@@ -106,8 +107,8 @@ public class AuthRestController {
                     return ResponseEntity.status(403).body(Map.of("message", "This account is currently disabled. Please contact the administrator."));
                 }
 
-                // Check for ENABLE_2FA Permission (Bypass for Super Admin)
-                if (guard.hasPermission(user, "ENABLE_2FA") && !guard.isSuperAdmin(user)) {
+                // Check for ENABLE_2FA Permission
+                if (guard.hasPermission(user, "ENABLE_2FA")) {
                     String otp = String.format("%06d", new java.security.SecureRandom().nextInt(999999));
                     
                     // Store OTP and Expiry in User record
@@ -119,9 +120,11 @@ public class AuthRestController {
                     try {
                         mailService.sendMfaOtp(user.getEmail(), otp);
                         System.out.println("[SECURITY] MFA OTP TRANSMITTED TO " + email);
+                        // Log OTP to console for development/testing visibility
+                        System.out.println("[DEVELOPER DEBUG] MFA OTP for " + email + " is: " + otp);
                     } catch (Exception e) {
                         System.err.println("[CRITICAL] Failed to transmit MFA OTP: " + e.getMessage());
-                        return ResponseEntity.status(500).body(Map.of("message", "Authentication service is temporarily unavailable."));
+                        return ResponseEntity.status(500).body(Map.of("message", "Authentication service is temporarily unavailable. Unable to transmit verification code."));
                     }
                     
                     // Pre-Auth Token (2 mins, 0 perms)
@@ -141,14 +144,11 @@ public class AuthRestController {
 
                 return establishSession(user, request, responseObj);
             } else {
-                // Bypass locking increments for Super Admin
-                if (!guard.isSuperAdmin(user)) {
-                    user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
-                    if (user.getFailedLoginAttempts() >= 5) {
-                        user.setLockedUntil(java.time.LocalDateTime.now().plusMinutes(15));
-                    }
-                    userRepository.save(user);
+                user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
+                if (user.getFailedLoginAttempts() >= 5) {
+                    user.setLockedUntil(java.time.LocalDateTime.now().plusMinutes(15));
                 }
+                userRepository.save(user);
             }
         } else {
             // Dummy verification to mitigate timing attacks
@@ -245,19 +245,23 @@ public class AuthRestController {
         String preAuthToken = data.get("preAuthToken");
         String otp = data.get("otp");
 
+        if (preAuthToken == null || otp == null || otp.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Pre-auth token and OTP are required."));
+        }
+
         String email = guard.getEmailFromPreAuthToken(preAuthToken);
         if (email == null) {
-            return ResponseEntity.status(401).body(Map.of("message", "MFA session expired. Please log in again."));
+            return ResponseEntity.status(401).body(Map.of("message", "MFA session expired or invalid token. Please log in again."));
         }
 
         Optional<User> userOpt = userRepository.findActiveByEmail(email);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-            
-            // Validate OTP and Expiry
-            if (user.getMfaOtp() != null && user.getMfaOtp().equals(otp) && 
+
+            // Validate OTP and Expiry with robust trimming to prevent whitespace mismatches
+            if (user.getMfaOtp() != null && user.getMfaOtp().equals(otp.trim()) &&
                 user.getMfaOtpExpiry() != null && user.getMfaOtpExpiry().isAfter(java.time.LocalDateTime.now())) {
-                
+
                 // Clear OTP after successful use
                 user.setMfaOtp(null);
                 user.setMfaOtpExpiry(null);
@@ -265,22 +269,25 @@ public class AuthRestController {
                 user.setFailedLoginAttempts(0);
                 user.setLockedUntil(null);
                 userRepository.save(user);
-                
+
                 return establishSession(user, request, responseObj);
             } else {
                 guard.recordFailedMfa(user);
-                
+
                 String errorMsg = "Invalid verification code.";
-                if (user.getMfaOtpExpiry() != null && user.getMfaOtpExpiry().isBefore(java.time.LocalDateTime.now())) {
+                if (user.getMfaOtp() == null) {
+                    errorMsg = "No MFA session found for this user. Please initiate login again.";
+                } else if (!user.getMfaOtp().equals(otp.trim())) {
+                    errorMsg = "The verification code you entered is incorrect.";
+                } else if (user.getMfaOtpExpiry() != null && user.getMfaOtpExpiry().isBefore(java.time.LocalDateTime.now())) {
                     errorMsg = "Verification code has expired.";
                 }
-                
+
                 return ResponseEntity.status(401).body(Map.of("message", errorMsg));
             }
         }
         return ResponseEntity.status(401).body(Map.of("message", "User not found"));
     }
-
     @PostMapping("/reset-password")
     @PreAuthorize("permitAll()")
     @org.springframework.transaction.annotation.Transactional

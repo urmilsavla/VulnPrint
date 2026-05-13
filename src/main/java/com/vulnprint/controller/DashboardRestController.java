@@ -67,7 +67,7 @@ public class DashboardRestController {
     }
 
     @GetMapping("/pentests")
-    @PreAuthorize("hasAuthority(T(com.vulnprint.security.AppSecurityGuard).VIEW_DASHBOARD)")
+    @PreAuthorize("hasAuthority(T(com.vulnprint.security.AppSecurityGuard).VIEW_DASHBOARD) or hasAuthority(T(com.vulnprint.security.AppSecurityGuard).GENERATE_REPORT)")
     public ResponseEntity<?> getPentests(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "3") int size, @RequestParam(required = false) String type) {
         size = Math.min(size, 100);
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();

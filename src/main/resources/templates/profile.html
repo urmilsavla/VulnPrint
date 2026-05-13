@@ -182,7 +182,7 @@
                     }
 
                     // Super Admin Protection
-                    const isSuperAdmin = user.email === 'superadmin@vulnprint.com' || (user.role && user.role.name === 'Super Admin');
+                    const isSuperAdmin = user.email === '[[${superAdminEmail}]]' || (user.role && user.role.name === 'Super Admin');
                     if (isSuperAdmin) {
                         const inputs = form.querySelectorAll('input, textarea');
                         inputs.forEach(i => i.readOnly = true);

@@ -619,18 +619,20 @@
                     if (tile) tile.classList.add('collapsed');
                 });
 
-                const userRes = await fetch('/api/users');
-                if (userRes.ok) {
-                    const users = await userRes.json();
-                    const approverSelect = document.getElementById('val-report-approver');
-                    if (approverSelect) {
-                        approverSelect.innerHTML = '<option value="">Select Authorized Approver...</option>';
-                        users.forEach(u => {
-                            const opt = document.createElement('option');
-                            opt.value = u.id;
-                            opt.textContent = `${u.firstName || ''} ${u.lastName || ''} (${u.role || 'User'})`;
-                            approverSelect.appendChild(opt);
-                        });
+                if (window.hasPermission('VIEW_USERS') || window.hasPermission('MANAGE_USERS')) {
+                    const userRes = await fetch('/api/users');
+                    if (userRes.ok) {
+                        const users = await userRes.json();
+                        const approverSelect = document.getElementById('val-report-approver');
+                        if (approverSelect) {
+                            approverSelect.innerHTML = '<option value="">Select Authorized Approver...</option>';
+                            users.forEach(u => {
+                                const opt = document.createElement('option');
+                                opt.value = u.id;
+                                opt.textContent = `${u.firstName || ''} ${u.lastName || ''} (${u.role || 'User'})`;
+                                approverSelect.appendChild(opt);
+                            });
+                        }
                     }
                 }
 

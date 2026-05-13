@@ -374,7 +374,6 @@ public class AppSecurityGuard {
 
     @Transactional
     public void recordFailedMfa(User user) {
-        if (isSuperAdmin(user)) return; // Bypass locking for root authority
         user.setFailedMfaAttempts(user.getFailedMfaAttempts() + 1);
         if (user.getFailedMfaAttempts() >= 3) {
             user.setStatus(User.AccountStatus.LOCKED);
@@ -524,8 +523,11 @@ public class AppSecurityGuard {
         }
     }
 
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.superadmin.email:superadmin@vulnprint.com}")
+    private String superAdminEmail;
+
     public boolean isSuperAdmin(User user) {
-        return user != null && "superadmin@vulnprint.com".equalsIgnoreCase(user.getEmail());
+        return user != null && superAdminEmail.equalsIgnoreCase(user.getEmail());
     }
 
     public boolean hasPermission(User user, String key) {
@@ -707,9 +709,9 @@ public class AppSecurityGuard {
             String path = request.getRequestURI();
             String ip = request.getRemoteAddr();
 
-            // Profile 1: Strict Limits for Auth Actions (5 req / min)
+            // Profile 1: Strict Limits for Auth Actions (Increased to 100 for testing)
             if (path.startsWith("/api/auth/") || path.equals("/api/users/activate")) {
-                if (!guard.checkRateLimit(ip, "AUTH", 5, 60000)) {
+                if (!guard.checkRateLimit(ip, "AUTH", 100, 60000)) {
                     response.setStatus(429);
                     response.setContentType("application/json");
                     response.getWriter().write("{\"message\": \"Rate limit exceeded. Please try again later.\"}");
@@ -717,9 +719,9 @@ public class AppSecurityGuard {
                     return;
                 }
             }
-            // Profile 2: Moderate Limits for Public HTML Views (60 req / min)
+            // Profile 2: Moderate Limits for Public HTML Views (Increased to 500 for testing)
             else if (path.equals("/") || path.equals("/login") || path.equals("/activate-account") || path.equals("/error")) {
-                if (!guard.checkRateLimit(ip, "VIEWS", 60, 60000)) {
+                if (!guard.checkRateLimit(ip, "VIEWS", 500, 60000)) {
                     response.setStatus(429);
                     response.setContentType("text/html");
                     response.getWriter().write("<!DOCTYPE html><html><head><title>Too Many Requests</title></head><body style='background:#0e0e0e;color:#4FFE49;font-family:monospace;text-align:center;padding:50px;'><h1>429 - Rate Limit Exceeded</h1><p>Please wait a moment before trying again.</p></body></html>");

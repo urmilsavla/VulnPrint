@@ -49,7 +49,7 @@ public class EmailService {
         }
     }
 
-    public void sendMfaOtp(String to, String otp) {
+    public void sendMfaOtp(String to, String otp) throws Exception {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom("security@vulnprint.local");
         message.setTo(to);
@@ -61,6 +61,7 @@ public class EmailService {
             System.out.println("[EMAIL SERVICE] MFA OTP sent to " + to);
         } catch (Exception e) {
             System.err.println("[EMAIL SERVICE] Failed to send MFA OTP to " + to + ": " + e.getMessage());
+            throw e; // Rethrow to allow controller to handle failure
         }
     }
 

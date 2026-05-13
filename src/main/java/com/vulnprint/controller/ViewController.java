@@ -18,6 +18,14 @@ public class ViewController {
     @Autowired
     private com.vulnprint.repository.SystemConfigRepository systemConfigRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.superadmin.email:superadmin@vulnprint.com}")
+    private String superAdminEmail;
+
+    @org.springframework.web.bind.annotation.ModelAttribute("superAdminEmail")
+    public String getSuperAdminEmail() {
+        return superAdminEmail;
+    }
+
     private boolean isRepGenEnabled() {
         return systemConfigRepository.findById("repgen_enabled")
                 .map(c -> "true".equals(c.getConfigValue()))

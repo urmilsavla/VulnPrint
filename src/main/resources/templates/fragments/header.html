@@ -490,6 +490,7 @@
         }
 
         async function loadAlerts() {
+            if (!window.hasPermission('VIEW_ALERTS')) return;
             try {
                 const res = await fetch('/api/dashboard/alerts');
                 if (!res.ok) return;

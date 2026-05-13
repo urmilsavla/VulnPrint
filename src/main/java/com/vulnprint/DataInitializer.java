@@ -33,6 +33,9 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired
     private AppSecurityGuard guard;
 
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.superadmin.email:superadmin@vulnprint.com}")
+    private String superAdminEmail;
+
     @Override
     public void run(String... args) throws Exception {
         try {
@@ -93,7 +96,7 @@ public class DataInitializer implements CommandLineRunner {
         System.out.println("[PRODUCTION CORE] Super Admin Role provisioned with global permissions.");
 
         // 3. Initialize Immutable Superadmin Account
-        String adminEmail = "superadmin@vulnprint.com";
+        String adminEmail = superAdminEmail;
         String adminPass = "VulnPrintAdmin08$";
         
         User superadmin = userRepository.findByEmail(adminEmail).orElseGet(() -> {

@@ -91,7 +91,6 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        if ("superadmin@vulnprint.com".equalsIgnoreCase(this.email)) return true;
         return this.enabled && !this.deleted;
     }
 
@@ -122,7 +121,6 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        if ("superadmin@vulnprint.com".equalsIgnoreCase(this.email)) return true;
         if (status == AccountStatus.LOCKED) return false;
         if (lockedUntil != null && java.time.LocalDateTime.now().isBefore(lockedUntil)) {
             return false;
