@@ -30,16 +30,16 @@ public class VulnDbService {
                 .filter(url -> !url.isBlank())
                 .orElse(defaultUrl); 
         
-        // SSRF Check: Ensure the configured VulnDB URL is not targeting forbidden zones
-        if (!guard.isSafeUrl(baseUrl)) {
+        String safeUrl = guard.resolveSafeUrl(baseUrl);
+        if (safeUrl == null) {
             throw new SecurityException("SSRF Blocked: Configured VulnDB URL targets a restricted internal address.");
         }
 
-        if (baseUrl.endsWith("/")) {
-            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+        if (safeUrl.endsWith("/")) {
+            safeUrl = safeUrl.substring(0, safeUrl.length() - 1);
         }
         
-        return RestClient.builder().baseUrl(baseUrl).build();
+        return RestClient.builder().baseUrl(safeUrl).build();
     }
 
     public Map search(String query, String category, String severity) {

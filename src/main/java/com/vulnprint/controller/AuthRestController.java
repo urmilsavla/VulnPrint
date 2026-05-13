@@ -134,11 +134,11 @@ public class AuthRestController {
                     // Send OTP via SMTP
                     try {
                         mailService.sendMfaOtp(user.getEmail(), otp);
-                        System.out.println("[SECURITY] MFA OTP TRANSMITTED TO " + email);
+                        logger.info("[SECURITY] MFA OTP TRANSMITTED TO " + email);
                         // Log OTP to console for development/testing visibility
-                        System.out.println("[DEVELOPER DEBUG] MFA OTP for " + email + " is: " + otp);
+
                     } catch (Exception e) {
-                        System.err.println("[CRITICAL] Failed to transmit MFA OTP: " + e.getMessage());
+                        logger.error("[CRITICAL] Failed to transmit MFA OTP: " + e.getMessage(), e);
                         return ResponseEntity.status(500).body(Map.of("message", "Authentication service is temporarily unavailable. Unable to transmit verification code."));
                     }
                     
@@ -374,3 +374,9 @@ public class AuthRestController {
         return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
 }
+;
+        return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
+    }
+}
+
+

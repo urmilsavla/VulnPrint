@@ -70,7 +70,6 @@ public class ConfigRestController {
 
             org.springframework.web.client.RestClient.builder()
                     .requestFactory(factory)
-                    .defaultHeader("Host", new java.net.URL(url).getHost())
                     .build()
                     .get()
                     .uri(safeUrl)

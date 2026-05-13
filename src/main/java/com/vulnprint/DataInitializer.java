@@ -99,7 +99,7 @@ public class DataInitializer implements CommandLineRunner {
         Role superAdminRole = roleRepository.findByName("Super Admin").orElseGet(() -> new Role("Super Admin"));
         superAdminRole.setPermissions(new HashSet<>(permissionRepository.findAll()));
         roleRepository.save(superAdminRole);
-        System.out.println("[PRODUCTION CORE] Super Admin Role provisioned with global permissions.");
+        logger.info("[PRODUCTION CORE] Super Admin Role provisioned with global permissions.");
 
         // 3. Initialize Immutable Superadmin Account
         String adminEmail = superAdminEmail;
@@ -121,7 +121,7 @@ public class DataInitializer implements CommandLineRunner {
         superadmin.setAddress(guard.encryptVault("VulnPrint Command Center"));
         
         userRepository.save(superadmin);
-        System.out.println("[PRODUCTION CORE] Immutable Superadmin provisioned: " + adminEmail);
+        logger.info("[PRODUCTION CORE] Immutable Superadmin provisioned: " + adminEmail);
 
 
         // 4. Initialize Core Configs
@@ -136,6 +136,16 @@ public class DataInitializer implements CommandLineRunner {
     private void registerPermission(String name, String desc) {
         if (permissionRepository.findByName(name).isEmpty()) {
             permissionRepository.save(new Permission(name, desc));
+        }
+    }
+}
+sc) {
+        if (permissionRepository.findByName(name).isEmpty()) {
+            permissionRepository.save(new Permission(name, desc));
+        }
+    }
+}
+ory.save(new Permission(name, desc));
         }
     }
 }

@@ -61,7 +61,7 @@ public class EmailService {
 
         try {
             emailSender.send(message);
-            System.out.println("[EMAIL SERVICE] Rejection email sent to " + toEmail);
+            logger.info("[EMAIL SERVICE] Rejection email sent to " + toEmail);
         } catch (Exception e) {
             System.err.println("[EMAIL SERVICE] Failed to send rejection email to " + toEmail + ": " + e.getMessage());
         }
@@ -76,7 +76,7 @@ public class EmailService {
         
         try {
             emailSender.send(message);
-            System.out.println("[EMAIL SERVICE] MFA OTP sent to " + to);
+            logger.info("[EMAIL SERVICE] MFA OTP sent to " + to);
         } catch (Exception e) {
             System.err.println("[EMAIL SERVICE] Failed to send MFA OTP to " + to + ": " + e.getMessage());
             throw e; // Rethrow to allow controller to handle failure
@@ -100,8 +100,16 @@ public class EmailService {
             emailSender.send(message);
             System.out.println("[EMAIL SERVICE] Password reset email sent to " + toEmail);
         } catch (Exception e) {
-            System.err.println("[EMAIL SERVICE] Failed to send password reset email to " + toEmail + ": " + e.getMessage());
+            logger.error("[EMAIL SERVICE] Failed to send password reset email to " + toEmail + ": " + e.getMessage(), e);
         }
     }
 }
+
+n e) {
+            logger.error("[EMAIL SERVICE] Failed to send password reset email to " + toEmail + ": " + e.getMessage(), e);
+        }
+    }
+}
+
+
 

@@ -141,7 +141,7 @@ public class UserRestController {
             user.setInvitationExpiry(java.time.LocalDateTime.now().plusHours(invitationExpiryHours));
             
             userRepository.save(user);
-            System.out.println("[DEBUG] User successfully saved to DB: " + email);
+            logger.info("[DEBUG] User successfully saved to DB: " + email);
 
             // Construct full activation URL based on the request's origin
             String baseUrl = String.format("%s://%s:%d", httpRequest.getScheme(), httpRequest.getServerName(), httpRequest.getServerPort());
@@ -156,8 +156,8 @@ public class UserRestController {
                 "authLink", authLink
             ));
         } catch (Exception e) {
-            System.err.println("[CRITICAL] Error in /api/users/invite: ");
-            e.printStackTrace();
+            logger.error("[CRITICAL] Error in /api/users/invite: ", e);
+            logger.error("Exception occurred: ", e);
             return ResponseEntity.status(500).body(Map.of("message", "Unable to process the invitation request at this time. Please contact support."));
         }
     }
@@ -386,7 +386,7 @@ public class UserRestController {
             userRepository.save(targetUser);
             return ResponseEntity.ok(Map.of("message", "Profile updated successfully" + (securityModified ? " and security sessions revoked" : "")));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Exception occurred: ", e);
             return ResponseEntity.status(400).body(Map.of("message", "Unable to update profile. Please ensure all data is correctly formatted."));
         }
     }
@@ -564,6 +564,16 @@ public class UserRestController {
         }
         
         User saved = userRepository.save(newUser);
+        return ResponseEntity.ok(saved);
+    }
+}
+;
+        return ResponseEntity.ok(saved);
+    }
+}
+}
+}
+      User saved = userRepository.save(newUser);
         return ResponseEntity.ok(saved);
     }
 }

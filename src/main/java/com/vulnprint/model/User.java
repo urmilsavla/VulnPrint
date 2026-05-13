@@ -24,6 +24,7 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private String password;
     
     @Column(nullable = false, unique = true)
@@ -36,8 +37,14 @@ public class User implements UserDetails {
     private AccountStatus status = AccountStatus.ACTIVE;
 
     private int failedMfaAttempts = 0;
+    
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private String mfaSecretEnc;
+    
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private String mfaOtp;
+    
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private java.time.LocalDateTime mfaOtpExpiry;
     private java.time.LocalDateTime accountExpiry;
     private int securityVersion = 0;
