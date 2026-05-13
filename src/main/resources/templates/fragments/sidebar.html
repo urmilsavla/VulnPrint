@@ -1,41 +1,41 @@
 <aside th:fragment="sidebar" id="sidebar" class="fixed left-0 top-0 h-full flex flex-col bg-neutral-950 border-r border-neutral-900 z-50 overflow-hidden transition-all duration-300 w-16 group hover:w-64 expanded:w-64">
     <div class="flex items-center gap-4 px-4 py-6 border-b border-neutral-900 overflow-hidden">
         <button id="sidebar-toggle" class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-sm hover:bg-neutral-900 transition-all">
-            <span class="material-symbols-outlined text-2xl" style="color: #39FF14">menu</span>
+            <span class="material-symbols-outlined text-2xl" style="color: #4FFE49">menu</span>
         </button>
     </div>
 
     <nav class="flex-1 px-2 py-6 space-y-2 overflow-y-auto custom-scrollbar">
         <a href="/dashboard" class="flex items-center gap-4 px-3 py-3 text-neutral-400 hover:text-primary hover:bg-primary/5 rounded-sm transition-all group/item">
             <span class="material-symbols-outlined text-neutral-500 group-hover/item:text-primary transition-colors">grid_view</span>
-            <span class="nav-label text-[10px] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 expanded:opacity-100 transition-opacity duration-300 whitespace-nowrap">Dashboard</span>
+            <span class="nav-label text-[10px] font-bold uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 expanded:opacity-100 transition-opacity duration-300 whitespace-nowrap">Dashboard</span>
         </a>
         <a href="/web-pentest" class="flex items-center gap-4 px-3 py-3 text-neutral-400 hover:text-primary hover:bg-primary/5 rounded-sm transition-all group/item">
             <span class="material-symbols-outlined text-neutral-500 group-hover/item:text-primary transition-colors">language</span>
-            <span class="nav-label text-[10px] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 expanded:opacity-100 transition-opacity duration-300 whitespace-nowrap">Web Applications</span>
+            <span class="nav-label text-[10px] font-bold uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 expanded:opacity-100 transition-opacity duration-300 whitespace-nowrap">Web Applications</span>
         </a>
         <a href="/mobile-pentest" class="flex items-center gap-4 px-3 py-3 text-neutral-400 hover:text-primary hover:bg-primary/5 rounded-sm transition-all group/item">
             <span class="material-symbols-outlined text-neutral-500 group-hover/item:text-primary transition-colors">smartphone</span>
-            <span class="nav-label text-[10px] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 expanded:opacity-100 transition-opacity duration-300 whitespace-nowrap">Mobile Apps</span>
+            <span class="nav-label text-[10px] font-bold uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 expanded:opacity-100 transition-opacity duration-300 whitespace-nowrap">Mobile Apps</span>
         </a>
         <a href="/api-pentest" class="flex items-center gap-4 px-3 py-3 text-neutral-400 hover:text-primary hover:bg-primary/5 rounded-sm transition-all group/item">
             <span class="material-symbols-outlined text-neutral-500 group-hover/item:text-primary transition-colors">api</span>
-            <span class="nav-label text-[10px] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 expanded:opacity-100 transition-opacity duration-300 whitespace-nowrap">API Endpoints</span>
+            <span class="nav-label text-[10px] font-bold uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 expanded:opacity-100 transition-opacity duration-300 whitespace-nowrap">API Endpoints</span>
         </a>
         <a href="/network-pentest" class="flex items-center gap-4 px-3 py-3 text-neutral-400 hover:text-primary hover:bg-primary/5 rounded-sm transition-all group/item">
             <span class="material-symbols-outlined text-neutral-500 group-hover/item:text-primary transition-colors">security</span>
-            <span class="nav-label text-[10px] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 expanded:opacity-100 transition-opacity duration-300 whitespace-nowrap">Infrastructure</span>
+            <span class="nav-label text-[10px] font-bold uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 expanded:opacity-100 transition-opacity duration-300 whitespace-nowrap">Infrastructure</span>
         </a>
         <a href="/source-code-pentest" class="flex items-center gap-4 px-3 py-3 text-neutral-400 hover:text-primary hover:bg-primary/5 rounded-sm transition-all group/item">
             <span class="material-symbols-outlined text-neutral-500 group-hover/item:text-primary transition-colors">code</span>
-            <span class="nav-label text-[10px] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 expanded:opacity-100 transition-opacity duration-300 whitespace-nowrap">Source Code</span>
+            <span class="nav-label text-[10px] font-bold uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 expanded:opacity-100 transition-opacity duration-300 whitespace-nowrap">Source Code</span>
         </a>
     </nav>
 
     <div class="p-2 mt-auto border-t border-neutral-900">
         <button onclick="logoutWithPermission()" class="flex items-center gap-4 px-3 py-4 text-error hover:bg-error/10 w-full rounded-sm transition-all group/logout">
             <span class="material-symbols-outlined text-[#ff7351]">logout</span>
-            <span class="nav-label text-[10px] font-bold uppercase tracking-widest text-[#ff7351] opacity-0 group-hover:opacity-100 expanded:opacity-100 transition-opacity duration-300 whitespace-nowrap">Logout</span>
+            <span class="nav-label text-[10px] font-bold uppercase tracking-[0.2em] text-[#ff7351] opacity-0 group-hover:opacity-100 expanded:opacity-100 transition-opacity duration-300 whitespace-nowrap">Logout</span>
         </button>
     </div>
 

@@ -15,12 +15,12 @@
         body.sidebar-expanded #header { left: 256px; }
         @media (max-width: 1024px) { #main-content { margin-left: 0 !important; } }
 
-        .tile-card { background: rgba(19, 19, 19, 0.4) !important; border: 1px solid #262626 !important; backdrop-filter: blur(12px); transition: all 0.3s ease; }
+        .panel-terminal { background: rgba(19, 19, 19, 0.4) !important; border: 1px solid #262626 !important; backdrop-filter: blur(12px); transition: all 0.3s ease; }
         .tile-header { cursor: pointer; }
         .tile-content { max-height: 5000px; overflow: visible; transition: all 0.5s cubic-bezier(0, 1, 0, 1); }
         .collapse-icon { transition: transform 0.3s ease; color: #525252; }
-        .tile-card.collapsed .tile-content { max-height: 0; opacity: 0; padding: 0 !important; margin: 0 !important; overflow: hidden; pointer-events: none; }
-        .tile-card.collapsed .collapse-icon { transform: rotate(-90deg); }
+        .panel-terminal.collapsed .tile-content { max-height: 0; opacity: 0; padding: 0 !important; margin: 0 !important; overflow: hidden; pointer-events: none; }
+        .panel-terminal.collapsed .collapse-icon { transform: rotate(-90deg); }
         
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -48,7 +48,7 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
                 <!-- Tile 1: System Branding -->
-                <div class="tile-card p-8 rounded-xl shadow-2xl h-fit" id="tile-branding">
+                <div class="panel-terminal p-8 rounded-xl shadow-2xl h-fit" id="tile-branding">
                     <div class="tile-header flex justify-between items-center mb-8 text-white" onclick="toggleTile('tile-branding')">
                         <div class="flex items-center gap-4">
                             <span class="material-symbols-outlined text-primary text-3xl">palette</span>
@@ -69,7 +69,7 @@
                 </div>
 
                 <!-- Tile 2: Contact Information -->
-                <div class="tile-card p-8 rounded-xl shadow-2xl lg:col-span-2" id="tile-identity">
+                <div class="panel-terminal p-8 rounded-xl shadow-2xl lg:col-span-2" id="tile-identity">
                     <div class="tile-header flex justify-between items-center mb-8 text-white" onclick="toggleTile('tile-identity')">
                         <div class="flex items-center gap-4">
                             <span class="material-symbols-outlined text-primary text-3xl">contact_mail</span>

@@ -15,7 +15,7 @@
         body.sidebar-expanded #header { left: 256px; }
         @media (max-width: 1024px) { #main-content { margin-left: 0 !important; } }
         
-        .tile-card { background: rgba(19, 19, 19, 0.4) !important; border: 1px solid #262626 !important; backdrop-filter: blur(12px); }
+        
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #4FFE49; }
@@ -23,7 +23,7 @@
         .tab-btn.active { color: #4FFE49; background: rgba(79, 254, 73, 0.1); border: 1px solid rgba(79, 254, 73, 0.2); }
         
         .status-pill {
-            @apply text-[8px] font-bold tracking-widest px-2 py-0.5 rounded-sm uppercase font-headline;
+            @apply text-[10px] font-bold tracking-[0.2em] px-2 py-0.5 rounded-sm uppercase font-headline;
         }
 
         .switch { position: relative; display: inline-block; width: 38px; height: 20px; }
@@ -42,7 +42,7 @@
     <div th:replace="~{fragments/header :: header}"></div>
 
     <main id="main-content" class="px-8 pb-20 relative z-10 font-body">
-        <div class="max-w-[1600px] mx-auto">
+        <div class="max-w-[1440px] mx-auto">
             <!-- Header Section -->
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-neutral-800 pb-8">
                 <div>
@@ -62,19 +62,19 @@
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 <!-- Left Sidebar: Selection List -->
                 <div class="lg:col-span-3 space-y-6">
-                    <div class="tile-card rounded-xl overflow-hidden">
+                    <div class="panel-terminal rounded-xl overflow-hidden">
                         <div class="flex p-1 bg-black/40 border-b border-neutral-800">
-                            <button onclick="switchTab('users')" id="tab-users" class="tab-btn active flex-1 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-400 hover:text-white transition-all rounded">Users</button>
-                            <button onclick="switchTab('requests')" id="tab-requests" class="tab-btn flex-1 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-400 hover:text-white transition-all rounded flex items-center justify-center gap-2">
+                            <button onclick="switchTab('users')" id="tab-users" class="tab-btn active flex-1 py-2 text-[10px] font-headline font-black uppercase tracking-[0.2em] text-neutral-400 hover:text-white transition-all rounded">Users</button>
+                            <button onclick="switchTab('requests')" id="tab-requests" class="tab-btn flex-1 py-2 text-[10px] font-headline font-black uppercase tracking-[0.2em] text-neutral-400 hover:text-white transition-all rounded flex items-center justify-center gap-2">
                                 Requests
-                                <span id="app-count-badge" class="bg-primary/20 text-primary text-[8px] px-1.5 py-0.5 rounded-full hidden">0</span>
+                                <span id="app-count-badge" class="bg-primary/20 text-primary text-[10px] px-1.5 py-0.5 rounded-full hidden">0</span>
                             </button>
-                            <button onclick="switchTab('deleted')" id="tab-deleted" class="tab-btn flex-1 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-400 hover:text-white transition-all rounded">Deleted</button>
+                            <button onclick="switchTab('deleted')" id="tab-deleted" class="tab-btn flex-1 py-2 text-[10px] font-headline font-black uppercase tracking-[0.2em] text-neutral-400 hover:text-white transition-all rounded">Deleted</button>
                         </div>
                         
                         <div class="p-4">
                             <div class="mb-4 relative">
-                                <input type="text" id="directory-search" oninput="handleSearch(this.value)" placeholder="SEARCH DIRECTORY..." class="w-full bg-black/60 border border-neutral-800 text-[10px] uppercase tracking-widest p-3 pl-10 focus:border-primary outline-none transition-all rounded-lg text-neutral-300">
+                                <input type="text" id="directory-search" oninput="handleSearch(this.value)" placeholder="SEARCH DIRECTORY..." class="input-terminal pl-10 text-[10px] font-headline">
                                 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-neutral-600 text-sm">search</span>
                             </div>
 
@@ -87,7 +87,7 @@
 
                 <!-- Right Content: Profile / Request Details -->
                 <div class="lg:col-span-9 h-full">
-                    <div id="profile-panel" class="tile-card p-10 rounded-xl hidden">
+                    <div id="profile-panel" class="panel-terminal p-10 rounded-xl hidden">
                         <div class="flex flex-col md:flex-row justify-between items-start gap-6 mb-12 border-b border-white/5 pb-8">
                             <div class="flex items-center gap-6">
                                 <div class="relative">
@@ -124,7 +124,7 @@
                             </div>
                             <div class="space-y-2">
                                 <label class="label-sub ml-1">Assigned Role</label>
-                                <select id="form-role" required class="input-terminal !py-3.5 appearance-none cursor-pointer uppercase tracking-widest text-[11px] font-bold">
+                                <select id="form-role" required class="input-terminal !py-3.5 appearance-none cursor-pointer uppercase tracking-[0.2em] text-[10px] font-bold">
                                     <!-- Populated via JS -->
                                 </select>
                             </div>
@@ -136,8 +136,8 @@
                                         <span class="slider"></span>
                                     </label>
                                     <div>
-                                        <p id="status-text" class="text-[10px] font-bold uppercase tracking-widest text-white">Active Account</p>
-                                        <p class="text-[8px] font-bold text-neutral-600 uppercase">Controls system access and authentication</p>
+                                        <p id="status-text" class="text-[10px] font-bold uppercase tracking-[0.2em] text-white">Active Account</p>
+                                        <p class="text-[10px] font-bold text-neutral-600 uppercase">Controls system access and authentication</p>
                                     </div>
                                 </div>
                             </div>
@@ -152,7 +152,7 @@
                         </form>
                     </div>
 
-                    <div id="request-panel" class="tile-card p-10 rounded-xl hidden">
+                    <div id="request-panel" class="panel-terminal p-10 rounded-xl hidden">
                         <div class="flex flex-col md:flex-row justify-between items-start gap-6 mb-12 border-b border-white/5 pb-8">
                             <div class="flex items-center gap-6">
                                 <div class="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
@@ -178,15 +178,15 @@
                                     <label class="label-sub mb-2 block">Personal Details</label>
                                     <div class="bg-black/40 p-6 rounded-xl border border-white/5 space-y-4">
                                         <div class="flex justify-between border-b border-white/5 pb-3">
-                                            <span class="text-[9px] font-bold text-neutral-500 uppercase">First Name</span>
-                                            <span id="req-first-name" class="text-[10px] font-bold text-white uppercase tracking-widest">---</span>
+                                            <span class="text-[10px] font-bold text-neutral-500 uppercase">First Name</span>
+                                            <span id="req-first-name" class="text-[10px] font-bold text-white uppercase tracking-[0.2em]">---</span>
                                         </div>
                                         <div class="flex justify-between border-b border-white/5 pb-3">
-                                            <span class="text-[9px] font-bold text-neutral-500 uppercase">Last Name</span>
-                                            <span id="req-last-name" class="text-[10px] font-bold text-white uppercase tracking-widest">---</span>
+                                            <span class="text-[10px] font-bold text-neutral-500 uppercase">Last Name</span>
+                                            <span id="req-last-name" class="text-[10px] font-bold text-white uppercase tracking-[0.2em]">---</span>
                                         </div>
                                         <div class="flex justify-between">
-                                            <span class="text-[9px] font-bold text-neutral-500 uppercase">Email</span>
+                                            <span class="text-[10px] font-bold text-neutral-500 uppercase">Email</span>
                                             <span id="req-email" class="text-[10px] font-mono text-primary uppercase">---</span>
                                         </div>
                                     </div>
@@ -194,7 +194,7 @@
                                 <div>
                                     <label class="label-sub mb-2 block">Professional Qualifications</label>
                                     <div class="bg-black/40 p-6 rounded-xl border border-white/5">
-                                        <p id="req-qualification" class="text-[10px] font-bold text-white uppercase leading-relaxed tracking-widest">---</p>
+                                        <p id="req-qualification" class="text-[10px] font-bold text-white uppercase leading-relaxed tracking-[0.2em]">---</p>
                                     </div>
                                 </div>
                             </div>
@@ -202,7 +202,7 @@
                                 <div>
                                     <label class="label-sub mb-2 block">Reason for Request</label>
                                     <div class="bg-black/20 p-6 rounded-xl border border-white/5 min-h-[200px]">
-                                        <p id="req-reason" class="text-[11px] text-neutral-400 italic leading-relaxed font-body">---</p>
+                                        <p id="req-reason" class="text-[10px] text-neutral-400 italic leading-relaxed font-body">---</p>
                                     </div>
                                 </div>
                             </div>
@@ -223,7 +223,7 @@
 
     <!-- Invite Modal -->
     <div id="invite-modal" class="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] hidden items-center justify-center p-4">
-        <div class="tile-card border border-neutral-800 w-full max-w-md p-10 relative rounded-3xl shadow-[0_0_100px_rgba(0,0,0,0.8)]">
+        <div class="panel-terminal border border-neutral-800 w-full max-w-md p-10 relative rounded-3xl shadow-[0_0_100px_rgba(0,0,0,0.8)]">
             <button onclick="closeInviteModal()" class="absolute top-6 right-6 text-neutral-600 hover:text-white transition-colors">
                 <span class="material-symbols-outlined">close</span>
             </button>
@@ -253,7 +253,7 @@
                 </div>
                 <div class="space-y-2">
                     <label class="label-sub ml-1">Initial Role</label>
-                    <select id="invite-role" required class="input-terminal !py-3.5 appearance-none cursor-pointer uppercase tracking-widest text-[11px] font-bold">
+                    <select id="invite-role" required class="input-terminal !py-3.5 appearance-none cursor-pointer uppercase tracking-[0.2em] text-[10px] font-bold">
                         <!-- Populated via JS -->
                     </select>
                 </div>
@@ -361,7 +361,7 @@
                         <img src="${u.profileImage || '/images/user.png'}" class="w-8 h-8 rounded-lg border border-neutral-800 grayscale-[0.5] group-hover:grayscale-0 transition-all ${!u.enabled ? 'opacity-30' : ''}">
                         <div class="flex-1 min-w-0">
                             <p class="text-[10px] font-black uppercase ${selectedId === u.id ? 'text-primary' : 'text-white'} truncate">${u.firstName} ${u.lastName}</p>
-                            <p class="text-[7px] font-bold text-neutral-600 uppercase tracking-widest truncate">${u.email}</p>
+                            <p class="text-[7px] font-bold text-neutral-600 uppercase tracking-[0.2em] truncate">${u.email}</p>
                         </div>
                     </div>
                 `).join('') || '<p class="text-center py-10 label-sub text-neutral-600">No matching users</p>';
@@ -379,7 +379,7 @@
                         <img src="${u.profileImage || '/images/user.png'}" class="w-8 h-8 rounded-lg border border-neutral-800 grayscale opacity-40">
                         <div class="flex-1 min-w-0">
                             <p class="text-[10px] font-black uppercase ${selectedId === u.id ? 'text-error' : 'text-neutral-500'} truncate">${u.firstName} ${u.lastName}</p>
-                            <p class="text-[7px] font-bold text-neutral-700 uppercase tracking-widest truncate">Deleted</p>
+                            <p class="text-[7px] font-bold text-neutral-700 uppercase tracking-[0.2em] truncate">Deleted</p>
                         </div>
                     </div>
                 `).join('') || '<p class="text-center py-10 label-sub text-neutral-600">No deleted accounts</p>';
@@ -397,7 +397,7 @@
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="text-[10px] font-black uppercase ${selectedId === r.id ? 'text-primary' : 'text-white'} truncate">${r.firstName} ${r.lastName}</p>
-                            <p class="text-[7px] font-bold text-neutral-600 uppercase tracking-widest truncate">${r.email}</p>
+                            <p class="text-[7px] font-bold text-neutral-600 uppercase tracking-[0.2em] truncate">${r.email}</p>
                         </div>
                     </div>
                 `).join('') || '<p class="text-center py-10 label-sub text-neutral-600">No pending requests</p>';

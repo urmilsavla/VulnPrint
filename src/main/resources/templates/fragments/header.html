@@ -43,7 +43,7 @@
                 @apply text-3xl font-headline font-bold text-white tracking-tighter uppercase leading-none;
             }
             .label-sub {
-                @apply text-[10px] font-label uppercase tracking-[0.2em] text-neutral-500;
+                @apply text-[10px] font-headline uppercase tracking-[0.2em] text-neutral-500;
             }
         }
     </style>
@@ -142,7 +142,7 @@
     </style>
 
     <div class="flex items-center gap-4">
-        <button id="mobile-toggle" class="lg:hidden text-neutral-400 hover:text-[#39FF14]"><span class="material-symbols-outlined">menu</span></button>
+        <button id="mobile-toggle" class="lg:hidden text-neutral-400 hover:text-[#4FFE49]"><span class="material-symbols-outlined">menu</span></button>
         <a href="/dashboard" class="flex items-center transition-transform hover:scale-105">
             <img alt="VulnPrint Logo" class="h-14 w-auto filter brightness-110" src="/images/logo.png">
         </a>
@@ -150,26 +150,26 @@
 
     <div class="flex items-center gap-6">
         <div id="admin-settings-container" class="relative group hidden">
-            <button class="text-neutral-400 hover:text-[#39FF14] transition-colors p-1 mt-1">
+            <button class="text-neutral-400 hover:text-[#4FFE49] transition-colors p-1 mt-1">
                 <span class="material-symbols-outlined">settings</span>
             </button>
             <div class="hidden group-hover:block absolute right-0 mt-0 w-48 pt-2 z-50">
                 <div class="bg-[#131313] border border-neutral-800 p-2 shadow-2xl">
                     <p class="px-4 py-2 text-[8px] font-black uppercase tracking-widest text-neutral-600 border-b border-neutral-900 mb-1">System Administration</p>
                     <a href="/vulnerability-approver" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-error hover:bg-neutral-800 transition-colors">Vulnerability Approver</a>
-                    <a href="/user-management" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">Manage Users</a>
-                    <a href="/organization-settings" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">Organizational Details</a>
-                    <a id="header-gen-report-link" href="/generate-report" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">Generate Report</a>
-                    <a href="/microservice-management" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">Microservice Management</a>
+                    <a href="/user-management" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#4FFE49] transition-colors">Manage Users</a>
+                    <a href="/organization-settings" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#4FFE49] transition-colors">Organizational Details</a>
+                    <a id="header-gen-report-link" href="/generate-report" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#4FFE49] transition-colors">Generate Report</a>
+                    <a href="/microservice-management" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#4FFE49] transition-colors">Microservice Management</a>
                 </div>
             </div>
         </div>
         
         <!-- Alerts Dropdown -->
         <div class="relative group">
-            <button class="relative text-neutral-400 hover:text-[#39FF14] transition-colors p-1 mt-1">
+            <button class="relative text-neutral-400 hover:text-[#4FFE49] transition-colors p-1 mt-1">
                 <span class="material-symbols-outlined">notifications</span>
-                <span id="alert-dot" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border border-black text-[9px] font-bold text-white flex items-center justify-center hidden">0</span>
+                <span id="alert-dot" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border border-black text-[10px] font-bold text-white flex items-center justify-center hidden">0</span>
             </button>
             <div class="hidden group-hover:block absolute right-[-50px] mt-0 w-80 pt-2 z-50">
                 <div class="bg-[#131313] border border-neutral-800 shadow-2xl overflow-hidden corner-accent">
@@ -192,18 +192,18 @@
             <button id="header-profile-toggle" class="flex items-center gap-3">
                 <div class="text-right hidden md:block">
                     <p id="header-user-fullname" class="text-[10px] font-bold uppercase text-white">User</p>
-                    <p id="header-user-role" class="text-[8px] font-bold uppercase text-[#39FF14]">Admin</p>
+                    <p id="header-user-role" class="text-[8px] font-bold uppercase text-[#4FFE49]">Admin</p>
                 </div>
                 <div class="relative">
-                    <img id="header-user-avatar" class="w-10 h-10 rounded-full border border-[#39FF14]/30 object-cover bg-neutral-900" src="/images/user.png">
-                    <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#39FF14] rounded-full border-2 border-black"></div>
+                    <img id="header-user-avatar" class="w-10 h-10 rounded-full border border-[#4FFE49]/30 object-cover bg-neutral-900" src="/images/user.png">
+                    <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#4FFE49] rounded-full border-2 border-black"></div>
                 </div>
             </button>
             <!-- Hover Dropdown -->
             <div class="hidden group-hover:block absolute right-0 mt-0 w-48 pt-2 z-50">
                 <div class="bg-[#131313] border border-neutral-800 p-2 shadow-2xl">
-                    <a href="/profile" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">My Profile</a>
-                    <button onclick="requestPasswordReset()" class="w-full text-left block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">Reset Password</button>
+                    <a href="/profile" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#4FFE49] transition-colors">My Profile</a>
+                    <button onclick="requestPasswordReset()" class="w-full text-left block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#4FFE49] transition-colors">Reset Password</button>
                     <div class="border-t border-neutral-800 my-1"></div>
                     <button onclick="logoutWithPermission()" class="w-full text-left px-4 py-2.5 text-[10px] uppercase tracking-widest text-red-500 hover:bg-neutral-800 transition-colors">Logout</button>
                     </div>
@@ -263,8 +263,8 @@
                 <h3 class="text-sm font-headline font-black uppercase tracking-widest text-white mb-2">Confirmation Required</h3>
                 <p id="confirm-message" class="text-xs text-zinc-400 mb-8 leading-relaxed tracking-tight">Are you sure you want to perform this action?</p>
                 <div class="grid grid-cols-2 gap-4 w-full">
-                    <button id="confirm-cancel" class="py-3 bg-neutral-900 border border-neutral-800 text-[9px] font-black uppercase tracking-widest text-white hover:bg-neutral-800 transition-colors rounded-lg">Cancel</button>
-                    <button id="confirm-proceed" class="py-3 bg-[#39FF14] text-black text-[9px] font-black uppercase tracking-widest hover:opacity-90 transition-all rounded-lg">Confirm</button>
+                    <button id="confirm-cancel" class="py-3 bg-neutral-900 border border-neutral-800 text-[10px] font-black uppercase tracking-widest text-white hover:bg-neutral-800 transition-colors rounded-lg">Cancel</button>
+                    <button id="confirm-proceed" class="py-3 bg-[#4FFE49] text-black text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all rounded-lg">Confirm</button>
                 </div>
             </div>
         </div>
@@ -450,7 +450,7 @@
             const container = document.getElementById('notification-container');
             const toast = document.createElement('div');
             
-            let color = '#39FF14'; // Default neon green
+            let color = '#4FFE49'; // Default neon green
             let icon = 'info';
             if (type === 'error') { color = '#ff7351'; icon = 'warning'; }
             if (type === 'success') { icon = 'check_circle'; }
@@ -502,7 +502,7 @@
                     dot.innerText = alerts.length;
                     dot.classList.remove('hidden');
                     list.innerHTML = alerts.map(a => {
-                        let color = '#39FF14';
+                        let color = '#4FFE49';
                         if (a.level === 'Critical') color = '#ff7351';
                         else if (a.level === 'High') color = '#ffb347';
                         
@@ -561,12 +561,12 @@
                 if (canApprove) menuHtml += `<a href="/vulnerability-approver" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-error hover:bg-neutral-800 transition-colors">Vulnerability Approver</a>`;
                 if (canManageUsers || canViewUsers) {
                     const label = canManageUsers ? "Manage Users" : "User Management";
-                    menuHtml += `<a href="/user-management" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">${label}</a>`;
+                    menuHtml += `<a href="/user-management" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#4FFE49] transition-colors">${label}</a>`;
                 }
-                if (canManageAccess) menuHtml += `<a href="/manage-access" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">Manage Access</a>`;
-                if (canManageDesign) menuHtml += `<a href="/organization-settings" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">Organizational Details</a>`;
-                if (canGenReport) menuHtml += `<a href="/generate-report" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">Generate Report</a>`;
-                if (canManageMicro) menuHtml += `<a href="/microservice-management" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#39FF14] transition-colors">Microservice Management</a>`;
+                if (canManageAccess) menuHtml += `<a href="/manage-access" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#4FFE49] transition-colors">Manage Access</a>`;
+                if (canManageDesign) menuHtml += `<a href="/organization-settings" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#4FFE49] transition-colors">Organizational Details</a>`;
+                if (canGenReport) menuHtml += `<a href="/generate-report" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#4FFE49] transition-colors">Generate Report</a>`;
+                if (canManageMicro) menuHtml += `<a href="/microservice-management" class="block px-4 py-2.5 text-[10px] uppercase tracking-widest text-white hover:bg-neutral-800 hover:text-[#4FFE49] transition-colors">Microservice Management</a>`;
                 
                 adminSettings.querySelector('.bg-\\[\\#131313\\]').innerHTML = menuHtml;
             }
@@ -619,4 +619,6 @@
             }
         }    </script>
 </div>
+
+
 

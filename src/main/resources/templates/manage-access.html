@@ -15,7 +15,7 @@
         body.sidebar-expanded #header { left: 256px; }
         @media (max-width: 1024px) { #main-content { margin-left: 0 !important; } }
         
-        .tile-card { background: rgba(19, 19, 19, 0.4) !important; border: 1px solid #262626 !important; transition: all 0.3s ease; backdrop-filter: blur(12px); }
+        .panel-terminal { background: rgba(19, 19, 19, 0.4) !important; border: 1px solid #262626 !important; transition: all 0.3s ease; backdrop-filter: blur(12px); }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #4FFE49; }
@@ -54,22 +54,22 @@
     <div th:replace="~{fragments/header :: header}"></div>
 
     <main id="main-content" class="px-8 pb-20">
-        <div class="max-w-7xl mx-auto">
+        <div class="max-w-[1440px] mx-auto">
             <!-- Header Section -->
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-neutral-800 pb-8">
                 <div>
-                    <h1 class="text-3xl font-bold text-white uppercase tracking-tight headline flex items-center gap-3">
+                    <h1 class="heading-main flex items-center gap-3">
                         <span class="material-symbols-outlined text-primary text-4xl">shield_person</span>
                         Manage Access
                     </h1>
-                    <p class="text-neutral-400 mt-1">Assign Security Roles & Individual Clearances</p>
+                    <p class="label-sub mt-1">Assign Security Roles & Individual Clearances</p>
                 </div>
                 <div class="flex gap-4">
-                    <button id="delete-role-btn" onclick="deleteActiveRole()" class="px-6 py-2 border border-error/30 text-error font-bold text-xs uppercase tracking-wider hover:bg-error/10 transition-all hidden rounded">
+                    <button id="delete-role-btn" onclick="deleteActiveRole()" class="btn-secondary !text-error !border-error/20 hover:!bg-error/10 hidden">
                         Remove Role
                     </button>
-                    <button onclick="openRoleModal()" class="px-6 py-2 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg rounded">
-                        Create New Role
+                    <button onclick="openRoleModal()" class="btn-primary flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">add_moderator</span> Create New Role
                     </button>
                 </div>
             </div>
@@ -77,15 +77,15 @@
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 <!-- Left Sidebar -->
                 <div class="lg:col-span-3 space-y-6">
-                    <div class="tile-card rounded-xl overflow-hidden">
+                    <div class="panel-terminal rounded-xl overflow-hidden">
                         <div class="flex p-1 bg-black/40 border-b border-neutral-800">
-                            <button onclick="switchTab('roles')" id="tab-roles" class="tab-btn active flex-1 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-400 hover:text-white transition-all rounded">Roles</button>
-                            <button onclick="switchTab('users')" id="tab-users" class="tab-btn flex-1 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-400 hover:text-white transition-all rounded">Users</button>
+                            <button onclick="switchTab('roles')" id="tab-roles" class="tab-btn active flex-1 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 hover:text-white transition-all rounded">Roles</button>
+                            <button onclick="switchTab('users')" id="tab-users" class="tab-btn flex-1 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 hover:text-white transition-all rounded">Users</button>
                         </div>
                         
                         <div class="p-4">
                             <div class="mb-4 relative">
-                                <input type="text" id="target-search" oninput="handleSearch(this.value)" placeholder="Search users by name, email, or role..." class="w-full bg-black/60 border border-neutral-800 text-[10px] uppercase tracking-widest p-3 pl-10 focus:border-primary outline-none transition-all rounded-lg text-neutral-300">
+                                <input type="text" id="target-search" oninput="handleSearch(this.value)" placeholder="Search users by name, email, or role..." class="w-full bg-black/60 border border-neutral-800 text-[10px] uppercase tracking-[0.2em] p-3 pl-10 focus:border-primary outline-none transition-all rounded-lg text-neutral-300">
                                 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-neutral-600 text-sm">search</span>
                             </div>
 
@@ -98,7 +98,7 @@
 
                 <!-- Right Content -->
                 <div class="lg:col-span-9">
-                    <div id="config-panel" class="tile-card p-10 rounded-xl hidden">
+                    <div id="config-panel" class="panel-terminal p-10 rounded-xl hidden">
                         <div class="flex flex-col md:flex-row justify-between items-start gap-6 mb-12 border-b border-neutral-800/50 pb-8">
                             <div class="flex items-center gap-6">
                                 <div id="target-avatar-container" class="hidden">
@@ -109,17 +109,17 @@
                                 </div>
                                 <div>
                                     <div class="flex items-center gap-3 mb-1">
-                                        <h3 id="target-name" class="text-2xl font-bold uppercase text-white tracking-tight headline">Select Entity</h3>
+                                        <h3 id="target-name" class="heading-main !text-2xl">Select Entity</h3>
                                         <span id="target-badge" class="status-pill bg-neutral-900 text-primary border border-neutral-800">Global</span>
                                     </div>
-                                    <p id="target-context" class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Adjusting system-wide access parameters</p>
+                                    <p id="target-context" class="text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em]">Adjusting system-wide access parameters</p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-3">
-                                <button id="refresh-btn" onclick="resetUserPermissions()" class="px-5 py-2 border border-neutral-800 text-neutral-500 text-[9px] font-bold uppercase tracking-widest hover:border-error hover:text-error transition-all hidden rounded">
+                                <button id="refresh-btn" onclick="resetUserPermissions()" class="btn-secondary !text-error !border-error/20 hover:!bg-error/10 hidden">
                                     Reset Overrides
                                 </button>
-                                <button onclick="saveChanges()" class="px-8 py-2 bg-primary text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg rounded">
+                                <button onclick="saveChanges()" class="btn-primary">
                                     Save Changes
                                 </button>
                             </div>
@@ -144,7 +144,7 @@
 
     <!-- Role Modal -->
     <div id="role-modal" class="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] hidden items-center justify-center p-4">
-        <div class="tile-card border border-neutral-800 w-full max-w-md p-10 shadow-3xl relative rounded-3xl">
+        <div class="panel-terminal border border-neutral-800 w-full max-w-md p-10 shadow-3xl relative rounded-3xl">
             <button onclick="closeRoleModal()" class="absolute top-6 right-6 text-neutral-600 hover:text-white transition-colors">
                 <span class="material-symbols-outlined">close</span>
             </button>
@@ -154,16 +154,16 @@
                 </div>
                 <div>
                     <h3 class="text-xl font-black text-white uppercase tracking-tight">New Security Role</h3>
-                    <p class="text-[9px] text-neutral-500 uppercase font-bold tracking-[0.2em]">Define a new organizational designation</p>
+                    <p class="text-[10px] text-neutral-500 uppercase font-bold tracking-[0.2em]">Define a new organizational designation</p>
                 </div>
             </div>
             <div class="space-y-8">
                 <div class="space-y-3">
-                    <label class="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-500 ml-1">Designation Name</label>
-                    <input type="text" id="new-role-name" oninput="validateRoleName(this.value)" placeholder="e.g. LEAD ARCHITECT" class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-all rounded-lg font-black uppercase tracking-widest">
-                    <p id="role-error" class="text-[9px] text-error mt-2 hidden font-bold italic">Designation already exists in the system.</p>
+                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 ml-1">Designation Name</label>
+                    <input type="text" id="new-role-name" oninput="validateRoleName(this.value)" placeholder="e.g. LEAD ARCHITECT" class="w-full bg-black/60 border border-neutral-800 text-white p-4 text-sm focus:border-primary outline-none transition-all rounded-lg font-black uppercase tracking-[0.2em]">
+                    <p id="role-error" class="text-[10px] text-error mt-2 hidden font-bold italic">Designation already exists in the system.</p>
                 </div>
-                <button id="create-role-btn" onclick="createRole()" class="w-full bg-primary text-black font-bold py-4 rounded-xl uppercase tracking-widest text-[11px] hover:opacity-90">
+                <button id="create-role-btn" onclick="createRole()" class="w-full bg-primary text-black font-bold py-4 rounded-xl uppercase tracking-[0.2em] text-[11px] hover:opacity-90">
                     Confirm Registration
                 </button>
             </div>
@@ -245,11 +245,11 @@
                     <div onclick="selectEntity('role', ${r.id})" class="p-4 border ${selectedId === r.id && activeTab === 'roles' ? 'border-primary/50 bg-primary/5' : 'border-transparent hover:bg-neutral-900/50'} cursor-pointer transition-all flex justify-between items-center rounded-xl group">
                         <div class="flex items-center gap-3">
                             <span class="material-symbols-outlined text-[16px] ${selectedId === r.id && activeTab === 'roles' ? 'text-primary' : 'text-neutral-600 group-hover:text-neutral-400'}">shield</span>
-                            <span class="text-[10px] font-black uppercase tracking-widest ${selectedId === r.id && activeTab === 'roles' ? 'text-primary' : 'text-neutral-400 group-hover:text-white'}">${r.name}</span>
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] ${selectedId === r.id && activeTab === 'roles' ? 'text-primary' : 'text-neutral-400 group-hover:text-white'}">${r.name}</span>
                         </div>
                         <span class="text-[8px] font-black text-neutral-700 group-hover:text-neutral-500 transition-colors">${r.permissions ? r.permissions.length : 0} KEYS</span>
                     </div>
-                `).join('') || '<p class="text-center py-8 text-[9px] text-neutral-600 uppercase font-bold tracking-widest">No matching roles</p>';
+                `).join('') || '<p class="text-center py-8 text-[10px] text-neutral-600 uppercase font-bold tracking-[0.2em]">No matching roles</p>';
             } else {
                 const filtered = allUsers.filter(u => 
                     (u.email && u.email.toLowerCase().includes(query)) || 
@@ -260,11 +260,11 @@
                     <div onclick="selectEntity('user', ${u.id})" class="p-3 border ${selectedId === u.id && activeTab === 'users' ? 'border-primary/50 bg-primary/5' : 'border-transparent hover:bg-neutral-900/50'} cursor-pointer transition-all flex items-center gap-3 rounded-xl group">
                         <img src="${u.profileImage || '/images/user.png'}" class="w-7 h-7 rounded-lg border border-neutral-800 grayscale-[0.5] group-hover:grayscale-0 transition-all">
                         <div class="flex-1 min-w-0">
-                            <p class="text-[9px] font-black uppercase text-white truncate">${u.firstName} ${u.lastName}</p>
-                            <p class="text-[7px] font-bold text-neutral-600 uppercase tracking-widest truncate">${u.role ? u.role.name : 'Unassigned'}</p>
+                            <p class="text-[10px] font-black uppercase text-white truncate">${u.firstName} ${u.lastName}</p>
+                            <p class="text-[7px] font-bold text-neutral-600 uppercase tracking-[0.2em] truncate">${u.role ? u.role.name : 'Unassigned'}</p>
                         </div>
                     </div>
-                `).join('') || '<p class="text-center py-8 text-[9px] text-neutral-600 uppercase font-bold tracking-widest">No matching users</p>';
+                `).join('') || '<p class="text-center py-8 text-[10px] text-neutral-600 uppercase font-bold tracking-[0.2em]">No matching users</p>';
             }
         }
 
@@ -368,7 +368,7 @@
                                 return `
                                     <div class="perm-card group p-5 rounded-xl flex items-center justify-between ${active ? 'active' : ''} ${inherited ? 'locked' : ''}">
                                         <div class="flex-1 pr-4 relative">
-                                            <p class="text-[10px] font-bold uppercase tracking-widest ${active ? 'text-white' : 'text-neutral-500'} transition-colors">${p.name.replace(/_/g, ' ')}</p>
+                                            <p class="text-[10px] font-bold uppercase tracking-[0.2em] ${active ? 'text-white' : 'text-neutral-500'} transition-colors">${p.name.replace(/_/g, ' ')}</p>
                                             ${inherited ? `<p class="text-[7px] font-bold text-primary/50 uppercase mt-1 tracking-tighter">${(isProtectedUser || isProtectedRole) ? 'Root Authority Protection' : 'Inherited from Role'}</p>` : ''}
                                             <div class="tooltip">${p.description}</div>
                                         </div>
