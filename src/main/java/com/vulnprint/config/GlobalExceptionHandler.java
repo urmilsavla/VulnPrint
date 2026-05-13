@@ -54,8 +54,12 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.ui.error.unexpected-message:An unexpected error occurred. Please contact support and provide the Correlation ID.}")
+    private String unexpectedErrorMessage;
+
     @ExceptionHandler(Exception.class)
-    public Object handleAllExceptions(Exception ex, HttpServletRequest request) {
+    public Object handleAll(Exception ex, HttpServletRequest request) {
+
         if (ex.getClass().getName().contains("AuthenticationException") || ex.getClass().getName().contains("AuthenticationCredentialsNotFoundException")) {
             return handleAccessDenied(new AccessDeniedException("Not Authenticated"), request);
         }
@@ -65,7 +69,7 @@ public class GlobalExceptionHandler {
         
         if (request.getRequestURI().startsWith("/api/")) {
             Map<String, Object> body = new HashMap<>();
-            body.put("message", "An unexpected error occurred. Please contact support and provide the Correlation ID.");
+            body.put("message", unexpectedErrorMessage);
             body.put("correlationId", correlationId);
             body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
             

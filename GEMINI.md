@@ -107,19 +107,24 @@ Do NOT use the following terms in code, comments, or UI:
 
 ## 🛡️ Senior Engineer Hardening Standards (Mandatory)
 
-### 1. Chain of Custody (Audit Logging)
+### 1. Centralized Configuration Management (The "Zero Magic Numbers" Rule)
+- **Mandate:** DO NOT hardcode operational thresholds, security keys, or business logic constants.
+- **Implementation:** All such values must reside in `application.properties` under the `vulnprint.*` namespace and be injected via `@Value`.
+- **Reasoning:** Enables environment-specific tuning (e.g., higher security rigor in production) without code changes or recompilation.
+
+### 2. Chain of Custody (Audit Logging)
 - **Observation:** Status changes in pentest reports are sensitive.
 - **Mandate:** Any modification to `VulnerabilityStatus`, `ReportingStatus`, or `PentestStatus` MUST trigger an entry in the `AlertRepository` with the level `System`. This ensures a clear audit trail of "Who approved what."
 
-### 2. Environment & Key Safety
-- **Observation:** `AppSecurityGuard` has a weak fallback for JWT keys.
-- **Mandate:** Never modify the security constructor to include hardcoded secrets. If `VULNPRINT_JWT_SECRET` is missing, the system must log a `CRITICAL` alert to the dashboard immediately upon startup.
+### 3. Environment & Key Safety
+- **Observation:** `AppSecurityGuard` uses a configuration-first approach for JWT and Vault keys.
+- **Mandate:** Never hardcode secrets. If `vulnprint.security.jwt-secret` is missing or uses a default value, the system must log a `CRITICAL` alert to the dashboard immediately upon startup.
 
-### 3. File System Integrity
+### 4. File System Integrity
 - **Observation:** Path traversal logic is present but must be strictly applied.
 - **Mandate:** All file operations (uploads/POC reads) MUST use `toRealPath()` and be checked against the `UPLOAD_DIR` constant. No exceptions.
 
-### 4. Professional Communication Layer
+### 5. Professional Communication Layer
 - **Mandate:** Avoid "Technical Jargon" in UI notifications.
 - **Instead of:** "403 Forbidden: JWT Expired"
 - **Use:** "Session Expired: Please sign in again to continue."

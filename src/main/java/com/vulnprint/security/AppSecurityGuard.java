@@ -56,7 +56,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -86,7 +85,6 @@ public class AppSecurityGuard {
     private com.vulnprint.repository.AlertRepository alertRepository;
 
     // --- PERMISSIONS CONSTANTS ---
-    // Projects (Pentests)
     public static final String VIEW_ASSIGNED_PROJECTS = "VIEW_ASSIGNED_PROJECTS";
     public static final String VIEW_ALL_PROJECTS = "VIEW_ALL_PROJECTS";
     public static final String ADD_PROJECT = "ADD_PROJECT";
@@ -95,8 +93,6 @@ public class AppSecurityGuard {
     public static final String DELETE_ASSIGNED_PROJECTS = "DELETE_ASSIGNED_PROJECTS";
     public static final String DELETE_ALL_PROJECTS = "DELETE_ALL_PROJECTS";
     public static final String CHANGE_PENTEST_STATUS = "CHANGE_PENTEST_STATUS";
-
-    // Vulnerabilities
     public static final String VIEW_ASSIGNED_VULNS = "VIEW_ASSIGNED_VULNS";
     public static final String VIEW_ALL_VULNS = "VIEW_ALL_VULNS";
     public static final String ADD_VULNERABILITY = "ADD_VULNERABILITY";
@@ -106,12 +102,8 @@ public class AppSecurityGuard {
     public static final String DELETE_ALL_VULNS = "DELETE_ALL_VULNS";
     public static final String APPROVE_ASSIGNED_VULNS = "APPROVE_ASSIGNED_VULNS";
     public static final String APPROVE_ALL_VULNS = "APPROVE_ALL_VULNS";
-    
-    // Status Modifiers
     public static final String CHANGE_VULN_REPORTING_STATUS = "CHANGE_VULN_REPORTING_STATUS";
     public static final String CHANGE_VULN_STATUS = "CHANGE_VULN_STATUS";
-
-    // System & Design
     public static final String MANAGE_REPORT_DESIGN = "MANAGE_REPORT_DESIGN";
     public static final String GENERATE_REPORT = "GENERATE_REPORT";
     public static final String VIEW_DASHBOARD = "VIEW_DASHBOARD";
@@ -129,82 +121,87 @@ public class AppSecurityGuard {
     private static final String ALGORITHM = "AES/GCM/NoPadding";
     private static final int TAG_LENGTH_BIT = 128;
     private static final int IV_LENGTH_BYTE = 12;
-    private final SecretKey vaultKey;
+    private SecretKey vaultKey;
+    private SecretKey jwtKey;
+    
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.security.jwt-expiration-ms:14400000}")
+    private long expirationMs;
 
-    // --- 1. JWT & CRYPTO PILLAR ---
-    private final SecretKey jwtKey;
-    private final long expirationMs = 14400000; // 4 hours for enhanced user experience
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.security.pre-auth-expiry-ms:120000}")
+    private long preAuthExpirationMs;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.security.session-expiry-days:7}")
+    private int sessionExpiryDays;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.security.password.min-length:8}")
+    private int minPasswordLength;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.security.token-invalidation-buffer-ms:500}")
+    private int tokenInvalidationBufferMs;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.security.lockout.mfa-duration-mins:30}")
+    private int mfaLockoutMins;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.security.lockout.mfa-max-attempts:3}")
+    private int mfaMaxAttempts;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.ratelimit.auth.max-requests:100}")
+    private int ratelimitAuthMax;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.ratelimit.auth.window-ms:60000}")
+    private int ratelimitAuthWindow;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.ratelimit.views.max-requests:500}")
+    private int ratelimitViewsMax;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.ratelimit.views.window-ms:60000}")
+    private int ratelimitViewsWindow;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.ui.assets.default-user-image:/images/user.png}")
+    private String defaultUserImage;
+
     private final Set<String> tokenBlocklist = ConcurrentHashMap.newKeySet();
-    private final String jwtEnvKey;
-    private final String vaultEnvKey;
 
-    public AppSecurityGuard() {
-        jwtEnvKey = System.getenv("VULNPRINT_JWT_SECRET");
-        if (jwtEnvKey != null && jwtEnvKey.length() >= 32) {
-            this.jwtKey = Keys.hmacShaKeyFor(jwtEnvKey.getBytes(StandardCharsets.UTF_8));
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.security.jwt-secret}")
+    private String jwtSecret;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.security.vault-key}")
+    private String vaultSecret;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.security.lockdown-key}")
+    private String lockdownSecretKey;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.security.ssrf.allowed-hosts}")
+    private List<String> allowedHosts;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.security.ssrf.allowed-ports}")
+    private List<Integer> allowedPorts;
+
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        if (jwtSecret != null && jwtSecret.length() >= 32) {
+            this.jwtKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         } else {
             this.jwtKey = Keys.secretKeyFor(io.jsonwebtoken.SignatureAlgorithm.HS256);
         }
-
-        vaultEnvKey = System.getenv("VULNPRINT_INTERNAL_ENC");
-        if (vaultEnvKey != null && vaultEnvKey.length() >= 32) {
-            this.vaultKey = new SecretKeySpec(vaultEnvKey.substring(0, 32).getBytes(StandardCharsets.UTF_8), "AES");
+        if (vaultSecret != null && vaultSecret.length() >= 32) {
+            this.vaultKey = new SecretKeySpec(vaultSecret.substring(0, 32).getBytes(StandardCharsets.UTF_8), "AES");
         } else {
             this.vaultKey = new SecretKeySpec("Fallback_Secure_Internal_Enc_Key_2026".substring(0, 32).getBytes(StandardCharsets.UTF_8), "AES");
         }
     }
 
-    @jakarta.annotation.PostConstruct
-    public void validateKeys() {
-        if (jwtEnvKey == null || jwtEnvKey.length() < 32) {
-            try {
-                com.vulnprint.model.Alert alert = new com.vulnprint.model.Alert();
-                alert.setTitle("Missing JWT Secret");
-                alert.setDetails("VULNPRINT_JWT_SECRET is missing. The system is using a session-based fallback key. All active sessions will be invalidated upon system restart.");
-                alert.setLevel("CRITICAL");
-                alert.setTimeAgo("Just now");
-                alert.setRead(false);
-                alertRepository.save(alert);
-            } catch(Exception e){
-                System.err.println("[CRITICAL] Failed to log JWT alert to dashboard: " + e.getMessage());
-            }
-        }
-        if (vaultEnvKey == null || vaultEnvKey.length() < 32) {
-            try {
-                com.vulnprint.model.Alert alert = new com.vulnprint.model.Alert();
-                alert.setTitle("Missing Vault Key");
-                alert.setDetails("VULNPRINT_INTERNAL_ENC is missing. Using a hardcoded internal fallback. Sensitive data encryption is NOT optimized for production.");
-                alert.setLevel("CRITICAL");
-                alert.setTimeAgo("Just now");
-                alert.setRead(false);
-                alertRepository.save(alert);
-            } catch(Exception e){
-                System.err.println("[CRITICAL] Failed to log Vault alert to dashboard: " + e.getMessage());
-            }
-        }
-    }
-
-    public void blockToken(String token) {
-        if (token != null) {
-            tokenBlocklist.add(token);
-        }
-    }
+    public void blockToken(String token) { if (token != null) tokenBlocklist.add(token); }
 
     public String generatePreAuthToken(String email) {
-        return Jwts.builder()
-                .setSubject(email)
-                .claim("scope", "MFA_ONLY")
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 120000)) // 2 minutes
-                .signWith(jwtKey)
-                .compact();
+        return Jwts.builder().setSubject(email).claim("scope", "MFA_ONLY").setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + preAuthExpirationMs)).signWith(jwtKey).compact();
     }
 
     public String getEmailFromPreAuthToken(String token) {
         try {
             var claims = Jwts.parserBuilder().setSigningKey(jwtKey).build().parseClaimsJws(token).getBody();
-            if ("MFA_ONLY".equals(claims.get("scope"))) return claims.getSubject();
-            return null;
+            return "MFA_ONLY".equals(claims.get("scope")) ? claims.getSubject() : null;
         } catch (Exception e) { return null; }
     }
 
@@ -219,622 +216,262 @@ public class AppSecurityGuard {
             perms.addAll(user.getExtraPermissions().stream().map(Permission::getName).collect(Collectors.toSet()));
         }
         claims.put("perms", perms);
-
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(user.getUsername())
-                .setId(UUID.randomUUID().toString())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expirationMs))
-                .signWith(jwtKey)
-                .compact();
+        return Jwts.builder().setClaims(claims).setSubject(user.getUsername()).setId(UUID.randomUUID().toString())
+                .setIssuedAt(new Date()).setExpiration(new Date(System.currentTimeMillis() + expirationMs)).signWith(jwtKey).compact();
     }
 
     public String getEmailFromToken(String token) {
-        try {
-            return Jwts.parserBuilder().setSigningKey(jwtKey).build().parseClaimsJws(token).getBody().getSubject();
-        } catch (Exception e) { return null; }
-    }
-
-    public String getUsernameFromToken(String token) {
-        return getEmailFromToken(token);
+        try { return Jwts.parserBuilder().setSigningKey(jwtKey).build().parseClaimsJws(token).getBody().getSubject(); }
+        catch (Exception e) { return null; }
     }
 
     public boolean isMfaOnlyToken(String token) {
-        try {
-            var claims = Jwts.parserBuilder().setSigningKey(jwtKey).build().parseClaimsJws(token).getBody();
-            return "MFA_ONLY".equals(claims.get("scope"));
-        } catch (Exception e) { return false; }
+        try { return "MFA_ONLY".equals(Jwts.parserBuilder().setSigningKey(jwtKey).build().parseClaimsJws(token).getBody().get("scope")); }
+        catch (Exception e) { return false; }
     }
 
     public Date getIssuedAtFromToken(String token) {
-        try {
-            return Jwts.parserBuilder().setSigningKey(jwtKey).build().parseClaimsJws(token).getBody().getIssuedAt();
-        } catch (Exception e) { return null; }
+        try { return Jwts.parserBuilder().setSigningKey(jwtKey).build().parseClaimsJws(token).getBody().getIssuedAt(); }
+        catch (Exception e) { return null; }
     }
 
     public boolean validateToken(String token) {
         if (tokenBlocklist.contains(token)) return false;
+        try { Jwts.parserBuilder().setSigningKey(jwtKey).build().parseClaimsJws(token); return true; }
+        catch (Exception e) { return false; }
+    }
+
+    public String hashPassword(String p) { return p == null ? null : passwordEncoder.encode(p); }
+    public boolean verifyPassword(String p, String h) { return p != null && h != null && passwordEncoder.matches(p, h); }
+
+    public String encryptVault(String s) {
+        if (s == null) return null;
         try {
-            Jwts.parserBuilder().setSigningKey(jwtKey).build().parseClaimsJws(token);
-            return true;
-        } catch (Exception e) { return false; }
+            byte[] iv = new byte[IV_LENGTH_BYTE]; new SecureRandom().nextBytes(iv);
+            Cipher c = Cipher.getInstance(ALGORITHM); c.init(Cipher.ENCRYPT_MODE, vaultKey, new GCMParameterSpec(TAG_LENGTH_BIT, iv));
+            return Base64.getEncoder().encodeToString(iv) + ":" + Base64.getEncoder().encodeToString(c.doFinal(s.getBytes(StandardCharsets.UTF_8)));
+        } catch (Exception e) { throw new RuntimeException(e); }
     }
 
-    public String hashPassword(String plaintext) {
-        return plaintext == null ? null : passwordEncoder.encode(plaintext);
-    }
-
-    public boolean verifyPassword(String plaintext, String hash) {
-        if (plaintext == null || hash == null) return false;
-        return passwordEncoder.matches(plaintext, hash);
-    }
-
-    // --- VAULT ENCRYPTION METHODS ---
-    public String encryptVault(String strToEncrypt) {
-        if (strToEncrypt == null) return null;
+    public String decryptVault(String s) {
+        if (s == null) return null;
         try {
-            byte[] iv = new byte[IV_LENGTH_BYTE];
-            new SecureRandom().nextBytes(iv);
-            Cipher cipher = Cipher.getInstance(ALGORITHM);
-            GCMParameterSpec spec = new GCMParameterSpec(TAG_LENGTH_BIT, iv);
-            cipher.init(Cipher.ENCRYPT_MODE, vaultKey, spec);
-            byte[] cipherText = cipher.doFinal(strToEncrypt.getBytes(StandardCharsets.UTF_8));
-            
-            return Base64.getEncoder().encodeToString(iv) + ":" + Base64.getEncoder().encodeToString(cipherText);
-        } catch (Exception e) {
-            throw new RuntimeException("Encryption failed", e);
-        }
-    }
-
-    public String decryptVault(String strToDecrypt) {
-        if (strToDecrypt == null) return null;
-        try {
-            String[] parts = strToDecrypt.split(":");
-            if (parts.length != 2) return strToDecrypt; // Not encrypted
-            
-            byte[] iv = Base64.getDecoder().decode(parts[0]);
-            byte[] cipherText = Base64.getDecoder().decode(parts[1]);
-            
-            Cipher cipher = Cipher.getInstance(ALGORITHM);
-            GCMParameterSpec spec = new GCMParameterSpec(TAG_LENGTH_BIT, iv);
-            cipher.init(Cipher.DECRYPT_MODE, vaultKey, spec);
-            byte[] decodeText = cipher.doFinal(cipherText);
-            
-            return new String(decodeText, StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            return null; 
-        }
-    }
-
-    // --- SESSION LIFECYCLE METHODS ---
-    @Transactional
-    public Map<String, Object> establishSession(User user, String ip, String ua) {
-        String refreshToken = UUID.randomUUID().toString();
-        UserSession session = new UserSession();
-        session.setUser(user);
-        session.setRefreshTokenHash(hashPassword(refreshToken));
-        session.setIpAddress(ip);
-        session.setUserAgent(ua);
-        session.setExpiry(LocalDateTime.now().plusDays(7));
-        userSessionRepository.save(session);
-
-        String accessToken = generateToken(user);
-        
-        return Map.of(
-            "accessToken", accessToken,
-            "refreshToken", refreshToken,
-            "sessionId", session.getId().toString()
-        );
-    }
-
-    @Transactional
-    public void revokeAllSessionsForUser(User user) {
-        userSessionRepository.findAllByUserAndRevokedFalse(user).forEach(s -> {
-            s.setRevoked(true);
-            userSessionRepository.save(s);
-        });
-    }
-
-    @Transactional
-    public Map<String, Object> rotateSession(String refreshToken, UUID sessionId, String ip, String ua) {
-        UserSession oldSession = userSessionRepository.findById(sessionId).orElse(null);
-        
-        if (oldSession == null || oldSession.isRevoked() || !verifyPassword(refreshToken, oldSession.getRefreshTokenHash())) {
-            if (oldSession != null) {
-                userSessionRepository.findAllByUserAndRevokedFalse(oldSession.getUser()).forEach(s -> {
-                    s.setRevoked(true);
-                    userSessionRepository.save(s);
-                });
-            }
-            throw new RuntimeException("Session Invalidated: Verification Failed");
-        }
-
-        oldSession.setRevoked(true);
-        userSessionRepository.save(oldSession);
-
-        String nextRefreshToken = UUID.randomUUID().toString();
-        UserSession nextSession = new UserSession();
-        nextSession.setUser(oldSession.getUser());
-        nextSession.setRefreshTokenHash(hashPassword(nextRefreshToken));
-        nextSession.setParentTokenId(oldSession.getId());
-        nextSession.setIpAddress(ip);
-        nextSession.setUserAgent(ua);
-        nextSession.setExpiry(LocalDateTime.now().plusDays(7));
-        userSessionRepository.save(nextSession);
-
-        String accessToken = generateToken(oldSession.getUser());
-        
-        return Map.of(
-            "accessToken", accessToken,
-            "refreshToken", nextRefreshToken,
-            "sessionId", nextSession.getId().toString()
-        );
-    }
-
-    @Transactional
-    public void recordFailedMfa(User user) {
-        user.setFailedMfaAttempts(user.getFailedMfaAttempts() + 1);
-        if (user.getFailedMfaAttempts() >= 3) {
-            user.setStatus(User.AccountStatus.LOCKED);
-            user.setLockedUntil(LocalDateTime.now().plusMinutes(30));
-        }
-        userRepository.save(user);
-    }
-
-    public boolean isStrongPassword(String password) {
-        if (password == null || password.length() < 8) return false;
-        boolean hasUpper = false, hasLower = false, hasNum = false;
-        for (char c : password.toCharArray()) {
-            if (Character.isUpperCase(c)) hasUpper = true;
-            else if (Character.isLowerCase(c)) hasLower = true;
-            else if (Character.isDigit(c)) hasNum = true;
-        }
-        return hasUpper && hasLower && hasNum;
-    }
-
-    public String hashToken(String token) {
-        try {
-            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest(token.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            StringBuilder hexString = new StringBuilder(2 * hash.length);
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (java.security.NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    @Transactional
-    public void triggerGlobalReset(String lockdownSecret) {
-        String envSecret = System.getenv("VULNPRINT_LOCKDOWN_KEY");
-        if (envSecret == null || !envSecret.equals(lockdownSecret)) {
-            throw new RuntimeException("Invalid Lockdown Secret");
-        }
-    }
-
-
-    // --- 2. XSS & SANITIZATION PILLAR ---
-    public String sanitize(String input) {
-        if (input == null) return null;
-        return HtmlUtils.htmlEscape(input.trim());
-    }
-
-    public String sanitizeProfileImage(String input) {
-        if (input == null || input.isBlank()) return "/images/user.png";
-        if (input.startsWith("data:image/") && input.contains(";base64,")) {
-            if (input.matches("^data:image/[a-zA-Z]+;base64,[a-zA-Z0-9+/=]+$")) return input;
-        }
-        if (input.startsWith("/images/") && !input.contains("..") && !input.contains("%")) {
-            return input;
-        }
-        return "/images/user.png";
-    }
-
-    // --- 3. SSRF SHIELD PILLAR ---
-    public boolean isSafeUrl(String urlString) {
-        return resolveSafeUrl(urlString) != null;
-    }
-
-    public String resolveSafeUrl(String urlString) {
-        if (urlString == null || urlString.isBlank()) return null;
-
-        try {
-            URL url = new URL(urlString);
-            String protocol = url.getProtocol().toLowerCase();
-            if (!"http".equals(protocol) && !"https".equals(protocol)) return null;
-
-            String host = url.getHost().toLowerCase();
-            int port = url.getPort() != -1 ? url.getPort() : url.getDefaultPort();
-
-            // Strict whitelist for internal services
-            if ((host.equals("localhost") || host.equals("127.0.0.1")) && (port == 8000 || port == 3000)) {
-                return new URL(protocol, host, port, url.getFile()).toString();
-            }
-
-            InetAddress address = InetAddress.getByName(host);
-            if (address.isLoopbackAddress() || address.isAnyLocalAddress() || 
-                address.isLinkLocalAddress() || address.isSiteLocalAddress()) return null;
-            if ("169.254.169.254".equals(address.getHostAddress())) return null;
-            
-            URL safeUrl = new URL(protocol, address.getHostAddress(), port, url.getFile());
-            return safeUrl.toString();
+            String[] p = s.split(":"); if (p.length != 2) return s;
+            Cipher c = Cipher.getInstance(ALGORITHM); c.init(Cipher.DECRYPT_MODE, vaultKey, new GCMParameterSpec(TAG_LENGTH_BIT, Base64.getDecoder().decode(p[0])));
+            return new String(c.doFinal(Base64.getDecoder().decode(p[1])), StandardCharsets.UTF_8);
         } catch (Exception e) { return null; }
     }
 
-    // --- 4. FILE & RCE SHIELD PILLAR ---
-    public boolean isSafePath(String requestedPath, String baseDir) {
-        if (requestedPath == null || baseDir == null || requestedPath.contains("\0")) return false;
+    @Transactional
+    public Map<String, Object> establishSession(User u, String ip, String ua) {
+        String rt = UUID.randomUUID().toString();
+        UserSession s = new UserSession(); s.setUser(u); s.setRefreshTokenHash(hashPassword(rt)); s.setIpAddress(ip); s.setUserAgent(ua);
+        s.setExpiry(LocalDateTime.now().plusDays(sessionExpiryDays)); userSessionRepository.save(s);
+        return Map.of("accessToken", generateToken(u), "refreshToken", rt, "sessionId", s.getId().toString());
+    }
+
+    @Transactional
+    public void revokeAllSessionsForUser(User u) {
+        userSessionRepository.findAllByUserAndRevokedFalse(u).forEach(s -> { s.setRevoked(true); userSessionRepository.save(s); });
+    }
+
+    @Transactional
+    public Map<String, Object> rotateSession(String rt, UUID sid, String ip, String ua) {
+        UserSession old = userSessionRepository.findById(sid).orElse(null);
+        if (old == null || old.isRevoked() || !verifyPassword(rt, old.getRefreshTokenHash())) {
+            if (old != null) revokeAllSessionsForUser(old.getUser());
+            throw new RuntimeException("Invalid Session");
+        }
+        old.setRevoked(true); userSessionRepository.save(old);
+        String nextRt = UUID.randomUUID().toString();
+        UserSession next = new UserSession(); next.setUser(old.getUser()); next.setRefreshTokenHash(hashPassword(nextRt));
+        next.setParentTokenId(old.getId()); next.setIpAddress(ip); next.setUserAgent(ua);
+        next.setExpiry(LocalDateTime.now().plusDays(sessionExpiryDays)); userSessionRepository.save(next);
+        return Map.of("accessToken", generateToken(old.getUser()), "refreshToken", nextRt, "sessionId", next.getId().toString());
+    }
+
+    @Transactional
+    public void recordFailedMfa(User u) {
+        u.setFailedMfaAttempts(u.getFailedMfaAttempts() + 1);
+        if (u.getFailedMfaAttempts() >= mfaMaxAttempts) {
+            u.setStatus(User.AccountStatus.LOCKED); u.setLockedUntil(LocalDateTime.now().plusMinutes(mfaLockoutMins));
+        }
+        userRepository.save(u);
+    }
+
+    public boolean isStrongPassword(String p) {
+        if (p == null || p.length() < minPasswordLength) return false;
+        boolean u = false, l = false, d = false;
+        for (char c : p.toCharArray()) { if (Character.isUpperCase(c)) u = true; else if (Character.isLowerCase(c)) l = true; else if (Character.isDigit(c)) d = true; }
+        return u && l && d;
+    }
+
+    public String hashToken(String t) {
         try {
-            Path base = Paths.get(baseDir).toAbsolutePath().normalize();
-            Path target = Paths.get(requestedPath).toAbsolutePath().normalize();
-            
-            // On Windows, drive letters and case can cause issues with startsWith on Strings,
-            // but Path.startsWith is generally safe after absolute/normalize.
-            // We use toRealPath() only if the path exists to satisfy the security mandate for resolving symlinks.
-            if (java.nio.file.Files.exists(base)) base = base.toRealPath();
-            if (java.nio.file.Files.exists(target)) target = target.toRealPath();
-            
+            var md = java.security.MessageDigest.getInstance("SHA-256");
+            var h = md.digest(t.getBytes(StandardCharsets.UTF_8));
+            var sb = new StringBuilder(); for (byte b : h) sb.append(String.format("%02x", b));
+            return sb.toString();
+        } catch (Exception e) { throw new RuntimeException(e); }
+    }
+
+    @Transactional
+    public void triggerGlobalReset(String s) { if (lockdownSecretKey == null || !lockdownSecretKey.equals(s)) throw new RuntimeException("Invalid Secret"); }
+
+    public String sanitize(String i) { return i == null ? null : HtmlUtils.htmlEscape(i.trim()); }
+
+    public String sanitizeProfileImage(String i) {
+        if (i == null || i.isBlank()) return defaultUserImage;
+        if (i.startsWith("data:image/") && i.contains(";base64,") && i.matches("^data:image/[a-zA-Z]+;base64,[a-zA-Z0-9+/=]+$")) return i;
+        if (i.startsWith("/images/") && !i.contains("..") && !i.contains("%")) return i;
+        return defaultUserImage;
+    }
+
+    public boolean isSafeUrl(String u) { return resolveSafeUrl(u) != null; }
+
+    public String resolveSafeUrl(String u) {
+        if (u == null || u.isBlank()) return null;
+        try {
+            var url = new URL(u); var prot = url.getProtocol().toLowerCase(); if (!"http".equals(prot) && !"https".equals(prot)) return null;
+            var host = url.getHost().toLowerCase(); var port = url.getPort() != -1 ? url.getPort() : url.getDefaultPort();
+            if (allowedHosts != null && allowedHosts.stream().anyMatch(h -> h.equalsIgnoreCase(host)) && allowedPorts != null && allowedPorts.contains(port)) return new URL(prot, host, port, url.getFile()).toString();
+            var addr = InetAddress.getByName(host);
+            if (addr.isLoopbackAddress() || addr.isAnyLocalAddress() || addr.isLinkLocalAddress() || addr.isSiteLocalAddress() || "169.254.169.254".equals(addr.getHostAddress())) return null;
+            return new URL(prot, addr.getHostAddress(), port, url.getFile()).toString();
+        } catch (Exception e) { return null; }
+    }
+
+    public boolean isSafePath(String p, String b) {
+        if (p == null || b == null || p.contains("\0")) return false;
+        try {
+            var base = Paths.get(b).toAbsolutePath().normalize(); var target = Paths.get(p).toAbsolutePath().normalize();
+            if (java.nio.file.Files.exists(base)) base = base.toRealPath(); if (java.nio.file.Files.exists(target)) target = target.toRealPath();
             return target.startsWith(base);
         } catch (IOException e) { return false; }
     }
 
-    public String processAndSaveImage(String base64Data, String uploadDir, String fileNamePrefix) throws IOException {
-        if (base64Data == null || !base64Data.contains(",")) throw new IOException("Invalid base64 image data");
-        String[] parts = base64Data.split(",");
-        byte[] imageBytes = Base64.getDecoder().decode(parts[1]);
-
-        try (ByteArrayInputStream bais = new ByteArrayInputStream(imageBytes)) {
-            BufferedImage image = ImageIO.read(bais);
-            if (image == null) throw new IOException("Corrupted image format detected");
-            
-            String fileName = fileNamePrefix + "_" + UUID.randomUUID().toString() + ".png";
-            File outputFile = new File(uploadDir, fileName);
-            
-            // Verify that the destination file will be within the project root and not traversing out
-            if (!isSafePath(outputFile.getAbsolutePath(), new File(".").getAbsolutePath())) {
-                throw new IOException("Security Violation: Path traversal blocked during image save");
-            }
-            
-            if (!ImageIO.write(image, "png", outputFile)) {
-                throw new IOException("Failed to write image bytes to disk");
-            }
-            return fileName;
+    public String processAndSaveImage(String data, String dir, String prefix) throws IOException {
+        if (data == null || !data.contains(",")) throw new IOException("Invalid data");
+        var bytes = Base64.getDecoder().decode(data.split(",")[1]);
+        try (var bais = new ByteArrayInputStream(bytes)) {
+            var img = ImageIO.read(bais); if (img == null) throw new IOException("Corrupted");
+            var name = prefix + "_" + UUID.randomUUID().toString() + ".png"; var file = new File(dir, name);
+            if (!isSafePath(file.getAbsolutePath(), new File(".").getAbsolutePath())) throw new IOException("Traversal");
+            if (!ImageIO.write(img, "png", file)) throw new IOException("Failed write");
+            return name;
         }
     }
 
-    // --- 5. RATE LIMITING PILLAR ---
     private final Map<String, List<Long>> hits = new ConcurrentHashMap<>();
-
-    public boolean checkRateLimit(String ip, String action, int maxRequests, long windowMs) {
-        String key = ip + ":" + action;
-        long now = System.currentTimeMillis();
-        hits.putIfAbsent(key, Collections.synchronizedList(new LinkedList<>()));
-        List<Long> timestamps = hits.get(key);
-
-        synchronized (timestamps) {
-            timestamps.removeIf(t -> now - t > windowMs);
-            if (timestamps.size() >= maxRequests) return false;
-            timestamps.add(now);
-            return true;
-        }
+    public boolean checkRateLimit(String ip, String act, int max, long win) {
+        var key = ip + ":" + act; var now = System.currentTimeMillis();
+        hits.putIfAbsent(key, Collections.synchronizedList(new LinkedList<>())); var ts = hits.get(key);
+        synchronized (ts) { ts.removeIf(t -> now - t > win); if (ts.size() >= max) return false; ts.add(now); return true; }
     }
 
     @org.springframework.beans.factory.annotation.Value("${vulnprint.superadmin.email:superadmin@vulnprint.com}")
     private String superAdminEmail;
-
-    public boolean isSuperAdmin(User user) {
-        return user != null && superAdminEmail.equalsIgnoreCase(user.getEmail());
+    public boolean isSuperAdmin(User u) { return u != null && superAdminEmail.equalsIgnoreCase(u.getEmail()); }
+    public boolean hasPermission(User u, String k) {
+        if (u == null || k == null) return false; if (isSuperAdmin(u)) return true;
+        if (u.getRole() != null && u.getRole().getPermissions() != null && u.getRole().getPermissions().stream().anyMatch(p -> p.getName().equals(k))) return true;
+        return u.getExtraPermissions() != null && u.getExtraPermissions().stream().anyMatch(p -> p.getName().equals(k));
     }
 
-    public boolean hasPermission(User user, String key) {
-        if (user == null || key == null) return false;
-        // Super Admin has all permissions implicitly
-        if (isSuperAdmin(user)) return true;
-        
-        if (user.getRole() != null && user.getRole().getPermissions() != null) {
-            if (user.getRole().getPermissions().stream().anyMatch(p -> p.getName().equals(key))) return true;
-        }
-        if (user.getExtraPermissions() != null) {
-            return user.getExtraPermissions().stream().anyMatch(p -> p.getName().equals(key));
-        }
-        return false;
-    }
-
-    // --- 6. PROJECT/VULNERABILITY CONTEXT AUTHORIZATION PILLAR ---
     private User getCurrentUser() {
-        org.springframework.security.core.Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null) return null;
-        Object principal = auth.getPrincipal();
-        if (principal instanceof User) {
-            return (User) principal;
-        }
-        return null;
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        return (auth != null && auth.getPrincipal() instanceof User) ? (User) auth.getPrincipal() : null;
     }
 
-    public boolean canViewProject(Long pentestId) {
-        User user = getCurrentUser();
-        if (user == null) return false;
-        if (hasPermission(user, VIEW_ALL_PROJECTS)) return true;
-        return hasPermission(user, VIEW_ASSIGNED_PROJECTS) && isAssignedToPentest(pentestId);
-    }
+    public boolean canViewProject(Long id) { User u = getCurrentUser(); return u != null && (hasPermission(u, VIEW_ALL_PROJECTS) || (hasPermission(u, VIEW_ASSIGNED_PROJECTS) && isAssignedToPentest(id))); }
+    public boolean canEditProject(Long id) { User u = getCurrentUser(); return u != null && (hasPermission(u, EDIT_ALL_PROJECTS) || (hasPermission(u, EDIT_ASSIGNED_PROJECTS) && isAssignedToPentest(id))); }
+    public boolean canDeleteProject(Long id) { User u = getCurrentUser(); return u != null && (hasPermission(u, DELETE_ALL_PROJECTS) || (hasPermission(u, DELETE_ASSIGNED_PROJECTS) && isAssignedToPentest(id))); }
+    public boolean canViewVuln(Long id) { User u = getCurrentUser(); return u != null && (hasPermission(u, VIEW_ALL_VULNS) || (hasPermission(u, VIEW_ASSIGNED_VULNS) && isAssignedToVuln(id))); }
+    public boolean canEditVuln(Long id) { User u = getCurrentUser(); return u != null && (hasPermission(u, EDIT_ALL_VULNS) || (hasPermission(u, EDIT_ASSIGNED_VULNS) && isAssignedToVuln(id))); }
+    public boolean canDeleteVuln(Long id) { User u = getCurrentUser(); return u != null && (hasPermission(u, DELETE_ALL_VULNS) || (hasPermission(u, DELETE_ASSIGNED_VULNS) && isAssignedToVuln(id))); }
+    public boolean canApproveVuln(Long id) { User u = getCurrentUser(); return u != null && (hasPermission(u, APPROVE_ALL_VULNS) || (hasPermission(u, APPROVE_ASSIGNED_VULNS) && isAssignedToVuln(id))); }
+    public boolean isAssignedToPentest(Long id) { User u = getCurrentUser(); return u != null && id != null && pentestRepository.findById(id).map(p -> p.getAssignedPentesters().stream().anyMatch(at -> at.getId().equals(u.getId()))).orElse(false); }
+    public boolean isAssignedToVuln(Long id) { User u = getCurrentUser(); return u != null && id != null && vulnerabilityRepository.findById(id).map(v -> v.getPentest() != null && v.getPentest().getAssignedPentesters().stream().anyMatch(at -> at.getId().equals(u.getId()))).orElse(false); }
+    public boolean isSelf(Long id) { User u = getCurrentUser(); return u != null && u.getId().equals(id); }
 
-    public boolean canEditProject(Long pentestId) {
-        User user = getCurrentUser();
-        if (user == null) return false;
-        if (hasPermission(user, EDIT_ALL_PROJECTS)) return true;
-        return hasPermission(user, EDIT_ASSIGNED_PROJECTS) && isAssignedToPentest(pentestId);
-    }
-
-    public boolean canDeleteProject(Long pentestId) {
-        User user = getCurrentUser();
-        if (user == null) return false;
-        if (hasPermission(user, DELETE_ALL_PROJECTS)) return true;
-        return hasPermission(user, DELETE_ASSIGNED_PROJECTS) && isAssignedToPentest(pentestId);
-    }
-
-    public boolean canViewVuln(Long vulnId) {
-        User user = getCurrentUser();
-        if (user == null) return false;
-        if (hasPermission(user, VIEW_ALL_VULNS)) return true;
-        return hasPermission(user, VIEW_ASSIGNED_VULNS) && isAssignedToVuln(vulnId);
-    }
-
-    public boolean canEditVuln(Long vulnId) {
-        User user = getCurrentUser();
-        if (user == null) return false;
-        if (hasPermission(user, EDIT_ALL_VULNS)) return true;
-        return hasPermission(user, EDIT_ASSIGNED_VULNS) && isAssignedToVuln(vulnId);
-    }
-
-    public boolean canDeleteVuln(Long vulnId) {
-        User user = getCurrentUser();
-        if (user == null) return false;
-        if (hasPermission(user, DELETE_ALL_VULNS)) return true;
-        return hasPermission(user, DELETE_ASSIGNED_VULNS) && isAssignedToVuln(vulnId);
-    }
-
-    public boolean canApproveVuln(Long vulnId) {
-        User user = getCurrentUser();
-        if (user == null) return false;
-        if (hasPermission(user, APPROVE_ALL_VULNS)) return true;
-        return hasPermission(user, APPROVE_ASSIGNED_VULNS) && isAssignedToVuln(vulnId);
-    }
-
-    public boolean isAssignedToPentest(Long pentestId) {
-        User currentUser = getCurrentUser();
-        if (currentUser == null || pentestId == null) return false;
-
-        Optional<Pentest> pentest = pentestRepository.findById(pentestId);
-        return pentest.map(p -> p.getAssignedPentesters().stream()
-                .anyMatch(u -> u.getId().equals(currentUser.getId())))
-                .orElse(false);
-    }
-
-    public boolean isAssignedToVuln(Long vulnId) {
-        User currentUser = getCurrentUser();
-        if (currentUser == null || vulnId == null) return false;
-
-        Optional<Vulnerability> vuln = vulnerabilityRepository.findById(vulnId);
-        return vuln.map(v -> v.getPentest() != null && v.getPentest().getAssignedPentesters().stream()
-                .anyMatch(u -> u.getId().equals(currentUser.getId())))
-                .orElse(false);
-    }
-
-    public boolean isSelf(Long userId) {
-        User currentUser = getCurrentUser();
-        return currentUser != null && currentUser.getId().equals(userId);
-    }
-
-    // --- MONOLITHIC NESTED COMPONENTS ---
+    // Getters for Proxied Access
+    public int getRatelimitAuthMax() { return ratelimitAuthMax; }
+    public int getRatelimitAuthWindow() { return ratelimitAuthWindow; }
+    public int getRatelimitViewsMax() { return ratelimitViewsMax; }
+    public int getRatelimitViewsWindow() { return ratelimitViewsWindow; }
 
     @Component
     public static class JwtAuthenticationFilter extends OncePerRequestFilter {
-        @Autowired
-        private AppSecurityGuard guard;
-        @Autowired
-        private UserRepository userRepository;
-
+        @Autowired private AppSecurityGuard guard;
+        @Autowired private UserRepository userRepository;
         @Override
-        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-                throws ServletException, IOException {
-            
-            // FORCE CSRF COOKIE GENERATION FOR SPRING SECURITY 6 DEFERRED TOKENS
-            org.springframework.security.web.csrf.CsrfToken csrfToken = (org.springframework.security.web.csrf.CsrfToken) request.getAttribute(org.springframework.security.web.csrf.CsrfToken.class.getName());
-            if (csrfToken != null) {
-                csrfToken.getToken();
-            }
-
-            String token = null;
-            String authHeader = request.getHeader("Authorization");
-
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                token = authHeader.substring(7);
-            } else if (request.getCookies() != null) {
-                for (Cookie cookie : request.getCookies()) {
-                    if ("JWT".equals(cookie.getName())) {
-                        token = cookie.getValue();
-                        break;
-                    }
-                }
-            }
-
+        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
+            var csrt = (org.springframework.security.web.csrf.CsrfToken) request.getAttribute(org.springframework.security.web.csrf.CsrfToken.class.getName());
+            if (csrt != null) csrt.getToken();
+            String token = null; var auth = request.getHeader("Authorization");
+            if (auth != null && auth.startsWith("Bearer ")) token = auth.substring(7);
+            else if (request.getCookies() != null) for (var c : request.getCookies()) if ("JWT".equals(c.getName())) { token = c.getValue(); break; }
             if (token != null && guard.validateToken(token)) {
-                if (guard.isMfaOnlyToken(token)) {
-                    filterChain.doFilter(request, response);
-                    return;
-                }
-
-                String email = guard.getEmailFromToken(token);
-                final String finalToken = token;
+                if (guard.isMfaOnlyToken(token)) { chain.doFilter(request, response); return; }
+                var email = guard.getEmailFromToken(token);
                 if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    userRepository.findActiveByEmail(email).ifPresent(user -> {
-                        if (user.getStatus() != User.AccountStatus.ACTIVE || !user.isEnabled()) return;
-
-                        Date issuedAt = guard.getIssuedAtFromToken(finalToken);
-                        boolean sessionValid = true;
-                        if (issuedAt != null && user.getLastRoleChange() != null) {
-                            java.time.Instant lastChangeInstant = user.getLastRoleChange().atZone(java.time.ZoneId.systemDefault()).toInstant();
-                            if (issuedAt.toInstant().isBefore(lastChangeInstant.minusMillis(500))) {
-                                sessionValid = false;
-                            }
-                        }
-
-                        if (sessionValid && user.isEnabled()) {
-                            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                                    user, null, user.getAuthorities());
-                            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                            SecurityContextHolder.getContext().setAuthentication(authentication);
-                            request.setAttribute("authenticatedUser", user);
+                    final String ft = token;
+                    userRepository.findActiveByEmail(email).ifPresent(u -> {
+                        var iat = guard.getIssuedAtFromToken(ft);
+                        boolean ok = true;
+                        if (iat != null && u.getLastRoleChange() != null && iat.toInstant().isBefore(u.getLastRoleChange().atZone(java.time.ZoneId.systemDefault()).toInstant().minusMillis(500))) ok = false;
+                        if (ok && u.isEnabled()) {
+                            var autht = new UsernamePasswordAuthenticationToken(u, null, u.getAuthorities());
+                            autht.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                            SecurityContextHolder.getContext().setAuthentication(autht);
                         }
                     });
                 }
             }
-            filterChain.doFilter(request, response);
+            chain.doFilter(request, response);
         }
     }
 
     @Component
     public static class RateLimitingFilter extends OncePerRequestFilter {
-        @Autowired
-        private AppSecurityGuard guard;
-
+        @Autowired private AppSecurityGuard guard;
         @Override
-        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-                throws ServletException, IOException {
-            
-            String path = request.getRequestURI();
-            String ip = request.getRemoteAddr();
-
-            // Profile 1: Strict Limits for Auth Actions (Increased to 100 for testing)
+        protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain) throws ServletException, IOException {
+            var path = req.getRequestURI(); var ip = req.getRemoteAddr();
             if (path.startsWith("/api/auth/") || path.equals("/api/users/activate")) {
-                if (!guard.checkRateLimit(ip, "AUTH", 100, 60000)) {
-                    response.setStatus(429);
-                    response.setContentType("application/json");
-                    response.getWriter().write("{\"message\": \"Rate limit exceeded. Please try again later.\"}");
-                    response.getWriter().flush();
-                    return;
+                if (!guard.checkRateLimit(ip, "AUTH", guard.getRatelimitAuthMax(), (long) guard.getRatelimitAuthWindow())) {
+                    res.setStatus(429); res.setContentType("application/json"); res.getWriter().write("{\"message\": \"Rate limit exceeded.\"}"); return;
+                }
+            } else if (List.of("/", "/login", "/activate-account", "/error").contains(path)) {
+                if (!guard.checkRateLimit(ip, "VIEWS", guard.getRatelimitViewsMax(), (long) guard.getRatelimitViewsWindow())) {
+                    res.setStatus(429); res.setContentType("text/html"); res.getWriter().write("<h1>429 - Rate Limit Exceeded</h1>"); return;
                 }
             }
-            // Profile 2: Moderate Limits for Public HTML Views (Increased to 500 for testing)
-            else if (path.equals("/") || path.equals("/login") || path.equals("/activate-account") || path.equals("/error")) {
-                if (!guard.checkRateLimit(ip, "VIEWS", 500, 60000)) {
-                    response.setStatus(429);
-                    response.setContentType("text/html");
-                    response.getWriter().write("<!DOCTYPE html><html><head><title>Too Many Requests</title></head><body style='background:#0e0e0e;color:#4FFE49;font-family:monospace;text-align:center;padding:50px;'><h1>429 - Rate Limit Exceeded</h1><p>Please wait a moment before trying again.</p></body></html>");
-                    response.getWriter().flush();
-                    return;
-                }
-            }
-
-            filterChain.doFilter(request, response);
+            chain.doFilter(req, res);
         }
     }
 
-    @Configuration
-    @EnableWebSecurity
-    @EnableMethodSecurity
+    @Configuration @EnableWebSecurity @EnableMethodSecurity
     public static class SecurityConfig {
-        @Autowired
-        private JwtAuthenticationFilter jwtAuthenticationFilter;
-
-        @Autowired
-        private RateLimitingFilter rateLimitingFilter;
-
-        @Bean
-        public PasswordEncoder passwordEncoder() {
-            return new BCryptPasswordEncoder();
+        @Autowired private JwtAuthenticationFilter jwtFilter;
+        @Autowired private RateLimitingFilter rateFilter;
+        @Bean public PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
+        @Bean public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
+            var c = new org.springframework.web.cors.CorsConfiguration(); c.setAllowedOriginPatterns(List.of("*"));
+            c.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+            c.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type", "X-XSRF-TOKEN"));
+            c.setExposedHeaders(List.of("X-XSRF-TOKEN")); c.setAllowCredentials(true);
+            var s = new org.springframework.web.cors.UrlBasedCorsConfigurationSource(); s.registerCorsConfiguration("/**", c); return s;
         }
-
-        @Bean
-        public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
-            org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
-            configuration.setAllowedOriginPatterns(Arrays.asList("*")); // Adjust in production to specific domains
-            configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-            configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type", "X-XSRF-TOKEN"));
-            configuration.setExposedHeaders(Arrays.asList("X-XSRF-TOKEN"));
-            configuration.setAllowCredentials(true);
-            org.springframework.web.cors.UrlBasedCorsConfigurationSource source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
-            source.registerCorsConfiguration("/**", configuration);
-            return source;
-        }
-
-        @Bean
-        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-            org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler requestHandler = new org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler();
-            requestHandler.setCsrfRequestAttributeName(null); // Opt out of deferred CSRF tokens
-
-            http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf
-                    .csrfTokenRepository(org.springframework.security.web.csrf.CookieCsrfTokenRepository.withHttpOnlyFalse())
-                    .csrfTokenRequestHandler(requestHandler)
-                    .ignoringRequestMatchers(
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/login"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/apply"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/verify-mfa"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/refresh"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/users/activate")
-                    )
-                )
-                .headers(headers -> headers
-                    .contentSecurityPolicy(csp -> csp
-                        .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*; frame-ancestors 'none'; form-action 'self';")
-                    )
-                    .frameOptions(frame -> frame.deny())
-                    .xssProtection(xss -> xss.headerValue(org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
-                    .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
-                )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                    .requestMatchers(
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/login"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/apply"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/verify-mfa"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/refresh"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/reset-password"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/users/activate")
-                    ).permitAll()
-                    .requestMatchers(
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/css/**"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/js/**"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/images/**"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/favicon.ico")
-                    ).permitAll()
-                    .requestMatchers(
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/login"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/activate-account"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/reset-password"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/error")
-                    ).permitAll()
-                    .requestMatchers(
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/dashboard"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/web-pentest"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/mobile-pentest"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api-pentest"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/network-pentest"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/source-code-pentest"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/template-guide"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/vulnerability-approver"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/user-management"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/organization-settings"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/microservice-management"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/manage-access"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/generate-report"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/reset-password"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/profile"),
-                        org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/pentest/**")
-                    ).authenticated()
+        @Bean public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+            var rh = new org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler(); rh.setCsrfRequestAttributeName(null);
+            http.cors(c -> c.configurationSource(corsConfigurationSource())).csrf(c -> c.csrfTokenRepository(org.springframework.security.web.csrf.CookieCsrfTokenRepository.withHttpOnlyFalse()).csrfTokenRequestHandler(rh).ignoringRequestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/login"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/apply"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/verify-mfa"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/refresh"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/users/activate")))
+                .headers(h -> h.contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*; frame-ancestors 'none'; form-action 'self';")).frameOptions(f -> f.deny()).xssProtection(x -> x.headerValue(org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK)).httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000)))
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(a -> a.requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/**"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/users/activate"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/css/**"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/js/**"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/images/**"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/favicon.ico"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/login"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/activate-account"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/reset-password"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/error")).permitAll()
                     .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/**")).authenticated()
-                    .anyRequest().denyAll()
-                )
-                .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
+                    .anyRequest().authenticated())
+                .addFilterBefore(rateFilter, UsernamePasswordAuthenticationFilter.class).addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
             return http.build();
         }
     }

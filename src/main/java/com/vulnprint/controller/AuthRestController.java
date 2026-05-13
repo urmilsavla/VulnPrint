@@ -39,6 +39,21 @@ public class AuthRestController {
     @Autowired
     private com.vulnprint.repository.AlertRepository alertRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.security.lockout.login-duration-mins:15}")
+    private int loginLockoutMins;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.security.lockout.login-max-attempts:5}")
+    private int loginMaxAttempts;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.ratelimit.login.max-requests:20}")
+    private int ratelimitLoginMax;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.ratelimit.login.window-ms:60000}")
+    private int ratelimitLoginWindow;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.auth.mfa-otp-expiry-mins:5}")
+    private int mfaOtpExpiryMins;
+
     private String dummyHash = null;
 
     @PostMapping("/apply")
@@ -72,7 +87,7 @@ public class AuthRestController {
             ip = ip.split(",")[0].trim();
         }
 
-        if (!guard.checkRateLimit(ip, "LOGIN", 20, 60000)) {
+        if (!guard.checkRateLimit(ip, "LOGIN", ratelimitLoginMax, (long) ratelimitLoginWindow)) {
             return ResponseEntity.status(429).body(Map.of("message", "Too many login attempts. Please try again later."));
         }
 
@@ -113,7 +128,7 @@ public class AuthRestController {
                     
                     // Store OTP and Expiry in User record
                     user.setMfaOtp(otp);
-                    user.setMfaOtpExpiry(java.time.LocalDateTime.now().plusMinutes(5));
+                    user.setMfaOtpExpiry(java.time.LocalDateTime.now().plusMinutes(mfaOtpExpiryMins));
                     userRepository.save(user);
 
                     // Send OTP via SMTP
@@ -145,8 +160,8 @@ public class AuthRestController {
                 return establishSession(user, request, responseObj);
             } else {
                 user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
-                if (user.getFailedLoginAttempts() >= 5) {
-                    user.setLockedUntil(java.time.LocalDateTime.now().plusMinutes(15));
+                if (user.getFailedLoginAttempts() >= loginMaxAttempts) {
+                    user.setLockedUntil(java.time.LocalDateTime.now().plusMinutes(loginLockoutMins));
                 }
                 userRepository.save(user);
             }

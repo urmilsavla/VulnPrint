@@ -36,6 +36,12 @@ public class DataInitializer implements CommandLineRunner {
     @org.springframework.beans.factory.annotation.Value("${vulnprint.superadmin.email:superadmin@vulnprint.com}")
     private String superAdminEmail;
 
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.superadmin.password:VulnPrintAdmin08$}")
+    private String superAdminPassword;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.superadmin.qualification:Immutable Root Authority}")
+    private String superAdminQualification;
+
     @Override
     public void run(String... args) throws Exception {
         try {
@@ -97,7 +103,7 @@ public class DataInitializer implements CommandLineRunner {
 
         // 3. Initialize Immutable Superadmin Account
         String adminEmail = superAdminEmail;
-        String adminPass = "VulnPrintAdmin08$";
+        String adminPass = superAdminPassword;
         
         User superadmin = userRepository.findByEmail(adminEmail).orElseGet(() -> {
             User u = new User();
@@ -111,11 +117,12 @@ public class DataInitializer implements CommandLineRunner {
         superadmin.setRole(superAdminRole);
         superadmin.setEnabled(true);
         superadmin.setStatus(User.AccountStatus.ACTIVE);
-        superadmin.setQualification("Immutable Root Authority");
+        superadmin.setQualification(superAdminQualification);
         superadmin.setAddress(guard.encryptVault("VulnPrint Command Center"));
         
         userRepository.save(superadmin);
         System.out.println("[PRODUCTION CORE] Immutable Superadmin provisioned: " + adminEmail);
+
 
         // 4. Initialize Core Configs
         if (systemConfigRepository.findAll().isEmpty()) {

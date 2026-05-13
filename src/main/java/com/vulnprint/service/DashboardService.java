@@ -35,6 +35,27 @@ public class DashboardService {
     @Autowired
     private AppSecurityGuard guard;
 
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.analytics.risk-weight.critical:10.0}")
+    private double weightCritical;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.analytics.risk-weight.high:7.0}")
+    private double weightHigh;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.analytics.risk-weight.medium:4.0}")
+    private double weightMedium;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.analytics.risk-weight.low:2.0}")
+    private double weightLow;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.analytics.risk-weight.info:0.1}")
+    private double weightInfo;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.ui.dashboard.recent-activity-limit:15}")
+    private int recentActivityLimit;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.ui.dashboard.recent-projects-limit:3}")
+    private int recentProjectsLimit;
+
     private List<Pentest> getAuthorizedPentests(User user) {
         if (guard.hasPermission(user, AppSecurityGuard.VIEW_ALL_PROJECTS)) {
             return pentestRepository.findAll();
@@ -70,7 +91,7 @@ public class DashboardService {
         map.put("low", low);
         map.put("info", info);
         
-        double weighted = (crit * 10) + (high * 7) + (med * 4) + (low * 2) + (info * 0.1);
+        double weighted = (crit * weightCritical) + (high * weightHigh) + (med * weightMedium) + (low * weightLow) + (info * weightInfo);
         double score = allVulns.isEmpty() ? 0.0 : Math.min(10.0, weighted / allVulns.size());
         map.put("globalRiskScore", String.format("%.1f", score));
         
@@ -85,7 +106,7 @@ public class DashboardService {
                     LocalDateTime d2 = p2.getCreatedDate() != null ? p2.getCreatedDate() : LocalDateTime.MIN;
                     return d2.compareTo(d1);
                 })
-                .limit(3)
+                .limit(recentProjectsLimit)
                 .collect(Collectors.toList());
     }
 
@@ -95,7 +116,7 @@ public class DashboardService {
                 .filter(p -> p.getVulnerabilities() != null)
                 .flatMap(p -> p.getVulnerabilities().stream())
                 .sorted((v1, v2) -> v2.getId().compareTo(v1.getId()))
-                .limit(15)
+                .limit(recentActivityLimit)
                 .map(v -> {
                     Map<String, Object> m = new HashMap<>();
                     m.put("id", v.getId());
@@ -224,7 +245,7 @@ public class DashboardService {
             map.put("low", low);
             map.put("info", info);
             
-            double pWeighted = (crit * 10) + (high * 7) + (med * 4) + (low * 2) + (info * 0.1);
+            double pWeighted = (crit * weightCritical) + (high * weightHigh) + (med * weightMedium) + (low * weightLow) + (info * weightInfo);
             double pScore = p.getVulnerabilities().isEmpty() ? 0.0 : Math.min(10.0, pWeighted / p.getVulnerabilities().size());
             map.put("riskIndex", String.format("%.1f", pScore));
             

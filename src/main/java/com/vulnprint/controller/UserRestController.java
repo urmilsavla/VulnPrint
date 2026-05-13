@@ -52,6 +52,12 @@ public class UserRestController {
     @Autowired
     private EmailService emailService;
 
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.auth.invitation-expiry-hours:24}")
+    private int invitationExpiryHours;
+
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.auth.password-reset-expiry-mins:15}")
+    private int passwordResetExpiryMins;
+
     @GetMapping("/requests")
     @PreAuthorize("hasAuthority('MANAGE_USERS')")
     public ResponseEntity<?> getPendingRequests() {
@@ -132,7 +138,7 @@ public class UserRestController {
             String rawToken = UUID.randomUUID().toString();
             String hashedToken = guard.hashToken(rawToken); 
             user.setInvitationToken(hashedToken);
-            user.setInvitationExpiry(java.time.LocalDateTime.now().plusHours(24));
+            user.setInvitationExpiry(java.time.LocalDateTime.now().plusHours(invitationExpiryHours));
             
             userRepository.save(user);
             System.out.println("[DEBUG] User successfully saved to DB: " + email);
@@ -155,6 +161,7 @@ public class UserRestController {
             return ResponseEntity.status(500).body(Map.of("message", "Unable to process the invitation request at this time. Please contact support."));
         }
     }
+
 
     @PostMapping("/activate")
     @PreAuthorize("permitAll()")
@@ -437,7 +444,7 @@ public class UserRestController {
             String hashedToken = guard.hashToken(rawToken);
 
             target.setActivationToken(hashedToken);
-            target.setTokenExpiry(LocalDateTime.now().plusHours(1));
+            target.setTokenExpiry(LocalDateTime.now().plusMinutes(passwordResetExpiryMins));
             userRepository.save(target);
 
             com.vulnprint.model.Alert alert = new com.vulnprint.model.Alert();
@@ -471,7 +478,7 @@ public class UserRestController {
             String hashedToken = guard.hashToken(rawToken);
             
             target.setActivationToken(hashedToken);
-            target.setTokenExpiry(java.time.LocalDateTime.now().plusHours(1));
+            target.setTokenExpiry(java.time.LocalDateTime.now().plusMinutes(passwordResetExpiryMins));
             userRepository.save(target);
 
             // Audit Log

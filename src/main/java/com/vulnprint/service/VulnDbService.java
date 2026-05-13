@@ -21,11 +21,14 @@ public class VulnDbService {
     @Autowired
     private AppSecurityGuard guard;
 
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.services.vulndb.default-url:http://vulndb.internal:8000}")
+    private String defaultUrl;
+
     private RestClient getClient() {
         String baseUrl = systemConfigRepository.findById("vulndb_url")
                 .map(SystemConfig::getConfigValue)
                 .filter(url -> !url.isBlank())
-                .orElse("http://vulndb.internal:8000"); // Use internal hostname instead of IP if possible
+                .orElse(defaultUrl); 
         
         // SSRF Check: Ensure the configured VulnDB URL is not targeting forbidden zones
         if (!guard.isSafeUrl(baseUrl)) {

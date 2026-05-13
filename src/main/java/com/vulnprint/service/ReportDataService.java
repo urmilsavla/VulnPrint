@@ -31,6 +31,9 @@ public class ReportDataService {
     @Autowired
     private AppSecurityGuard guard;
 
+    @org.springframework.beans.factory.annotation.Value("${vulnprint.logic.report.reference-prefix:VULN-}")
+    private String referencePrefix;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Transactional(readOnly = true)
@@ -210,7 +213,7 @@ public class ReportDataService {
             Vulnerability v = vs.get(i);
             Map<String, Object> f = new LinkedHashMap<>();
             f.put("srNo", i + 1);
-            f.put("referenceId", "VULN-" + String.format("%03d", v.getId()));
+            f.put("referenceId", referencePrefix + String.format("%03d", v.getId()));
             f.put("vulnerabilityTitle", v.getTitle());
             f.put("severity", v.getSeverity());
             f.put("cvssScore", v.getCvssScore());
@@ -230,7 +233,7 @@ public class ReportDataService {
         for (Vulnerability v : vs) {
             Map<String, Object> ev = new LinkedHashMap<>();
             ev.put("vulnerabilityTitle", v.getTitle());
-            ev.put("referenceId", "VULN-" + String.format("%03d", v.getId()));
+            ev.put("referenceId", referencePrefix + String.format("%03d", v.getId()));
             ev.put("evidenceMode", v.getEvidenceMode());
             ev.put("globalFileName", v.getFileName());
             ev.put("globalLineNumber", v.getLineNumber());
