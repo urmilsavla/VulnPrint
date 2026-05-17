@@ -215,7 +215,8 @@
                     if (document.getElementById('repgen_url').value) testConnection('repgen', true);
                 }
             } catch (err) {
-                console.error('Failed to load configs:', err);
+                // Error loading configs
+
             }
         }
 
@@ -224,7 +225,8 @@
             autoSaveTimers[key] = setTimeout(async () => {
                 try {
                     await saveConfig(key, value);
-                    console.log(`Auto-saved: ${key}`);
+                    // Auto-saved success notification logic could go here
+
                 } catch (e) { console.error(e); }
             }, 500);
         }

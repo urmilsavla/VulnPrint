@@ -2,6 +2,8 @@ package com.vulnprint.controller;
 
 import com.vulnprint.model.User;
 import com.vulnprint.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,6 +32,8 @@ import com.vulnprint.service.EmailService;
 @RestController
 @RequestMapping("/api/users")
 public class UserRestController {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserRestController.class);
 
     @Autowired
     private UserRepository userRepository;
@@ -90,7 +94,7 @@ public class UserRestController {
     @PreAuthorize("hasAuthority('MANAGE_USERS')")
     public ResponseEntity<?> inviteUser(@RequestBody Map<String, Object> rawData, jakarta.servlet.http.HttpServletRequest httpRequest) {
         try {
-            System.out.println("[DEBUG] /api/users/invite endpoint hit with data: " + rawData);
+            // logger.debug("/api/users/invite endpoint hit with data: " + rawData);
             
             String rawEmail = rawData.get("email") != null ? String.valueOf(rawData.get("email")) : "";
             String email = guard.sanitize(rawEmail);
@@ -126,7 +130,7 @@ public class UserRestController {
                     Long roleId = Long.valueOf(String.valueOf(rawData.get("roleId")));
                     roleRepository.findById(roleId).ifPresent(user::setRole);
                 } catch (NumberFormatException nfe) {
-                    System.out.println("[DEBUG] Invalid roleId format: " + rawData.get("roleId"));
+                    // logger.debug("Invalid roleId format: " + rawData.get("roleId"));
                 }
             }
 
@@ -564,16 +568,6 @@ public class UserRestController {
         }
         
         User saved = userRepository.save(newUser);
-        return ResponseEntity.ok(saved);
-    }
-}
-;
-        return ResponseEntity.ok(saved);
-    }
-}
-}
-}
-      User saved = userRepository.save(newUser);
         return ResponseEntity.ok(saved);
     }
 }

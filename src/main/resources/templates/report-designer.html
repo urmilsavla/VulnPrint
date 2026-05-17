@@ -587,7 +587,7 @@
 
         async function loadProjectData() {
             try {
-                console.log("Initializing Report Designer for Project:", pentestId);
+                // Initialize Report Designer components
                 const el = document.getElementById('tiles-container');
                 if (el && typeof Sortable !== 'undefined') {
                     Sortable.create(el, {
@@ -608,7 +608,8 @@
                                 const item = el.querySelector(`[data-id="${id}"]`);
                                 if (item) el.appendChild(item);
                             });
-                        } catch (e) { console.warn("Invalid saved tile order"); }
+                        } catch (e) { /* Invalid saved tile order */ }
+
                     }
                 }
 

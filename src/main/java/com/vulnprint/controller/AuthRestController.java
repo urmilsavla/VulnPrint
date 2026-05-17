@@ -5,6 +5,8 @@ import com.vulnprint.model.User;
 import com.vulnprint.repository.AccessRequestRepository;
 import com.vulnprint.repository.UserRepository;
 import com.vulnprint.security.AppSecurityGuard;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +25,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 @RequestMapping("/api/auth")
 @org.springframework.transaction.annotation.Transactional
 public class AuthRestController {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthRestController.class);
 
     @Autowired
     private UserRepository userRepository;
@@ -60,7 +64,7 @@ public class AuthRestController {
     @PreAuthorize("permitAll()")
     @org.springframework.transaction.annotation.Transactional
     public ResponseEntity<?> applyForAccess(@RequestBody Map<String, String> data) {
-        System.out.println("[DEBUG] Received access request for: " + data.get("email"));
+        // logger.debug("Received access request for: " + data.get("email"));
         String email = data.get("email");
         if (userRepository.findByEmail(email).isPresent() || accessRequestRepository.findByEmail(email).isPresent()) {
             return ResponseEntity.status(409).body(Map.of("message", "This email is already registered or has a pending application."));
@@ -374,9 +378,3 @@ public class AuthRestController {
         return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
 }
-;
-        return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
-    }
-}
-
-

@@ -1,5 +1,7 @@
 package com.vulnprint.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -7,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class EmailService {
+
+    private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
 
     @Autowired
     private JavaMailSender emailSender;
@@ -43,7 +47,7 @@ public class EmailService {
         
         try {
             emailSender.send(message);
-            System.out.println("[EMAIL SERVICE] Invitation email sent to " + toEmail);
+            // logger.debug("Email successfully sent.");
         } catch (Exception e) {
             System.err.println("[EMAIL SERVICE] Failed to send invitation email to " + toEmail + ": " + e.getMessage());
         }
@@ -98,18 +102,9 @@ public class EmailService {
         
         try {
             emailSender.send(message);
-            System.out.println("[EMAIL SERVICE] Password reset email sent to " + toEmail);
+            // logger.debug("Password reset email successfully sent.");
         } catch (Exception e) {
             logger.error("[EMAIL SERVICE] Failed to send password reset email to " + toEmail + ": " + e.getMessage(), e);
         }
     }
 }
-
-n e) {
-            logger.error("[EMAIL SERVICE] Failed to send password reset email to " + toEmail + ": " + e.getMessage(), e);
-        }
-    }
-}
-
-
-
