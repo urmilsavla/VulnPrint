@@ -338,17 +338,18 @@ public class AuthRestController {
                 user.setPassword(guard.hashPassword(newPassword));
                 
                 // SECURITY PURGE: Invalidate all existing sessions
-                // 1. Update lastRoleChange to invalidate existing JWTs (JwtAuthenticationFilter checks this)
                 user.setLastRoleChange(java.time.LocalDateTime.now());
                 
-                // 2. Revoke all active Refresh Tokens in the database
+                // Revoke all active Refresh Tokens in the database
                 guard.revokeAllSessionsForUser(user);
                 
-                // 3. Clear token to prevent reuse
+                // Clear token to prevent reuse and ensure account is active
                 user.setActivationToken(null);
                 user.setTokenExpiry(null);
+                user.setEnabled(true);
+                user.setStatus(User.AccountStatus.ACTIVE);
                 
-                userRepository.save(user);
+                userRepository.saveAndFlush(user);
 
                 // Audit Log
                 com.vulnprint.model.Alert alert = new com.vulnprint.model.Alert();

@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+  db-test:
+    image: postgres:15
+    container_name: vulnprint_db_test
+    environment:
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpassword
+      POSTGRES_DB: vulnprint_test
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata_test:/var/lib/postgresql/data
+
+  mailpit-test:
+    image: axllent/mailpit
+    container_name: vulnprint_mailpit_test
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+volumes:
+  pgdata_test:

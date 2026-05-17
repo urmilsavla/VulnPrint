@@ -9,12 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 
@@ -31,6 +26,7 @@ import com.vulnprint.service.EmailService;
 
 @RestController
 @RequestMapping("/api/users")
+@Transactional
 public class UserRestController {
 
     private static final Logger logger = LoggerFactory.getLogger(UserRestController.class);
@@ -174,44 +170,66 @@ public class UserRestController {
         String password = data.get("password");
         String hashedToken = guard.hashToken(rawToken);
 
-        return userRepository.findByInvitationToken(hashedToken)
-            .map(user -> {
-                if (user.getInvitationExpiry().isBefore(java.time.LocalDateTime.now())) {
-                    return ResponseEntity.badRequest().body(Map.of("message", "Authorization link has expired."));
-                }
-                
-                // Security: Revoke all existing sessions if this is a reset for an active user
-                if (user.getStatus() == User.AccountStatus.ACTIVE) {
-                    user.setLastRoleChange(java.time.LocalDateTime.now());
-                }
+        Optional<User> userOpt = userRepository.findByInvitationToken(hashedToken);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(404).body(Map.of("message", "Invalid authorization token."));
+        }
 
-                user.setPassword(guard.hashPassword(password));
-                user.setStatus(User.AccountStatus.ACTIVE);
-                user.setEnabled(true);
-                user.setInvitationToken(null);
-                user.setInvitationExpiry(null);
-                userRepository.save(user);
-                
-                return ResponseEntity.ok(Map.of("message", "Account activated successfully. You can now sign in."));
-            }).orElse(ResponseEntity.status(404).body(Map.of("message", "Invalid authorization token.")));
+        User user = userOpt.get();
+        if (user.getInvitationExpiry() != null && user.getInvitationExpiry().isBefore(java.time.LocalDateTime.now())) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Authorization link has expired."));
+        }
+        
+        // Security: Revoke all existing sessions if this is a reset for an active user
+        if (user.getStatus() == User.AccountStatus.ACTIVE) {
+            user.setLastRoleChange(java.time.LocalDateTime.now());
+        }
+
+        user.setPassword(guard.hashPassword(password));
+        user.setStatus(User.AccountStatus.ACTIVE);
+        user.setEnabled(true);
+        user.setInvitationToken(null);
+        user.setInvitationExpiry(null);
+        
+        userRepository.saveAndFlush(user);
+        
+        return ResponseEntity.ok(Map.of("message", "Account activated successfully. You can now sign in."));
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('VIEW_USERS')")
+    @PreAuthorize("hasAuthority('VIEW_USERS') or hasAuthority('ADD_PROJECT') or hasAuthority('EDIT_ALL_PROJECTS') or hasAuthority('EDIT_ASSIGNED_PROJECTS')")
     public ResponseEntity<?> getAllUsers(@RequestParam(required = false, defaultValue = "false") boolean includeDeleted) {
+        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        boolean hasFullView = guard.hasPermission(currentUser, "VIEW_USERS") || guard.isSuperAdmin(currentUser);
+
         List<User> users = userRepository.findAll().stream()
                 .filter(u -> includeDeleted || !u.isDeleted())
                 .collect(Collectors.toList());
-        users.forEach(u -> {
-            if (u.getAddress() != null && !u.getAddress().isEmpty()) {
-                try {
-                    u.setAddress(guard.decryptVault(u.getAddress()));
-                } catch (Exception e) {
-                    // Log but continue
+        
+        if (hasFullView) {
+            users.forEach(u -> {
+                if (u.getAddress() != null && !u.getAddress().isEmpty()) {
+                    try {
+                        u.setAddress(guard.decryptVault(u.getAddress()));
+                    } catch (Exception e) {
+                        // Log but continue
+                    }
                 }
-            }
-        });
-        return ResponseEntity.ok(users);
+            });
+            return ResponseEntity.ok(users);
+        } else {
+            // Sanitize: Return only non-sensitive data for assignment purposes
+            return ResponseEntity.ok(users.stream().map(u -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", u.getId());
+                map.put("firstName", u.getFirstName());
+                map.put("lastName", u.getLastName());
+                map.put("email", u.getEmail());
+                map.put("role", u.getRole());
+                map.put("profileImage", u.getProfileImage());
+                return map;
+            }).collect(Collectors.toList()));
+        }
     }
 
     @GetMapping("/check-email")
